@@ -1906,6 +1906,42 @@ sub _cssEnable {
 }
 
 
+sub _minCSS {
+        my ($self) = @_;
+        #
+        # when showing pre-installation screens this is the CSS that will make login's and panels show up correctly
+        # this is only used for adminLogin and for fws_systemInfo
+        #
+        return '<style type="text/css">'.
+                  'body {font-family: Tahoma, serifSansSerifMonospace;font-size:12px;}'.
+                  '.FWSStatusNote { padding:15px;text-align:center;color:#FF0000; }'.
+                  '.FWSPanelTitle { padding:10px;color:#2B6FB6;padding-bottom:15px;font-size:16px;font-weight:800; }'.
+                  '.FWSPanel { width:90%;margin:auto;margin-bottom:20px; }'.
+                  '.FWSPanelContent { padding:10px;font-size:12px;}'.
+                  '.loginInput { width:200px; }'.
+                  '.loginSubmit { text-align:right;width:275px; }'.
+                  '.ui-corner-all { -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px; }'.
+                  '.ui-widget { font-family: Tahoma, serifSansSerifMonospace; font-size: 14px }'.
+                  '.ui-widget button { font-family: Tahoma, serifSansSerifMonospace; font-size: 14px; }'.
+                  '.ui-widget-content { border: 1px solid #aaaaaa; background: #ffffff url('.$self->{'fileFWSPath'}.'/jquery/ui-1.8.9/ui-bg_flat_75_ffffff_40x100.png) 50% 50% repeat-x; color: #222222; }'.
+                  '.ui-button { display: inline-block; position: relative; padding: 5px; margin-right: .1em; text-decoration: none !important; cursor: pointer; text-align: center; overflow: visible; }'.
+                  '.ui-state-default { border: 1px solid #d3d3d3; background: #e6e6e6 url('.$self->{'fileFWSPath'}.'/jquery/ui-1.8.9/images/ui-bg_glass_75_e6e6e6_1x400.png) 50% 50% repeat-x; font-weight: normal; color: #555555; }'.
+                  '.loginContainer { margin: 170px auto; width: 581px; }'.
+                  '.loginContainer #loginBox h2 {  font-size: 14px; font-weight: normal; margin-top: 0px; }'.
+                  '.loginContainer #loginForm .left { float: left; }'.
+                  '.loginContainer #loginForm .right { float: right; }'.
+                  '.loginContainer #loginForm { text-align: left; padding: 33px 57px 50px; background: #fff url('.$self->{'fileFWSPath'}.'/login_background.png) top left no-repeat; }'.
+                  '.loginContainer #loginBox { text-align: center; }'.
+                  '.loginContainer #loginBox input.cleanborder { overflow:visible; width: 224px; padding: 3px; height: 20px; border-color: #AAAAAA #C8C8C8 #C8C8C8 #AAAAAA; border-style: solid; border-width: 1px; font-size: 12px; }'.
+                  '.loginContainer #loginBox label { color: #333333; font-weight: bold; font-size: 12px; }'.
+                  '.loginContainer p.legal { background: #fff url('.$self->{'fileFWSPath'}.'/login_box_legal_bg.gif) top left no-repeat;padding: 8px 8px 5px; margin: 0; font-size: 10px; }'.
+                  '.loginContainer .bottom { height: 5px; width: 581px; overflow: hidden; background: #fff url('.$self->{'fileFWSPath'}.'/login_box_bottom.jpg) top left no-repeat; }'.
+                  '.loginContainer .form-button {background: #ED6502 url('.$self->{'fileFWSPath'}.'/login_button_bg.png) top left repeat;border-color: #ED6502 #A04300 #A04300 #ED6502;border-style: solid;border-width: 1px;color: #FFFFFF;cursor: pointer;font: bold 12px arial,helvetica,sans-serif;padding: 1px 7px;text-align: center !important;white-space: nowrap; float: right;margin-top: 8px; }'.
+                  '.clear { clear: both; }'.
+                '</style>';
+
+}
+
 =head1 AUTHOR
 
 Nate Lewis, C<< <nlewis at gnetworks.com> >>
