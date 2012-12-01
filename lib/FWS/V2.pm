@@ -442,7 +442,7 @@ sub new {
 	$self->{'domain'} 		= defined $self->{'domain'}		? $self->{'domain'} 		: 'http://'.$ENV{"SERVER_NAME"};
 
         # if the admin ID is blank, set it to admin so users can access it via /admin
-	$self->{'FWSPluginServer'} 	= defined $self->{'FWSPluginServer'}	? $self->{'FWSPluginServer'} 	: ''https://www.frameworksites.com';
+	$self->{'FWSPluginServer'} 	= defined $self->{'FWSPluginServer'}	? $self->{'FWSPluginServer'} 	: 'https://www.frameworksites.com';
         
         # the FWS auto update server
 	$self->{'FWSServer'} 		= defined $self->{'FWSServer'}		? $self->{'FWSServer'} 		: 'http://www.frameworksites.com/downloads';
