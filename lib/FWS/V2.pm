@@ -413,83 +413,51 @@ sub new {
         $self->{'securityHash'}->{'showSiteUsers'}{'title'}     = 'User Account Access';
         $self->{'securityHash'}->{'showSiteUsers'}{'note'}      = 'Access to create, delete and modify high level information for site accounts and groups.';
 
-        #
-        # set defaults
-        #
 
-        #
-        # TODO rewrite this section to reverse defaults and overload passed parameter.  Would be slightly more efficient
-        #
-
-        #
         # if the admin ID is blank, set it to admin so users can access it via /admin
-        #
-        if ($self->{'adminURL'} eq '')          { $self->{'adminURL'} = 'admin' }
+	$self->{'adminURL'} 		= defined $self->{'adminURL'} 		? $self->{'adminURL'} 		: 'admin';
 
-        #
         # set the secure domain to a non https because it probably does not have a cert if it was not set
-        #
-        if ($self->{'secureDomain'} eq '')      { $self->{'secureDomain'} = 'http://'.$ENV{"SERVER_NAME"} }
+	$self->{'secureDomain'} 	= defined $self->{'secureDomain'}	? $self->{'secureDomain'} 	: 'http://'.$ENV{"SERVER_NAME"};
 
-        #
-        # Change the theme of the ace IDE for developer  mode
-        #
-        if ($self->{'aceTheme'} eq '')    	{ $self->{'aceTheme'} = 'idle_fingers' }
+        # Change the theme of the ace IDE for developer mode
+	$self->{'aceTheme'} 		= defined $self->{'aceTheme'}		? $self->{'aceTheme'} 		: 'idle_fingers';
 
-	#
         # The subdirectory of where tinyMCE is placed to make upgrading  and testing new versions easier
-        #
-        if ($self->{'tinyMCEPath'} eq '')       { $self->{'tinyMCEPath'} = 'tinymce-3.5.4' }
+	$self->{'tinyMCEPath'} 		= defined $self->{'tinyMCEPath'}	? $self->{'tinyMCEPath'} 	: 'tinymce-3.5.4';
 
-        #
         # Sometimes sites need bigger thatn text blob, 'mediumtext' might be needed
-        #
-        if ($self->{'scriptTextSize'} eq '')    { $self->{'scriptTextSize'} = 'text' }
+	$self->{'scriptTextSize'} 	= defined $self->{'scriptTextSize'}	? $self->{'scriptTextSize'} 	: 'text';
 
-        #
         # set the domains to the environment version if it was not set
-        #
-        if ($self->{'sessionCookieName'} eq '') { $self->{'sessionCookieName'} = 'fws_session' }
+	$self->{'sessionCookieName'} 	= defined $self->{'sessionCookieName'}	? $self->{'sessionCookieName'} 	: 'fws_session';
 
-        #
         # set mysql to default
-        #
-        if ($self->{'DBType'} eq '')            { $self->{'DBType'} = 'mysql' }
-        if ($self->{'DBPort'} eq '')            { $self->{'DBPort'} = '3306' }
+	$self->{'DBType'} 		= defined $self->{'DBType'}		? $self->{'DBType'} 		: 'mysql';
+        
+	# set mysql default port
+	$self->{'DBPort'} 		= defined $self->{'DBPort'}		? $self->{'DBPort'} 		: '3306';
 
-        #
         # set the domains to the environment version if it was not set
-        #
-        if ($self->{'domain'} eq '')            { $self->{'domain'} = 'http://'.$ENV{"SERVER_NAME"} }
+	$self->{'domain'} 		= defined $self->{'domain'}		? $self->{'domain'} 		: 'http://'.$ENV{"SERVER_NAME"};
 
-        #
         # if the admin ID is blank, set it to admin so users can access it via /admin
-        #
-        if ($self->{'FWSPluginServer'} eq '')   { $self->{'FWSPluginServer'} = 'https://www.frameworksites.com' }
-        #
+	$self->{'FWSPluginServer'} 	= defined $self->{'FWSPluginServer'}	? $self->{'FWSPluginServer'} 	: ''https://www.frameworksites.com';
+        
         # the FWS auto update server
-        #
-        if ($self->{'FWSServer'} eq '')         { $self->{'FWSServer'} = 'http://www.frameworksites.com/downloads' }
+	$self->{'FWSServer'} 		= defined $self->{'FWSServer'}		? $self->{'FWSServer'} 		: 'http://www.frameworksites.com/downloads';
 
-        #
         # set the default seconds to how long a affiliate code will last once it is recieved
-        #
-        if ($self->{"affiliateExpMax"} eq '')   { $self->{"affiliateExpMax"} = 295200 }
+	$self->{'affiliateExpMax'} 	= defined $self->{'affiliateExpMax'}	? $self->{'affiliateExpMax'} 	: 295200;
 
-        #
         # set the default FWS log level
-        #
-        if ($self->{"FWSLogLevel"} eq '')       { $self->{"FWSLogLevel"} = 1 }
+	$self->{'FWSLogLevel'} 		= defined $self->{'FWSLogLevel'}	? $self->{'FWSLogLevel'} 	: 1;
 
-        #
         # set the default SQL log level
-        #
-        if ($self->{"SQLLogLevel"} eq '')       { $self->{"SQLLogLevel"} = 0 }
+	$self->{'SQLLogLevel'} 		= defined $self->{'SQLLogLevel'}	? $self->{'SQLLogLevel'} 	: 0;
 
-        #
         # set the default location for sendmail
-        #
-        if ($self->{"sendmailBin"} eq '')       { $self->{"sendmailBin"} = '/usr/sbin/sendmail' }
+	$self->{'sendmailBin'} 		= defined $self->{'sendmailBin'}	? $self->{'sendmailBin'} 	: '/usr/sbin/sendmail';
 
         #
         # prepopulate a few things that might be needed so they are not undefined
@@ -514,7 +482,7 @@ sub new {
         # but in case we need a ph before then
         #
         %{$self->{'dataCacheFields'}}           = ();
-        %{$self->{'plugins'}}           = ();
+        %{$self->{'plugins'}}           	= ();
 
         #
         # this will store the currently logged in userHash
