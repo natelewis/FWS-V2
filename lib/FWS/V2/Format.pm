@@ -254,6 +254,72 @@ sub dateDiff {
 }
 
 
+
+=head2 dialogWindow
+
+Return a modal window link or onclick javascript.
+
+Possible Parameters:
+
+=over 4
+
+=item * width
+
+defaults to 800 (only pass int)
+
+=item * height
+
+deafults to jquery dialog deafult
+
+=item * linkText
+
+If linkText is passed the return will the a the linkText wrappered in an anchor tag with the modal onclick
+
+=back
+
+=cut
+
+
+sub dialogWindow {
+        my ($self,%paramHash) = @_;
+
+        $self->jqueryEnable('ui-1.8.9');
+        $self->jqueryEnable('ui.dialog-1.8.9');
+        $self->jqueryEnable('ui.position-1.8.9');
+
+        if ($paramHash{'width'} eq '') { $paramHash{'width'} = '800' }
+
+        # Determine Auto Resize Settings
+        if ($paramHash{'autoResize'} eq '') { $paramHash{'autoResize'} = 'true'; }
+
+        my $uniqueId = '_'.$self->createPassword(composition=>'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM',lowLength=>6,highLength=>6);
+        my $returnHTML = "var jsAutoResize = '".$paramHash{'autoResize'}."';";
+        $returnHTML .= "\$('";
+
+        if ($paramHash{'id'} ne '') { $returnHTML .= "#".$paramHash{'id'} } else { $returnHTML .= "<div></div>').html('<img src=".$self->loadingImage()."></img> Loading, please wait..." }
+
+        $returnHTML .= "').modal({";
+        $returnHTML .= "dataId :'";
+        $returnHTML .= "modal_".$uniqueId."',";
+        if ($paramHash{'height'} ne '') { $returnHTML .= "minHeight: ".$paramHash{'height'}.","; $returnHTML .= "maxHeight: ".$paramHash{'height'}.",";  }
+        $returnHTML .= "autoResize: ".$paramHash{'autoResize'}.",";
+
+        if ($paramHash{'id'} eq '') {
+                $returnHTML .= "onShow: function (dialog) { \$('#modal_".$uniqueId."').load('".$self->{'scriptName'}.$self->{'queryHead'}.$paramHash{'queryString'}."',function(){";
+                my %jqueryHash = %{$self->{'_jqueryHash'}};
+                if ($self->{'adminLoginId'} ne '') { $returnHTML .= "FWSUIInit();" }
+                $returnHTML .= "if (jsAutoResize.length) { \$.modal.update(); } }); },";
+        }
+
+        $returnHTML .= "onClose: function(dialog) {if(typeof(tinyMCE) != 'undefined') {";
+        $returnHTML .= "for (id in tinyMCE.editors) { if (id.match(/(0|_v_)/)) {tinyMCE.execCommand('mceRemoveControl', false, id); }}}";
+        $returnHTML .= "\$.modal.close();},minWidth:".$paramHash{'width'};
+        $returnHTML .= "}); ";
+
+        if ($paramHash{'linkHTML'} ne "") { return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"".$returnHTML."\">".$paramHash{'linkHTML'}."</span>" }
+        else { return $returnHTML."" }
+ }
+
 =head2 formatDate
 
 Return the date time in a given format.  By passing epochTime, SQLTime you can do a time conversion from that date/time to what ever format is set to.  If you do not pass epoch or SQL time the server time will be used.
