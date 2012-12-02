@@ -73,18 +73,18 @@ sub formValue {
         return $self->{"form"}{$field};
 }
 
-=head2 getFormValues
+=head2 setFormValues
 
 Gather the passed form values, and from it set the language formValue and the session formValue.
 
         #
         # get the array
         #
-        $fws->getFormValues();
+        $fws->setFormValues();
 
 =cut
 
-sub getFormValues {
+sub setFormValues {
         my ($self) =  @_;
         use CGI qw(:cgi);
         my $cgi = new CGI();
@@ -303,12 +303,12 @@ sub siteValue {
 
 =head2 userValue
 
-Get or set a admin user value.  This is used mostly for security flags and should only be used to get values FWS has set, never to change or set them.
+Get an admin user value.  This is used mostly for security flags and is only used to get values FWS has set.   
 
 	#
         # is the admin user a developer?
         #
-        my $isDeveloper = $fws->siteValue('isDeveloper');
+        my $isDeveloper = $fws->userValue('isDeveloper');
 
 =cut
 

@@ -390,6 +390,18 @@ sub pageIdOfElement {
 }
 
 
+=head2 getFormValues {
+
+Renamed to setFormValues()
+
+=cut
+
+sub getFormValues {
+        my ( $self ) = @_;
+        return $self->setFormValues();
+}
+
+
 =head2 guidKey
 
 Deprecated, no longer needed with V2 security models
@@ -400,6 +412,7 @@ sub guidKey {
         my ( $self ) = @_;
         return '';
 }
+
 
 =head2 initActions
 
