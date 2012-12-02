@@ -16,11 +16,11 @@ FWS::V2 - Framework Sites version 2
 
 =head1 VERSION
 
-Version 0.009
+Version 0.0010
 
 =cut
 
-our $VERSION = '0.009';
+our $VERSION = '0.0010';
 
 
 =head1 SYNOPSIS
@@ -41,6 +41,12 @@ FWS::V2 is the utility counterpart to the web based content management developme
 Using this version is ideal for accessing any plugin feature, or data stored within a FWS installation from a standalone script.  Examples of this would be scripts to do site maintenance, imports, exports, mass data updates, data mining, 3rd party data synchronization, web services, APIs... and more!   
 
 The syntax and usage of the FWS::V2 is identical to the web based element and plugin development available within the FWS web based administration.  Code from either is interchangeable between both distributions of FWS::V2 and the web based distribution of FWS available from www.frameworksites.com.
+
+=head1 PACKAGE DEPENDENCE
+
+Wait a second... why does FWS V2 seem to have its own home grown methods that are already in popular well established packages????
+
+One of the main goals of FWS is to have a bundled, autonomous version of the FWS that can be picked up and sat on almost any major ISP or Linux hosting environment without any care for what is present on the server.   Packages the FWS does use have been carefully picked and validated to be supported on most all major ISPs.  For more information on this bundled web optimized version visit http://www.frameworksites.com
 
 =head1 METHODS AND PARAMETERS
 
@@ -351,6 +357,7 @@ BEGIN {
                         "FWS::V2::Net",
                         "FWS::V2::Legacy",
                         "FWS::V2::Session",
+                        "FWS::V2::Cache",
                         "FWS::V2::Safety");
    
 	use FWS::V2::Database;
@@ -360,6 +367,7 @@ BEGIN {
 	use FWS::V2::Net;
 	use FWS::V2::Legacy;
 	use FWS::V2::Session;
+	use FWS::V2::Cache;
 	use FWS::V2::Safety;
 }
 

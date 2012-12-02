@@ -2,6 +2,7 @@ Revision history for FWS-V2
 0.010
  - $fws->{GMTOffset} is now configured in site settings
  - Stored hash libraries added: saveHash(), deleteHash(), and hashArray()
+ - Added Cache libary base methods
 
 0.009 2012-10-16
  - Add an ease of use method for date comparing: dateDiff()

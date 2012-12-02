@@ -7,6 +7,7 @@ lib/FWS/V2/Format.pm
 lib/FWS/V2/File.pm
 lib/FWS/V2/Net.pm
 lib/FWS/V2/Legacy.pm
+lib/FWS/V2/Cache.pm
 lib/FWS/V2/Session.pm
 Makefile.PL
 MANIFEST			This list of files
