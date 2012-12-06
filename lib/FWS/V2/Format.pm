@@ -271,9 +271,25 @@ defaults to 800 (only pass int)
 
 deafults to jquery dialog deafult
 
+=item * id
+
+The id of the div you wish to populate the modals content with (Can not be used with queryString)
+
+=item * queryString
+
+The query after the queryHead used to populate the modal (Can not be used with id)
+
 =item * linkText
 
 If linkText is passed the return will the a the linkText wrappered in an anchor tag with the modal onclick
+
+=item * subModal
+
+Set this to 1 if you are passing queryString and wish to replace the current contents of the modal with the new query.  This will only work if it is called from within another modal
+
+=item * loadingContent
+
+HTML passed as the "now loading..." type text as HTML.  This is javascript wrappered with single tics escape them if you need to use them: \'
 
 =back
 
@@ -283,39 +299,68 @@ If linkText is passed the return will the a the linkText wrappered in an anchor 
 sub dialogWindow {
         my ($self,%paramHash) = @_;
 
+	#
+	# set defaults and fix up the width
+	#
         $self->jqueryEnable('ui-1.8.9');
         $self->jqueryEnable('ui.dialog-1.8.9');
         $self->jqueryEnable('ui.position-1.8.9');
-
         if ($paramHash{'width'} eq '') { $paramHash{'width'} = '800' }
+        my $returnHTML = "var jsAutoResize = '".$paramHash{'autoResize'}."';";
+	
+	#
+	# build the ajax load without the jquery pre object because we could use it two different ways
+	#
+	my $ajaxLoad = "load('".$self->{'scriptName'}.$self->{'queryHead'}.$paramHash{'queryString'}."',function(){";
+        if ($self->{'adminLoginId'} ne '') { $ajaxLoad .= "FWSUIInit();" }
+        $ajaxLoad .= "if (jsAutoResize.length) { \$.modal.update(); } });";
 
+	#
         # Determine Auto Resize Settings
+	#
         if ($paramHash{'autoResize'} eq '') { $paramHash{'autoResize'} = 'true'; }
 
+	#
+	# create someting small and unique so we can use it as a reference
+	#
         my $uniqueId = '_'.$self->createPassword(composition=>'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM',lowLength=>6,highLength=>6);
-        my $returnHTML = "var jsAutoResize = '".$paramHash{'autoResize'}."';";
-        $returnHTML .= "\$('";
 
-        if ($paramHash{'id'} ne '') { $returnHTML .= "#".$paramHash{'id'} } else { $returnHTML .= "<div></div>').html('<img src=".$self->loadingImage()."></img> Loading, please wait..." }
+	$paramHash{loadingContent} ||= "<img src=".$self->loadingImage()."></img> Loading, please wait...";
 
-        $returnHTML .= "').modal({";
-        $returnHTML .= "dataId :'";
-        $returnHTML .= "modal_".$uniqueId."',";
-        if ($paramHash{'height'} ne '') { $returnHTML .= "minHeight: ".$paramHash{'height'}.","; $returnHTML .= "maxHeight: ".$paramHash{'height'}.",";  }
-        $returnHTML .= "autoResize: ".$paramHash{'autoResize'}.",";
+	#
+	# return the ajax against he modal wrapper if we are just refreshing with new content
+	#
 
-        if ($paramHash{'id'} eq '') {
-                $returnHTML .= "onShow: function (dialog) { \$('#modal_".$uniqueId."').load('".$self->{'scriptName'}.$self->{'queryHead'}.$paramHash{'queryString'}."',function(){";
-                my %jqueryHash = %{$self->{'_jqueryHash'}};
-                if ($self->{'adminLoginId'} ne '') { $returnHTML .= "FWSUIInit();" }
-                $returnHTML .= "if (jsAutoResize.length) { \$.modal.update(); } }); },";
-        }
-
-        $returnHTML .= "onClose: function(dialog) {if(typeof(tinyMCE) != 'undefined') {";
-        $returnHTML .= "for (id in tinyMCE.editors) { if (id.match(/(0|_v_)/)) {tinyMCE.execCommand('mceRemoveControl', false, id); }}}";
-        $returnHTML .= "\$.modal.close();},minWidth:".$paramHash{'width'};
-        $returnHTML .= "}); ";
-
+	if ($paramHash{subModal}) { $returnHTML .= "\$('.simplemodal-data').html( '".$paramHash{loadingContent} ."' );\$('.simplemodal-data').".$ajaxLoad }
+	
+	#
+	# this is not a subModal do the whole gig
+	#
+	else {
+		$returnHTML .= "\$('". ( $paramHash{'id'} ? "#".$paramHash{'id'} : "<div></div>').html( '".$paramHash{loadingContent} ."' )").".modal({dataId :'modal_".$uniqueId."',";
+	
+		#
+		# Set the hit and autoresize
+		#
+	        if ($paramHash{'height'} ne '') { $returnHTML .= "minHeight: ".$paramHash{'height'}.",maxHeight: ".$paramHash{'height'}.","; }
+	        $returnHTML .= "autoResize: ".$paramHash{'autoResize'}.",";
+	
+		#
+		# because we do NOT have an ID, lets build the onShow loader
+		#
+	        if ($paramHash{'id'} eq '') { $returnHTML .= "onShow: function (dialog) { \$('#modal_".$uniqueId."').".$ajaxLoad." }," }
+	
+		#
+		# create the oncloase to clean up any mce thingies
+		#
+	        $returnHTML .= "onClose: function(dialog) {if(typeof(tinyMCE) != 'undefined') {for (id in tinyMCE.editors) { if (id.match(/(0|_v_)/)) {tinyMCE.execCommand('mceRemoveControl', false, id); }}}\$.modal.close();},";
+		$returnHTML .= "minWidth:".$paramHash{'width'};
+	        $returnHTML .= "}); ";
+	}
+	
+	#
+	# return the link wrapperd onclick or just the onclick
+	#
         if ($paramHash{'linkHTML'} ne "") { return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"".$returnHTML."\">".$paramHash{'linkHTML'}."</span>" }
         else { return $returnHTML."" }
  }

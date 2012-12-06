@@ -73,15 +73,16 @@ sub saveCache {
 	#
 	# set cache file based on expire date
 	#
-	my $newFile = $cacheDir.'/'.( time + ( $paramHash{expire} * 60 ) );
+	my $newFile = $cacheDir.'/'.( time() + ( $paramHash{expire} * 60 ) );
 	
 	#
 	# set the file name as the exp epoch with its content
 	#
-        open( FILE, ">$newFile" );
-	print FILE ( time + ( $paramHash{expire} * 60 ) )."\n";
-        print FILE $paramHash{value};
-	close( FILE );
+	my $expireEpoch = ( time() + ( $paramHash{expire} * 60 ) );
+        open( CFILE, ">$newFile" );
+	print CFILE $expireEpoch."\n";
+        print CFILE $paramHash{value};
+	close( CFILE );
 	
 	#
 	# Move it to the live value, or if we have something nasty from file locking happen
@@ -182,18 +183,18 @@ sub cacheValue {
 	#
 	# open the file and get the first line
 	# 
-        open( FILE, $newFile );
-        chomp( my $timeStamp = <FILE> );
+        open( VFILE, $newFile );
+        chomp( my $timeStamp = <VFILE> );
 
 	#
 	# if we are still within timestamp lets return it
 	#
-	if ( $timeStamp > time ) { while (<FILE>) { $value .= $_ } }
+	if ( $timeStamp > time() ) { while (<VFILE>) { $value .= $_ } }
 	
 	#
 	# Return the value and close the file
 	#
-        close( FILE );
+        close( VFILE );
         return $value;
 }
 

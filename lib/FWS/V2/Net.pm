@@ -35,11 +35,13 @@ FWS version 2 core network methods
 
 Post HTTP or HTTPS and return the result to a hash reference containing the results plus the parameters provided.
 
-        my $responseRef = $fws->HTTPRequest(	url	=>'http://www.cpan.org' # only required parameter
-						type	=>'get'			# default is get [get|post]
-						user	=>'theUser'		# if needed for auth
-						password=>'thePass'		# if needed for auth 
-						timeout =>'30'			# fail if 30 seconds go by
+        my $responseRef = $fws->HTTPRequest(	url	=> 'http://www.cpan.org'# only required parameter
+						type	=> 'get'		# default is get [get|post]
+						user	=> 'theUser'		# if needed for auth
+						password=> 'thePass'		# if needed for auth 
+						timeout => '30'			# fail if 30 seconds go by
+						expire  =>  30			# cache this for 30 minutes 
+										# and return cache till it expires
 						ip	=>'1.2.3.4');		# show that I am from this ip
 
 	print $responseRef->{'url'}."\n";		# what was passed to HTTPRequest
@@ -52,6 +54,23 @@ Post HTTP or HTTPS and return the result to a hash reference containing the resu
 sub HTTPRequest {
         my ($self,%paramHash) = @_;
 
+	#
+	# URL Hash caching if needed
+	#
+        use Digest::MD5  qw(md5_hex);
+	my $URLHash = md5_hex( $paramHash{url} );
+
+	#
+	# check if we are cached, and if so lets return if we are still in time
+	#
+	if ($paramHash{'expire'} ne '') {
+		$paramHash{content} = $self->cacheValue( 'FWSHTTP_'.$URLHash );
+		if ( $paramHash{content} ne '' ) { 
+			$paramHash{success} = 1;
+			return \%paramHash;
+		};
+	}
+	
 	#
 	# lets use the LWP to get this done
 	#
@@ -95,7 +114,17 @@ sub HTTPRequest {
         #
 	my $response = $ua->request($req);
 	$paramHash{'content'} = $response->content;
-        if ($response->is_success) { $paramHash{'success'} = 1 }
+        if ($response->is_success) { 
+		$paramHash{'success'} = 1 ;
+	
+		#
+		# because we have success lets cache this if we are supposed to
+		#
+		if ($paramHash{'expire'} ne '') {
+			$self->saveCache( key => 'FWSHTTP_'.$URLHash, expire => $paramHash{'expire'}, value => $paramHash{'content'} ); 
+		}
+
+	}
         else { $paramHash{'success'} = 0 }
 
 	#
