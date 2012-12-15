@@ -365,6 +365,56 @@ sub dialogWindow {
         else { return $returnHTML."" }
  }
 
+
+=head2 displayAdminLogin
+
+Return the HTML used for a default FWS admin login.
+
+=cut
+
+sub displayAdminLogin {
+        my ($self,@tabList) = @_;
+        my $pageId = $self->formValue('p');
+
+        my $loginForm = "<div class=\"FWSAdminLoginContainer\"><div id=\"FWSAdminLogin\">";
+        $loginForm .= "<form method=\"post\" enctype=\"multipart/form-data\" action=\"".$self->{'scriptName'}."\">";
+
+        $loginForm .= "<h2>FWS Administrator Login</h2>";
+
+        $loginForm .= "<div class=\"FWSAdminLoginLeft\"><label for=\"FWSAdminLoginUser\">Username:</label><br/><input type=\"text\" name=\"bs\" id=\"FWSAdminLoginUser\" value=\"".$self->formValue("bs_hold")."\" /></div>";
+        $loginForm .= "<div class=\"FWSAdminLoginRight\"><label for=\"FWSAdminLoginPassword\">Password:</label><br/><input id=\"FWSAdminLoginPassword\" type=\"password\" name=\"l_password\" /></div>";
+
+        $loginForm .= "<div class=\"clear\"></div>";
+
+        $loginForm .= "<input class=\"FWSAdminLoginButton\" type=\"submit\" title=\"Login\" value=\"Login\" />";
+
+        $loginForm .= "<input type=\"hidden\" name=\"p\" value=\"".$self->{'adminURL'}."\"/>";
+        $loginForm .= "<input type=\"hidden\" name=\"session\" value=\"".$self->formValue("session")."\"/>";
+        $loginForm .= "<input type=\"hidden\" name=\"id\" value=\"" . $self->safeQuery( $self->formValue( "id" ) ) . "\"/>";
+        $loginForm .= "<input type=\"hidden\" id=\"s\" name=\"s\" value=\"" . $self->formValue("s") . "\"/>";
+
+        $loginForm .= "</form>";
+        $loginForm .= "</div>";
+
+        $loginForm .= "<div class=\"FWSAdminLoginLegal\">Powered by Framework Sites v".$self->{'FWSVersion'}."</div>";
+
+        $loginForm .= "</div></div>";
+
+        $self->printPage( content => $loginForm, head => $self->_minCSS() );
+}
+
+
+=head2 fontCSS
+
+Return css that will set the default FWS font for inline use before CSS is capable of being applied.
+
+=cut
+
+sub fontCSS {
+        return "font-size:12px;font-family: Tahoma, serifSansSerifMonospace;";
+        }
+
+
 =head2 formatDate
 
 Return the date time in a given format.  By passing epochTime, SQLTime you can do a time conversion from that date/time to what ever format is set to.  If you do not pass epoch or SQL time the server time will be used.
@@ -2037,17 +2087,17 @@ sub _minCSS {
                   '.ui-widget-content { border: 1px solid #aaaaaa; background: #ffffff url('.$self->{'fileFWSPath'}.'/jquery/ui-1.8.9/ui-bg_flat_75_ffffff_40x100.png) 50% 50% repeat-x; color: #222222; }'.
                   '.ui-button { display: inline-block; position: relative; padding: 5px; margin-right: .1em; text-decoration: none !important; cursor: pointer; text-align: center; overflow: visible; }'.
                   '.ui-state-default { border: 1px solid #d3d3d3; background: #e6e6e6 url('.$self->{'fileFWSPath'}.'/jquery/ui-1.8.9/images/ui-bg_glass_75_e6e6e6_1x400.png) 50% 50% repeat-x; font-weight: normal; color: #555555; }'.
-                  '.loginContainer { margin: 170px auto; width: 581px; }'.
-                  '.loginContainer #loginBox h2 {  font-size: 14px; font-weight: normal; margin-top: 0px; }'.
-                  '.loginContainer #loginForm .left { float: left; }'.
-                  '.loginContainer #loginForm .right { float: right; }'.
-                  '.loginContainer #loginForm { text-align: left; padding: 33px 57px 50px; background: #fff url('.$self->{'fileFWSPath'}.'/login_background.png) top left no-repeat; }'.
-                  '.loginContainer #loginBox { text-align: center; }'.
-                  '.loginContainer #loginBox input.cleanborder { overflow:visible; width: 224px; padding: 3px; height: 20px; border-color: #AAAAAA #C8C8C8 #C8C8C8 #AAAAAA; border-style: solid; border-width: 1px; font-size: 12px; }'.
-                  '.loginContainer #loginBox label { color: #333333; font-weight: bold; font-size: 12px; }'.
-                  '.loginContainer p.legal { background: #fff url('.$self->{'fileFWSPath'}.'/login_box_legal_bg.gif) top left no-repeat;padding: 8px 8px 5px; margin: 0; font-size: 10px; }'.
-                  '.loginContainer .bottom { height: 5px; width: 581px; overflow: hidden; background: #fff url('.$self->{'fileFWSPath'}.'/login_box_bottom.jpg) top left no-repeat; }'.
-                  '.loginContainer .form-button {background: #ED6502 url('.$self->{'fileFWSPath'}.'/login_button_bg.png) top left repeat;border-color: #ED6502 #A04300 #A04300 #ED6502;border-style: solid;border-width: 1px;color: #FFFFFF;cursor: pointer;font: bold 12px arial,helvetica,sans-serif;padding: 1px 7px;text-align: center !important;white-space: nowrap; float: right;margin-top: 8px; }'.
+                  '.FWSAdminLoginLeft { float: left; text-align: left; }'.
+                  '.FWSAdminLoginRight { float: right; text-align: left; }'.
+                  '.FWSAdminLoginContainer { margin: 170px auto; width: 581px; border: solid 1px; }'.
+                  '#FWSAdminLogin h2 {  font-size: 24px; color: #f78d1d; font-weight: 800; }'.
+                  '#FWSAdminLogin { text-align: left; padding: 2px 57px 50px; background: #ddd; }'.
+                  '#FWSAdminLogin { text-align: center; }'.
+                  '#FWSAdminLoginUser, #FWSAdminLoginPassword { overflow:visible; width: 224px; padding: 3px; height: 20px; border-color: #AAAAAA #C8C8C8 #C8C8C8 #AAAAAA; border-style: solid; border-width: 1px; font-size: 12px; }'.
+                  '.FWSAdminLoginContainer #FWSAdminLogin label { color: #333333; font-weight: bold; font-size: 12px; }'.
+                  '.FWSAdminLoginLegal { background: #fff; padding: 8px 8px 5px; margin: 0; border-top: dashed 1px; font-size: 10px; }'.
+                  '.FWSAdminLoginContainer .FWSAdminLoginBottom { height: 5px; width: 581px; overflow: hidden; background: #fff; }'.
+                  '.FWSAdminLoginButton { float: right; margin-top: 10px; cursor: pointer; padding: 5px 20px; text-shadow: 0 1px 1px rgba(0,0,0,.3); -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px; -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2); -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2); box-shadow: 0 1px 2px rgba(0,0,0,.2); color: #fef4e9; border: solid 1px #da7c0c; background: #f78d1d; background: -webkit-gradient(linear, left top, left bottom, from(#faa51a), to(#f47a20)); background: -moz-linear-gradient(top,  #faa51a,  #f47a20); } '.
                   '.clear { clear: both; }'.
                 '</style>';
 
