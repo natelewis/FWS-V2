@@ -58,9 +58,9 @@ All directories should be wrapped in this method before being applied.  It will 
 =cut
 
 sub safeDir {
-        my ($self, $incommingText) = @_;
-        $incommingText =~ s/(\.\.|\||;)//sg;
-        return $incommingText;
+        my ($self, $incomingText) = @_;
+        $incomingText =~ s/(\.\.|\||;)//sg;
+        return $incomingText;
 }
 
 
@@ -77,9 +77,9 @@ All files should be wrapped in this method before being applied.  It will remove
 
 
 sub safeFile {
-        my ($self, $incommingText) = @_;
-        $incommingText =~ s/(\/|\\|;|\|)//sg;
-        return $incommingText;
+        my ($self, $incomingText) = @_;
+        $incomingText =~ s/(\/|\\|;|\|)//sg;
+        return $incomingText;
 }
 
 =head2 safeNumber
@@ -116,13 +116,32 @@ All fields and dynamic content in SQL statements should be wrapped in this metho
 =cut
 
 sub safeSQL {
-        my ($self, $incommingText) = @_;
-        $incommingText =~ s/\'/\'\'/sg;
-        $incommingText =~ s/\\/\\\\/sg;
-        return $incommingText;
+        my ($self, $incomingText) = @_;
+        $incomingText =~ s/\'/\'\'/sg;
+        $incomingText =~ s/\\/\\\\/sg;
+        return $incomingText;
 }
 
 
+=head2 safeQuery
+
+Remove anything from a query string that could advocate a cross site scripting attack
+
+        #
+        # Do something that could be used for evil
+        #
+        my $querySting = 'id=<script>alert('bo!')</script>url&this=that';
+        $valueHash{'html'} .= '<a href="http://www.frameworksites.com/cgi-bin/go.pl?'.$fws->safeQuery($queryString).'">Click Me</a>';
+
+=cut
+
+sub safeQuery {
+        my ($self, $incomingText) = @_;
+        $incomingText =~ s/\%3C/\</sg;
+        $incomingText =~ s/\%3E/\>/sg;
+        $incomingText = $self->removeHTML($incomingText);
+        return $incomingText;
+}
 
 
 =head2 safeURL
@@ -144,15 +163,12 @@ Switch a string into a safe url by replacing all non 0-9 a-z A-Z with a dash but
 =cut
 
 sub safeURL {
-        my ($self, $incommingText) = @_;
-        $incommingText =~ s/\&/and/sg;
-        $incommingText =~ s/[^0-9a-zA-Z]/_/sg;
-	$incommingText =~ s/^\s+//;
-        return $incommingText;
+        my ($self, $incomingText) = @_;
+        $incomingText =~ s/\&/and/sg;
+        $incomingText =~ s/[^0-9a-zA-Z]/_/sg;
+	$incomingText =~ s/^\s+//;
+        return $incomingText;
 }
-
-
-
 
 
 =head2 safeJSON
@@ -170,11 +186,11 @@ Replace any thing harmful to an JSON node that could cause it to fail.  It will 
 
 
 sub safeJSON {
-        my ($self, $incommingText) = @_;
-        $incommingText =~ s/\\/\\\\/sg;
-        $incommingText =~ s/"/\\"/sg;
-        $incommingText =~ s/\//\\\//sg;
-        return $incommingText;
+        my ($self, $incomingText) = @_;
+        $incomingText =~ s/\\/\\\\/sg;
+        $incomingText =~ s/"/\\"/sg;
+        $incomingText =~ s/\//\\\//sg;
+        return $incomingText;
 }
 
 
@@ -202,10 +218,10 @@ Replace any thing harmful to an XML node that could cause it to fail validation.
 =cut
 
 sub safeXML {
-        my ($self, $incommingText) = @_;
-        $incommingText =~ s/&/&amp;/sg;
-        $incommingText =~ s/</&lt;/sg;
-        return $incommingText;
+        my ($self, $incomingText) = @_;
+        $incomingText =~ s/&/&amp;/sg;
+        $incomingText =~ s/</&lt;/sg;
+        return $incomingText;
 }
 
 
