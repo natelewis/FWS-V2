@@ -770,6 +770,86 @@ sub SQLLog{
 }
 
 
+sub _installPlugin {
+        my ($self, %paramHash ) = @_;
+
+	#
+	# pull the files from FWS
+	#
+        my $plugin = $self->safeFile( $paramHash{plugin} );
+        ( my $cleanDomain = $self->{'domain'} ) =~ s/.*\/\///sg;
+        my $responseRef = $self->HTTPRequest( type =>'get', url=> $self->{'FWSPluginServer'} . '/cgi-bin/go.pl?p=publishPlugin&install=1&plugin='.$plugin.'&FWSKey='.$self->{'FWSKey'}.'&domain='.$cleanDomain);
+
+        my $script;
+        my $files;
+        my $fileReading;
+        my $fileName;
+        my $scriptPulled = 0;
+
+	#
+	# bring in web accessable files
+	#
+        my $pluginWebFileDir = $self->{'filePath'}.'/plugins/'.$plugin;
+        $self->makeDir($pluginWebFileDir);
+        while($responseRef->{'content'} =~ /(.*)\n?/g){
+                my $line = $1;
+
+                # if we have started the file, stop working on the scripts
+                if ($line =~ /^FILE\|/) { $scriptPulled = 1 }
+
+                # still building the script
+                if (!$scriptPulled) { $script .= $line."\n" }
+
+                # if there is a FILE END we are done, lets process
+                if ($line =~ /^FILE_END\|/) {
+                        #
+                        # save the file to that directory
+                        #
+                        $self->FWSLog("Plugin File: ".$pluginWebFileDir."/".$fileName);
+                        $self->saveEncodedBinary($pluginWebFileDir."/".$fileName,$fileReading);
+
+                        #
+                        # reset so when we come around again we will no we are done.
+                        #
+                        $fileName = '';
+                        $fileReading = '';
+                }
+
+                #
+                # if we have a file name,  we are currenlty looking for a
+                # file.  eat those lines up and stick them in a diffrent var
+                #
+                elsif ($fileName ne '') { $fileReading .= $line."\n" }
+
+                #
+                # if this is a start of a file, lets get it set up and
+                # define the file name, the next time we go around we
+                # will be looking at the base 64
+                #
+                if ($line =~ /^FILE\|/) { ( $fileName = $line ) =~ s/.*\///sg }
+
+        }
+
+
+	#
+        # save the script
+        #
+        $self->makeDir( $self->{'fileSecurePath'} . '/plugins' );
+        my $fileName = $self->{'fileSecurePath'} . '/plugins/' . $plugin . '.pm';
+
+        #
+        # make backup if its there and write the new one
+        #
+        if ( -e $fileName ) { rename( $fileName, $fileName . '.' . $self->formatDate( format => 'number') ) }
+        open( FILE, ">".$fileName ) || die "could not save plugin: ".$fileName;
+        print FILE $script;
+        close(FILE);
+
+        $self->FWSLog('Install Plugin '.$plugin.' version '.$self->getPluginVersion( $fileName ).' complete');
+}
+
+
+
 =head1 AUTHOR
 
 Nate Lewis, C<< <nlewis at gnetworks.com> >>
