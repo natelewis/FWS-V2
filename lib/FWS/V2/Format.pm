@@ -300,6 +300,11 @@ sub dialogWindow {
         my ($self,%paramHash) = @_;
 
 	#
+        # Determine Auto Resize Settings default it to true if it is blank
+	#
+        $paramHash{'autoResize'} = 'true' if ( $paramHash{'autoResize'} eq '' );
+
+	#
 	# set defaults and fix up the width
 	#
         $self->jqueryEnable('ui-1.8.9');
@@ -315,10 +320,6 @@ sub dialogWindow {
         if ($self->{'adminLoginId'} ne '') { $ajaxLoad .= "FWSUIInit();" }
         $ajaxLoad .= "if (jsAutoResize.length) { \$.modal.update(); } });";
 
-	#
-        # Determine Auto Resize Settings
-	#
-        if ($paramHash{'autoResize'} eq '') { $paramHash{'autoResize'} = 'true'; }
 
 	#
 	# create someting small and unique so we can use it as a reference
@@ -353,7 +354,8 @@ sub dialogWindow {
 		#
 		# create the oncloase to clean up any mce thingies
 		#
-	        $returnHTML .= "onClose: function(dialog) {if(typeof(tinyMCE) != 'undefined') {for (id in tinyMCE.editors) { if (id.match(/(0|_v_)/)) {tinyMCE.execCommand('mceRemoveControl', false, id); }}}\$.modal.close();},";
+	        #$returnHTML .= "onClose: function(dialog) {if(typeof(tinyMCE) != 'undefined') {for (id in tinyMCE.editors) { if (id.match(/(0|_v_)/)) {tinyMCE.execCommand('mceRemoveControl', false, id); }}}\$.modal.close();},";
+	        $returnHTML .= "onClose: function(dialog) { FWSCloseMCE(); \$.modal.close(); },";
 		$returnHTML .= "minWidth:".$paramHash{'width'};
 	        $returnHTML .= "}); ";
 	}
@@ -1979,10 +1981,12 @@ sub tabs {
                 # if tiny mce is being used on a tab, lets light it up per the clicky
                 # also tack on any tabJava we had passed to us
                 #
-                my $javaScript          = "if(typeof(tinyMCE) != 'undefined') {";
-		$javaScript		.= "for (id in tinyMCE.editors) { tinyMCE.execCommand('mceRemoveControl', false, id); }";
-                $javaScript             .= "tinyMCE.execCommand('mceAddControl', false, '".$editorName."');}";
-                $javaScript             .= "if(typeof(\$.modal) != 'undefined') {\$.modal.update();}";
+                #my $javaScript          = "if(typeof(tinyMCE) != 'undefined') {";
+		#$javaScript		.= "for (id in tinyMCE.editors) { tinyMCE.execCommand('mceRemoveControl', false, id); }";
+		#my $javaScript		.= "if(typeof(tinyMCE) != 'undefined') {for (id in tinyMCE.editors) { if (id.match(/(0|_v_)/)) {tinyMCE.execCommand('mceRemoveControl', false, id); }}";
+		my $javaScript		.= "FWSCloseMCE();";
+                $javaScript             .= "if ( typeof(tinyMCE) != 'undefined' ) { tinyMCE.execCommand('mceAddControl', false, '".$editorName."'); }";
+                $javaScript             .= "if ( typeof(\$.modal) != 'undefined' ) { \$.modal.update(); }";
                 $javaScript             .= $tabJava;
                 $javaScript             .= "return false;";
 
