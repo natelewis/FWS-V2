@@ -191,6 +191,79 @@ sub fileArray {
         return \@fileHashArray;
 }
 
+
+=head2 formMapToHashArray
+
+Return a reference to a hash array from its human readable formMap.    The format is new line delmited per array item then subsectioned by |, then name valued paired with ~ per each subsection.  The first item of each | and ~ delemited section is translaged into the name hash key while the rest of the ~ delemented are convered into a name value pair.
+
+Example: 
+
+	title 1~type~type 1|sub title 1a|sub title 1b
+	title 2~something~extra|sub title 2a~extaKey~extra value|sub title 2b
+
+Will return: 	
+
+        [
+          {
+            'name' => 'title 1',
+            'type' => 'type 1',
+            'optionArray' => [
+                               {
+                                 'name' => 'sub title 1a'
+                               },
+                               {
+                                 'name' => 'sub title 1b'
+                               }
+                             ]
+          },
+          {
+            'name' => 'title 2',
+            'something' => 'extra',
+            'optionArray' => [
+                               {
+                                 'name' => 'sub title 2a',
+                                 'extaKey' => 'extra value'
+                               },
+                               {
+                                 'name' => 'sub title 2b'
+                               }
+                             ]
+          }
+        ];
+
+=cut
+
+sub formMapToHashArray {
+        my ( $self, $obj ) = @_;
+
+        my @formArray;
+        for my $line ( split ( /\n/, $obj ) ) {
+
+                my @optionArray;;
+                my @items = split ( /\|/, $line );
+
+                my %item;
+                my %itemExt;
+                ( $item{name}, %itemExt ) = split( /~/, shift( @items ) );
+                %item = ( %itemExt, %item );
+
+                my @optionArray;
+                while (@items ) {
+                        my %option;
+                        my %optionExt;
+                        ( $option{name}, %optionExt) = split( /~/, shift( @items ) );
+                        %option = ( %optionExt, %option );
+                        push( @optionArray,  {%option} );
+                }
+
+                $item{'optionArray'} = \@optionArray;
+                push( @formArray, {%item} );
+        }
+
+        return \@formArray;
+}
+
+
 =head2 getEncodedBinary
 
 Retrive a file and convert it into a base 64 encoded binary.
@@ -353,8 +426,8 @@ sub getPluginVersion {
 	open (FILE, $self->safeDir($pluginFile));
         while (<FILE>) {
         	my $line = $_ ;
-	        $line =~ /\$VERSION(\s*)=(\s*)'(.*?)'/;
-    		my $verCheck = $3;
+	        $line =~ /\$VERSION\s*=\s*'(.*?)'/;
+    		my $verCheck = $1;
         	if ($verCheck ne '') { $version = $verCheck }
 	}
 	return $version
@@ -554,61 +627,55 @@ sub saveImage {
                 my ($width,$height) = $image->getBounds();
 
 		#
-		#
+		# if you are binding a width and a height, then do some magic to truncate extra sizing
 		#
 		if ( $paramHash{'height'} ne '' && $paramHash{'width'} ne '' ) {
 			if (($width / $paramHash{width}) > ($height / $paramHash{height})) {
-				$paramHash{cropWidth} = $paramHash{width};
-				$paramHash{'width'} = '';
+				$paramHash{cropWidth} 	= $paramHash{width};
+				$paramHash{'width'} 	= '';
 			}
 			else {
-				$paramHash{cropHeight} = $paramHash{height};
-				$paramHash{'height'} = '';
+				$paramHash{cropHeight} 	= $paramHash{height};
+				$paramHash{'height'} 	= '';
 			}
 		}
-
-
 
                 #
                 # do math to get new width/height
                 #
-                if (!$paramHash{'height'}) { $paramHash{'height'} = $paramHash{'width'} / $width * $height }
-                if (!$paramHash{'width'}) { $paramHash{'width'} = $paramHash{'height'} / $height * $width }
+                if (!$paramHash{'height'}) { 	$paramHash{'height'} 	= int( $paramHash{'width'} / $width * $height ) }
+                if (!$paramHash{'width'}) { 	$paramHash{'width'} 	= int( $paramHash{'height'} / $height * $width ) }
 
                 #
                 # make sure size is at least 1
                 #
-                if ($paramHash{'width'} < 1) { $paramHash{'width'} = 1 }
+                if ($paramHash{'width'} < 1) { 	$paramHash{'width'} = 1 }
                 if ($paramHash{'height'} < 1) { $paramHash{'height'} = 1 }
 
                 #
                 # Resize image and save to a file using proper mime type
                 #
-
-                $image->copyResampled($image,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$width,$height);
+		my $sizedImage = GD::Image->new($paramHash{width},$paramHash{height}); 
+                $sizedImage->copyResampled($image,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$width,$height);
 		
 		#
-		# trim it up
+		# trim it up or this is pointless if the perpsective is already correct, but what the hay!
 		#
-		if ($paramHash{cropWidth} eq '') { $paramHash{cropWidth}  = $paramHash{'width'} } 
-		if ($paramHash{cropHeight} eq '') { $paramHash{cropHeight}  = $paramHash{'height'} }
+		if ($paramHash{cropWidth} eq '') { 	$paramHash{cropWidth} 	= $paramHash{'width'} } 
+		if ($paramHash{cropHeight} eq '') { 	$paramHash{cropHeight} 	= $paramHash{'height'} }
 		my $newImage = GD::Image->new($paramHash{cropWidth},$paramHash{cropHeight}); 
-                $newImage->copyResized($image,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$paramHash{'width'},$paramHash{'height'});
+	        $newImage->copyResized($sizedImage,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$paramHash{'width'},$paramHash{'height'});
 		
 		#
 		# safe the the physical file
-		#
-                open    IMG, ">".$paramHash{'fileName'} or die "Error:". $!;
-                binmode IMG;
-
-                #
                 # save as what ever extnesion was passed for the name
-                #
+		#
+               	open    IMG, ">".$paramHash{'fileName'} or die "Error:". $!;
+               	binmode IMG;
                 if ($paramHash{'fileName'} =~ /\.(jpg|jpeg|jpe)$/i) {   print IMG $newImage->jpeg() }
                 if ($paramHash{'fileName'} =~ /\.png$/i) {              print IMG $newImage->png() }
                 if ($paramHash{'fileName'} =~ /\.gif$/i) {              print IMG $newImage->gif() }
                 close   IMG;
-
         }
 }
 
@@ -789,8 +856,8 @@ sub _installPlugin {
 	#
 	# bring in web accessable files
 	#
-        my $pluginWebFileDir = $self->{'filePath'}.'/plugins/'.$plugin;
-        $self->makeDir($pluginWebFileDir);
+        my $webDir = $self->{'filePath'}.'/plugins/'.$plugin;
+        $self->makeDir($webDir);
         while($responseRef->{'content'} =~ /(.*)\n?/g){
                 my $line = $1;
 
@@ -805,8 +872,8 @@ sub _installPlugin {
                         #
                         # save the file to that directory
                         #
-                        $self->FWSLog("Plugin File: ".$pluginWebFileDir."/".$fileName);
-                        $self->saveEncodedBinary($pluginWebFileDir."/".$fileName,$fileReading);
+                        $self->FWSLog("Plugin File: ".$webDir."/".$fileName);
+                        $self->saveEncodedBinary($webDir."/".$fileName,$fileReading);
 
                         #
                         # reset so when we come around again we will no we are done.
