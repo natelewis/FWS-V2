@@ -2,6 +2,23 @@ FWS-V2
 
 Framework Sites Version 2
 
+
+OVERVIEW
+
+FWS::V2 is the utility counterpart to the web based content management development platform provided at www.frameworksites.com.  The web based version of this module is derived from this source with additional web specific features and packaging.   The web based version enables the FWS to function on most any modern hosting environment, be upgraded in real time via the web based FWS administration, and control shared plugins between all of your installations even on different servers.
+
+Using this version is ideal for accessing any plugin feature, or data stored within a FWS installation from a standalone script.  Examples of this would be scripts to do site maintenance, imports, exports, mass data updates, data mining, 3rd party data synchronization, web services, APIs... and more!
+
+The syntax and usage of the FWS::V2 is identical to the web based element and plugin development available within the FWS web based administration.  Code from either is interchangeable between both distributions of FWS::V2 and the web based distribution of FWS available from www.frameworksites.com.
+
+
+PACKAGE DEPENDENCE
+
+Wait a second... why does FWS V2 seem to have its own home grown methods that are already in popular well established packages????
+
+One of the main goals of FWS is to have a bundled, autonomous version of the FWS that can be picked up and sat on almost any major ISP or Linux hosting environment without any care for what is present on the server.   Packages the FWS does use have been carefully picked and validated to be supported on most all major ISPs.  For more information on this bundled web optimized version visit http://www.frameworksites.com
+
+
 INSTALLATION
 
 To install this module, run the following commands:
@@ -10,6 +27,7 @@ To install this module, run the following commands:
 	make
 	make test
 	make install
+
 
 SUPPORT AND DOCUMENTATION
 

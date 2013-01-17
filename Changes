@@ -1,5 +1,7 @@
 Revision history for FWS-V2
 0.010
+ - Added formMap methods as part of core release
+ - Minor change to prevent a bug with tinymce
  - $fws->{GMTOffset} is now configured in site settings
  - Stored hash libraries added: saveHash(), deleteHash(), and hashArray()
  - Added Cache libary base methods
