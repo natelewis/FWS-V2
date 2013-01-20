@@ -35,6 +35,52 @@ Framework Sites version 2 file writing, reading and manipulation methods.
 
 =head1 METHODS
 
+
+=head2 backupFWS
+
+Create a backup of the filesSecurePath, filesPath and the database and place it under the filesSecurePath backups directory.  The file names will be date keyed and be processed by the restoreFWS method by they keyed date string.
+
+        $fws->backupFWS();
+
+=cut
+
+sub backupFWS {
+        my ($self,%paramHash) = @_;
+
+	#
+	# build inital directories where this will be stored
+	#
+        my $backupDir = $self->{'fileSecurePath'} . '/backups';
+        my $backupFile = $self->{'fileSecurePath'} . '/backups/' . $self->formatDate( format=>'number' );
+        $self->makeDir( $backupDir );
+
+        #
+        # Dump the database
+        #
+        open SQLFILE, ">" . $backupFile . ".sql";
+        my $tables = $self->runSQL(SQL=>"SHOW TABLES");
+        while (@$tables) {
+                my $table = shift( @$tables );
+                print SQLFILE "DROP TABLE IF EXISTS " . $self->safeSQL( $table ) . ";\n";
+                print SQLFILE $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->selectall_arrayref( "SHOW CREATE TABLE " . $self->safeSQL( $table ) )->[0][1] . ";\n";
+                my $sth = $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->prepare("SELECT * FROM " . $table);
+                $sth->execute();
+                while ( my @data = $sth->fetchrow_array() ) {
+                        map ( $_ = "'".$self->safeSQL($_)."'", @data );
+                        print SQLFILE "INSERT INTO " . $table . " VALUES (" . join( ',', @data ) . ");\n";
+                }
+        }
+        close SQLFILE;
+
+        open FILEFILE, ">" . $backupFile . ".files";
+        print FILEFILE $self->packDirectory( directory => $self->{'filePath'} );
+        close FILEFILE;
+
+        open SECUREFILE, ">" . $backupFile . ".secureFiles";
+        print SECUREFILE $self->packDirectory( directory => $self->{'fileSecurePath'}, baseDirectory => $self->{fileSecurePath} );
+        close SECUREFILE;
+}
+
 =head2 createSizedImages
 
 Create all of the derived images from a file upload based on its schema definition
@@ -301,12 +347,18 @@ MIME encode a directory ready for a FWS export.
         #
         # Get the file
         #
-        my $packedFileString = $fws->packDirectory($someDirectory);
+        my $packedFileString = $fws->packDirectory( directory => $someDirectory );
 
 =cut
 
 sub packDirectory {
-        my ($self,$dir) = @_;
+        my ( $self, %paramHash ) = @_;
+
+	#
+	# set the default base dir for parsing
+	#
+	$paramHash{baseDirectory} ||= $self->{'filePath'};
+	my $dirPath = $paramHash{baseDirectory};
 	
 	#
 	# this will need some MIME and file find action
@@ -318,36 +370,23 @@ sub packDirectory {
 	# PH for the return
 	#
 	my $packFile;
-
-        finddepth(sub {
+        
+	finddepth(sub {
                 #
                 # clean up the name so it will always be consistant
                 #
                 my $fullFileName = $File::Find::name;
-                my $file = $fullFileName;
-                my $dirPath = $self->{'filePath'};
-                #my $dirSecurePath = $self->{'fileSecurePath'};
-	
-		#
-		# set FILE or SECUREFILE as type
-		#
-		my $fileType = 'FILE';
-		#if ($file =~ /^$dirSecurePath/) { $fileType = 'SECUREFILE' }
-
-		#
-		# get rid of either
-		#
-		$file =~ s/^$dirPath//sg;
-		#$file =~ s/^$dirSecurePath//sg;
+                ( my $file = $fullFileName ) =~ s/^$dirPath//sg;
 
 		#
 		# move though the files
 		#
-                if (-f $fullFileName) {
+                if (-f $fullFileName && $file !~ /^\/(backups)\// ) {
+
                                 #
                                 # print the header of the file "FILE|fileName";
                                 #
-                                $packFile .= $fileType.'|'.$file."\n";
+                                $packFile .= 'FILE|'.$file."\n";
 
                                 #
                                 # get the file
@@ -366,9 +405,9 @@ sub packDirectory {
                                 #
                                 # footer around the file
                                 #
-                                $packFile .= $fileType.'_END|'.$file."\n";
+                                $packFile .= 'FILE_END|'.$file."\n";
                                 }
-                }, $dir);
+                }, $paramHash{directory} );
 	return $packFile;
 	}
 
