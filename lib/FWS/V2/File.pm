@@ -9,11 +9,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 0.004
+Version 0.005
 
 =cut
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 
 =head1 SYNOPSIS
@@ -38,21 +38,38 @@ Framework Sites version 2 file writing, reading and manipulation methods.
 
 =head2 backupFWS
 
-Create a backup of the filesSecurePath, filesPath and the database and place it under the filesSecurePath backups directory.  The file names will be date keyed and be processed by the restoreFWS method by they keyed date string.
+Create a backup of the filesSecurePath, filesPath and the database and place it under the filesSecurePath backups directory.  The file names will be date keyed and be processed by the restoreFWS method by they keyed date string.  This will exclude any table that has the word 'session' in it, or anything that starts with 'admin_'.  
 
+Parameters:
+	id: file name of files - the date string in numbers will be used if no id is passed
+	excludeTable: Comma delimited list of tables you do not want to back up
+	excludeFiles: Do not backup the FWS web accessable files
+	excludeSiteFiles: Backup site files related to plugins and the fws instance, but not the once related to the site
+	excludeSecureFiles: Do not backup the secure files
         $fws->backupFWS();
 
 =cut
 
 sub backupFWS {
-        my ($self,%paramHash) = @_;
+        my ( $self, %paramHash ) = @_;
+
+	#
+	# set or use the default id
+	#
+	$paramHash{id} ||= $self->formatDate( format => 'number' );
 
 	#
 	# build inital directories where this will be stored
 	#
         my $backupDir = $self->{'fileSecurePath'} . '/backups';
-        my $backupFile = $self->{'fileSecurePath'} . '/backups/' . $self->formatDate( format=>'number' );
+        my $backupFile = $backupDir . '/' . $paramHash{id};
         $self->makeDir( $backupDir );
+
+	#
+	# turn the exclude table into a ha to compare against
+	#
+	my %excludeTable;
+	map { $excludeTable{$_} = 1 } split ( ',', $paramHash{excludeTable} );
 
         #
         # Dump the database
@@ -61,24 +78,76 @@ sub backupFWS {
         my $tables = $self->runSQL(SQL=>"SHOW TABLES");
         while (@$tables) {
                 my $table = shift( @$tables );
-                print SQLFILE "DROP TABLE IF EXISTS " . $self->safeSQL( $table ) . ";\n";
-                print SQLFILE $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->selectall_arrayref( "SHOW CREATE TABLE " . $self->safeSQL( $table ) )->[0][1] . ";\n";
-                my $sth = $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->prepare("SELECT * FROM " . $table);
-                $sth->execute();
-                while ( my @data = $sth->fetchrow_array() ) {
-                        map ( $_ = "'".$self->safeSQL($_)."'", @data );
-                        print SQLFILE "INSERT INTO " . $table . " VALUES (" . join( ',', @data ) . ");\n";
+		if ( $table !~ /session/ && $table !~ /^admin_/ && !$excludeTable{$table} ) {
+	                print SQLFILE "DROP TABLE IF EXISTS " . $self->safeSQL( $table ) . ";" . "\n";
+	                print SQLFILE $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->selectall_arrayref( "SHOW CREATE TABLE " . $self->safeSQL( $table ) )->[0][1] . ";" . "\n";
+	                my $sth = $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->prepare("SELECT * FROM " . $table);
+	                $sth->execute();
+	                while ( my @data = $sth->fetchrow_array() ) {
+	                        map ( $_ = "'".$self->safeSQL($_)."'", @data );
+	                        map ( $_ =~ s/\0/\\0/sg, @data );
+	                        map ( $_ =~ s/\n/\\n/sg, @data );
+	                        print SQLFILE "INSERT INTO " . $table . " VALUES (" . join( ',', @data ) . ");" . "\n";
+	                }
                 }
         }
         close SQLFILE;
 
-        open FILEFILE, ">" . $backupFile . ".files";
-        print FILEFILE $self->packDirectory( directory => $self->{'filePath'} );
-        close FILEFILE;
+	if ( !$paramHash{'excludeFiles'} ) {
+		if ( !$paramHash{'excludeSiteFiles'} ) {
+	       		$self->packDirectory( fileName => $backupFile . ".files", directory => $self->{'filePath'} );
+		}
+		else {
+	       		$self->packDirectory( directoryList => '/fws,/plugins', fileName => $backupFile . ".files", directory => $self->{'filePath'} );
+		}
+	}
 
-        open SECUREFILE, ">" . $backupFile . ".secureFiles";
-        print SECUREFILE $self->packDirectory( directory => $self->{'fileSecurePath'}, baseDirectory => $self->{fileSecurePath} );
-        close SECUREFILE;
+	if ( !$paramHash{'excludeSecureFiles'} ) {
+	        $self->packDirectory( fileName => $backupFile . ".secureFiles", directory => $self->{'fileSecurePath'}, baseDirectory => $self->{fileSecurePath} );
+	}
+
+	return $paramHash{id};
+}
+
+
+=head2 restoreFWS
+
+Restore a backup created by backupFWS.  This will overwrite the files in place that are the same, and will replace all database tables with the one from the restore that are restored.   All tables, and files not part of the restore will be left untouched.
+
+        $fws->restoreFWS( id=> 'someID' );
+
+=cut
+
+sub restoreFWS {
+        my ( $self, %paramHash ) = @_;
+
+        $self->unpackDirectory( fileName => $self->{'fileSecurePath'} . '/backups/' . $paramHash{'id'} . '.files',       directory => $self->{'filePath'} );
+        $self->unpackDirectory( fileName => $self->{'fileSecurePath'} . '/backups/' . $paramHash{'id'} . '.secureFiles', directory => $self->{'fileSecurePath'} );
+
+        open SQLFILE,  $self->{'fileSecurePath'} . '/backups/' . $paramHash{'id'} . '.sql';
+        my $statement;
+        my $endTest;
+        while ( <SQLFILE> ) {
+                $statement      .= $_;
+                $endTest        .= $_;
+
+                #
+                # git rid of all the escaped tics, and then eat the
+                #
+                $endTest =~ s/''//sg;
+                $endTest =~ s/'(.*?)'//sg;
+
+                #
+                # if there is no tick, reset for next pass, and keep going
+                #
+                if ($endTest !~ /'/ && $endTest =~ /;$/) {
+                        $self->runSQL( SQL=> $statement );
+                        $statement      = '';
+                        $endTest        = '';
+                }
+        }
+
+	close SQLFILE;
 }
 
 =head2 createSizedImages
@@ -335,19 +404,98 @@ sub getEncodedBinary {
         while ( read (FILE, my $buffer, 1)) { $rawFile .= $buffer }
         close (FILE);
 
-	my $rawfile =encode_base64($rawFile);
+	my $rawfile = encode_base64($rawFile);
 	return $rawfile;
+}
+
+
+
+
+=head2 unpackDirectory
+
+The counterpart to packDirectory.   This will put the files under the directory you choose from a file created by packDirectory.
+
+        #
+        # Put the files somewhere
+        #
+        $fws->unpackDirectory( directory => $someDirectory, fileName => '/something' );
+
+=cut
+
+sub unpackDirectory {
+        my ( $self, %paramHash ) = @_;
+
+	#
+	# for good mesure, make the directory in case this is super fresh
+	#
+        $self->makeDir( $paramHash{directory} );
+
+	#
+	# PH's for file slurping
+	#
+        my $fileReading;
+        my $fileName;
+       
+	#
+	# open file
+	# 
+	open UNPACKFILE, $paramHash{'fileName'};
+        while ( <UNPACKFILE> ) {
+                my $line = $_;
+
+                if ( $line =~ /^FILE_END\|/ ) {
+                        #
+                        # save the file to that directory
+                        #
+                        $self->saveEncodedBinary( $paramHash{directory} . "/" . $fileName, $fileReading );
+                        
+			#
+                        # reset so when we come around again we will no we are done.
+                        #
+                        $fileName       = '';
+                        $fileReading    = '';
+                }
+
+                #
+                # if we have a file name,  we are currenlty looking for a
+                # file.  eat those lines up and stick them in a diffrent var
+                #
+                elsif ( $fileName ne '' ) { $fileReading .= $line."\n" }
+
+                #
+                # if this is a start of a file, lets get it set up and
+                # define the file name, the next time we go around we
+                # will be looking at the base 64
+                #
+                if ( $line =~ /^FILE\|/ ) {
+                        ( $fileName = $line ) =~ s/.*?\|\/*(.*)\n*/$1/sg;
+                        ( my $directory = $paramHash{directory} . '/' . $fileName ) =~ s/^(.*)\/.*/$1/sg;
+                        $self->makeDir( $directory );
+                }
+
+
+        }
+        close UNPACKFILE;
 }
 
 
 =head2 packDirectory
 
-MIME encode a directory ready for a FWS export.
+MIME encode a directory ready for a FWS export.  This will exclude anything that starts with /backup, /cache, /import_ or ends with .log or .pm.someDateNumber.
 
         #
         # Get the file
         #
         my $packedFileString = $fws->packDirectory( directory => $someDirectory );
+
+
+You can also pass the key directoryList, and it will only add directories on this comma delimtied list unless the file begins with FWS.
+        
+	#
+        # Only grab fws and plugins dirs
+        #
+        my $packedFileString = $fws->packDirectory( directory => $someDirectory, directoryList => '/fws,/plugins' );
+
 
 =cut
 
@@ -357,8 +505,9 @@ sub packDirectory {
 	#
 	# set the default base dir for parsing
 	#
-	$paramHash{baseDirectory} ||= $self->{'filePath'};
+	$paramHash{baseDirectory} ||= $self->{filePath};
 	my $dirPath = $paramHash{baseDirectory};
+
 	
 	#
 	# this will need some MIME and file find action
@@ -366,12 +515,14 @@ sub packDirectory {
 	use File::Find;
         use MIME::Base64;
 
+	if ( $paramHash{fileName} ne '' ) { open FILEFILE, ">" . $paramHash{fileName} }
+
 	#
 	# PH for the return
 	#
 	my $packFile;
         
-	finddepth(sub {
+	finddepth( sub {
                 #
                 # clean up the name so it will always be consistant
                 #
@@ -379,35 +530,44 @@ sub packDirectory {
                 ( my $file = $fullFileName ) =~ s/^$dirPath//sg;
 
 		#
+		# if we have a list of dirs, lets make sure we are ok to process this one
+		#
+		my $dirOK = 0;
+		if ( $paramHash{directoryList} ne '' ) {
+			map { if ($file =~ /^$_/) { $dirOK = 1 } } split( /,/, $paramHash{directoryList} );
+		}
+
+		#
+		# if we didn't pass a directoryList then we are all good for every file
+		#
+		else { $dirOK = 1 }
+
+		#
 		# move though the files
 		#
-                if (-f $fullFileName && $file !~ /^\/(backups)\// ) {
-
-                                #
-                                # print the header of the file "FILE|fileName";
-                                #
-                                $packFile .= 'FILE|'.$file."\n";
+                if (-f $fullFileName && $file !~ /^\/(import_|backup|cache)/i && $file !~ /(.log|\.pm\.\d+)$/i && ( $dirOK || $file =~ /^FWS/ ) ) {
 
                                 #
                                 # get the file
                                 #
                                 my $rawFile;
-                                open (FILE, $fullFileName) or die "Can not open file:". $!;
+                                open ( FILE, $fullFileName ) or die "Can not open file:". $!;
                                 binmode FILE;
-                                while ( read (FILE, my $buffer, 1)) { $rawFile .= $buffer }
-                                close (FILE);
+                                while ( read( FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
+                                close ( FILE );
 
                                 #
-                                # encode it
+                                # print the header - encode it - footer around the file
                                 #
-                                $packFile .= encode_base64($rawFile);
+				my $fileLine = "FILE|" . $file . "\n" . encode_base64( $rawFile ) . 'FILE_END|' . $file . "\n";
+				if ( $paramHash{'fileName'} ne '' ) { print FILEFILE $fileLine }
+				else { $packFile .= $fileLine }
 
-                                #
-                                # footer around the file
-                                #
-                                $packFile .= 'FILE_END|'.$file."\n";
                                 }
                 }, $paramHash{directory} );
+	
+	if ( $paramHash{'fileName'} ne '' ) { close FILEFILE }
+	
 	return $packFile;
 	}
 
@@ -809,6 +969,57 @@ sub FWSEncrypt {
                 $data = unpack("H*",$enc);
         }
         return $data;
+}
+
+
+=head2 tailFile
+
+Read x number of lines from the end of a file.  If lines are not specified it will default to 10.
+
+        #
+        # Print last 10 lines of the FWS.log file
+        #
+        print $fws->tailFile( lines => 50, fileName => $fws->{'fileSecurePath'} . "/FWS.log" );
+
+=cut
+
+sub tailFile {
+        my ( $self, %paramHash ) = @_;
+
+	#
+	# set the default ot 10 lines
+	#
+	$paramHash{lines} ||= 10;
+
+	#
+	# open the file
+	#
+        open( TAILFILE, $paramHash{'fileName'} );
+
+
+	#
+	# set our cursor to to know where we are at
+	#
+	my $lineCursor;
+	my $tailReturn;
+	
+	while ( <TAILFILE> ) {
+
+		#
+		# advance the cursor and add the next line to the end
+		#
+		$tailReturn .= $_;
+		$lineCursor++;
+
+		#
+		# eat the first line if we have what we needed
+		#
+		if ( $lineCursor > $paramHash{lines} ) { $tailReturn =~ s/^(.*?)\n// }
+	}	
+
+	close TAILFILE;
+	
+	return $tailReturn;
 }
 
 
