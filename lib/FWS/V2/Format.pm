@@ -1186,6 +1186,37 @@ sub truncateContent {
         return $newString;
 }
 
+
+=head2 urlEncode
+
+Encode a string to make it browser url friendly.
+
+        print $fws->urlEncode($someString);
+
+=cut
+
+sub urlEncode {
+        my ($self,$url) = @_;
+        $url =~ s/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg;
+        return $url;
+}
+
+=head2 urlDecode
+
+Decode a string to make it potentially browser url unfriendly.
+
+        print $fws->urlEncode($someString);
+
+=cut
+
+sub urlDecode {
+        my ($self,$url) = @_;
+        $url =~ s/\+/ /sg;
+        $url =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
+        return $url;
+}
+
+
 =head1 FWS ADMIN METHODS
 
 These methods are used only by FWS Admin maintainers.   They should not be used out of the context of the FWS Admin as they could change without warning.
