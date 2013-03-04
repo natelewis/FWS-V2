@@ -2,6 +2,8 @@ package FWS::V2::Safety;
 
 use 5.006;
 use strict;
+use warnings;
+no warnings 'uninitialized';
 
 =head1 NAME
 
