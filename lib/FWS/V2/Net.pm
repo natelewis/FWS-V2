@@ -2,6 +2,8 @@ package FWS::V2::Net;
 
 use 5.006;
 use strict;
+use warnings;
+no warnings 'uninitialized';
 
 =head1 NAME
 
@@ -229,20 +231,20 @@ sub send {
 
                                         use MIME::Base64;
 
-                                        open SENDMAIL, "|".$self->{'sendmailBin'}." -t" or die "Cannot open ".$self->{'sendmailBin'};
+                                        open ( my $SENDMAIL, "|-", $self->{'sendmailBin'}." -t" ) or die "Cannot open ".$self->{'sendmailBin'};
 
-                                        print SENDMAIL "Reply-To: \"".$paramHash{'fromName'}."\" <".$paramHash{'from'}.">\n";
-                                        print SENDMAIL "From: \"".$paramHash{'fromName'}."\" <".$paramHash{'from'}.">\n";
-                                        print SENDMAIL "MIME-Version: 1.0\n";
-                                        print SENDMAIL "To: ".$paramHash{'to'}."\n";
-                                        print SENDMAIL "Subject: ".$paramHash{'subject'}."\n";
-                                        print SENDMAIL "Content-Type: multipart/mixed;";
-                                        print SENDMAIL "\n\tboundary=\"".$boundary."\"\n";
-                                        print SENDMAIL "\nThis is a multi-part message in MIME format.\n";
-                                        print SENDMAIL "\n--".$boundary."\n";
-                                        print SENDMAIL "Content-Type: ".$paramHash{'mimeType'}."; charset=".$paramHash{'characterSet'}."\n";
-                                        print SENDMAIL "Content-Transfer-Encoding: ".$paramHash{'transferEncoding'}."\n\n";
-                                        print SENDMAIL $paramHash{'body'};
+                                        print $SENDMAIL "Reply-To: \"".$paramHash{'fromName'}."\" <".$paramHash{'from'}.">\n";
+                                        print $SENDMAIL "From: \"".$paramHash{'fromName'}."\" <".$paramHash{'from'}.">\n";
+                                        print $SENDMAIL "MIME-Version: 1.0\n";
+                                        print $SENDMAIL "To: ".$paramHash{'to'}."\n";
+                                        print $SENDMAIL "Subject: ".$paramHash{'subject'}."\n";
+                                        print $SENDMAIL "Content-Type: multipart/mixed;";
+                                        print $SENDMAIL "\n\tboundary=\"".$boundary."\"\n";
+                                        print $SENDMAIL "\nThis is a multi-part message in MIME format.\n";
+                                        print $SENDMAIL "\n--".$boundary."\n";
+                                        print $SENDMAIL "Content-Type: ".$paramHash{'mimeType'}."; charset=".$paramHash{'characterSet'}."\n";
+                                        print $SENDMAIL "Content-Transfer-Encoding: ".$paramHash{'transferEncoding'}."\n\n";
+                                        print $SENDMAIL $paramHash{'body'};
 
 
 
@@ -253,17 +255,17 @@ sub send {
                                                 if ((-e $fileName) && ($fileName ne '')) {
                                                         my $justFileName = $self->justFileName($fileName);
 
-                                                        print SENDMAIL "\n--".$boundary."\n";
-                                                        print SENDMAIL "Content-Type: application/octet-stream;\n";
-                                                        print SENDMAIL "\tname=\"".$justFileName."\"\n";
-                                                        print SENDMAIL "Content-Transfer-Encoding: base64\n";
-                                                        print SENDMAIL "Content-Disposition: attachment\n";
-                                                        print SENDMAIL "\tfilename=\"".$justFileName."\"\n\n";
-                                                        print SENDMAIL $self->getEncodedBinary($fileName);
+                                                        print $SENDMAIL "\n--".$boundary."\n";
+                                                        print $SENDMAIL "Content-Type: application/octet-stream;\n";
+                                                        print $SENDMAIL "\tname=\"".$justFileName."\"\n";
+                                                        print $SENDMAIL "Content-Transfer-Encoding: base64\n";
+                                                        print $SENDMAIL "Content-Disposition: attachment\n";
+                                                        print $SENDMAIL "\tfilename=\"".$justFileName."\"\n\n";
+                                                        print $SENDMAIL $self->getEncodedBinary($fileName);
                                                 }
                                         }
-                                        print SENDMAIL "\n--".$boundary."--\n\n";
-                                        close(SENDMAIL);
+                                        print $SENDMAIL "\n--".$boundary."--\n\n";
+                                        close $SENDMAIL;
                                 }
                         }
 

@@ -1,10 +1,16 @@
 Revision history for FWS-V2
 0.010
+ - FULL WEB RELEASE! You can now run FWS web renderings from FWS::V2
  - Added formMap methods as part of core release
  - Minor change to prevent a bug with tinymce
  - $fws->{GMTOffset} is now configured in site settings
  - Stored hash libraries added: saveHash(), deleteHash(), and hashArray()
  - Added Cache libary base methods
+ - Added backup and restore methods as well as a generic unpack file method
+ - Many updates to code formatting
+ - Add Geo.pm methods
+ - Add Display.pm methods
+ - Add Admin.pm methods
 
 0.009 2012-10-16
  - Add an ease of use method for date comparing: dateDiff()

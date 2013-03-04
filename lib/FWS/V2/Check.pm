@@ -2,7 +2,8 @@ package FWS::V2::Check;
 
 use 5.006;
 use strict;
-
+use warnings;
+no warnings 'uninitialized';
 
 =head1 NAME
 
@@ -73,7 +74,7 @@ Return a 0 or 1 depending if a site user is currently logged in.
 sub isUserLoggedIn {
         my ($self,$loginType) = @_;
         if ($self->{'userLoginId'} eq '') { return (0) } else { return (1) }
-        }
+}
 
 =head2 isValidEmail
 
@@ -85,9 +86,85 @@ sub isValidEmail {
         my ($self,$fieldValue) = @_;
         if ($fieldValue !~ /^\w+[\w|\.|-]*\w+@(\w+[\w|\.|-]*\w+\.[a-z]{2,4}|(\d{1,3}\.){3}\d{1,3})$/i) { return (0) }
         return (1);
+}
+
+=head2 isCaptchaValid
+
+Built in captcha support will return 1 or 0 based on the last captcha post.
+
+=cut
+
+sub isCaptchaValid {
+        my ($self) = @_;
+        my $publicKey = $self->siteValue("captchaPublicKey");
+        my $privateKey = $self->siteValue("captchaPrivateKey");
+        my $returnHTML;
+        if ($publicKey ne "") {
+                require Captcha::reCAPTCHA;
+                Captcha::reCAPTCHA->import();
+                my $captcha = Captcha::reCAPTCHA->new();
+                my $result = $captcha->check_answer($privateKey, $ENV{"REMOTE_ADDR"}, $self->formValue("recaptcha_challenge_field"), $self->formValue("recaptcha_response_field"));
+                if ( $result->{"is_valid"} ) { return "1" } else { return "0" }
+        }
+        return 1;
+}
+
+
+=head2 isStrongPassword
+
+FWS standard strong password checker.   Upper, lower, symbol, at least 6 chars.
+
+=cut
+
+sub isStrongPassword {
+        my ($self,$fieldValue) = @_;
+        if ($fieldValue !~ /^.*(?=.{6,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*$/) { return 0 }
+        return 1;
+}
+
+=head2 isElementPresent
+
+See if an element is present on the current page.  This is here for some legacy code but should not be used because it is not good practice and could be slow if the page is complex.  Just find another way to achieve the same result of knowing if something is present on a page.
+
+=cut
+
+sub isElementPresent {
+        my ($self,$guid,$elementName) = @_;
+
+        #
+        # Lets check if the formavalue FWS_elementblahblah is set if, so we have already looked this up and don't need to re-run it
+        #
+        my $isPresent = $self->formValue("FWS_ELEMENT_PRESENT_".$elementName);
+
+        #
+        # if it is blank, then we do need to run it for the first time :(
+        #
+        if ($isPresent eq '') {
+
+                #
+                # pull from the database to see if its there
+                #
+                my $pageId = $self->getPageGUID($guid);
+                ($isPresent) = $self->openRS("select 1 from data left join guid_xref on data.guid=child where guid_xref.parent='".$pageId."' and data.site_guid='".$self->safeSQL($self->{'siteGUID'})."' and (element_type like '".$self->safeSQL($elementName)."')");
+
+                #
+                # if it comes back as "NO NO NO!"  then it will be blank.  so we will need to set it to 0
+                #
+                if ($isPresent eq '') { $isPresent = 0 }
+
+                #
+                # Set the form value to what the value is so then we don't have to worry about it the next time we are here
+                #
+                $self->formValue("FWS_ELEMENT_PRESENT_".$elementName,$isPresent);
         }
 
-##########################################################################################
+        #
+        # pass back the value if we have gotten it from the cache or we had to look it up
+        #
+        return $isPresent;
+}
+
+
 =head1 AUTHOR
 
 Nate Lewis, C<< <nlewis at gnetworks.com> >>

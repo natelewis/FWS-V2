@@ -2,6 +2,7 @@ package FWS::V2::Legacy;
 
 use 5.006;
 use strict;
+use warnings;
 
 =head1 NAME
 
@@ -296,6 +297,20 @@ sub googleAppsKeyFile {
         return $self->{"googleAppsKeyFile"};
 }
 
+
+=head2 navigationHref
+
+Deprecated, use navigationLink() and add hrefOnly flag.
+
+=cut
+
+sub navigationHref {
+        my ($self,%hrefHash) = @_;
+        $hrefHash{'hrefOnly'} = 1;
+        return $self->navigationLink(%hrefHash);
+}
+
+
 =head2 phone
 
 Deprecated, use formatPhone()
@@ -307,6 +322,18 @@ sub phone {
         return $self->formatPhone(%paramHash);
 }
 
+
+=head2 processDownloads
+
+Deprecated, all downloads are handled by the rendering element.
+
+=cut
+
+sub processDownloads {
+        return 1;
+}
+
+
 =head2 siteGlobalValue
 
 Deprecated, use siteValue()
@@ -317,6 +344,7 @@ sub siteGlobalValue {
         my ($self,$key,$value) = @_;
         return $self->siteValue($key,$value);
 }
+
 
 =head2 skipIpCheckOnLogin
 
@@ -337,7 +365,7 @@ Deprecated, use formatDate()
 =cut
 
 sub dateTime {
-        my ($self,%paramHash) = @_;
+        my (  $self, %paramHash ) = @_;
         return $self->formatDate(%paramHash);
 }
 
@@ -349,8 +377,8 @@ Deprecated, use formatDate()
 =cut
 
 sub showDateTime {
-        my %paramHash;
 	my $self;
+	my %paramHash;
         ($self,$paramHash{'format'},$paramHash{'monthMod'},$paramHash{'epochTime'},$paramHash{'GMTOffset'},$paramHash{'SQLTime'}) = @_;
         return $self->formatDate(%paramHash);
 }
@@ -426,6 +454,15 @@ sub initActions {
 }
 
 
+=head2 isStaging
+
+Deprecated.
+
+=cut
+
+sub isStaging { return "1" }
+
+
 =head2 openRS
 
 Depricated, use runSQL instead.
@@ -459,6 +496,17 @@ Depricated, use saveImage instead.
 sub resizeImage {
         my ($self,$origFile,$newFile,$newWidth,$newHeight) = @_;
         return $self->saveImage(sourceFile=>$origFile,fileName=>$newFile,width=>$newWidth,height=>$newHeight);
+}
+
+
+=head2 runSiteActions
+
+Depricated, all site actions are in plugins or elements
+
+=cut
+
+sub runSiteActions {
+        return '';
 }
 
 
@@ -679,6 +727,35 @@ sub SQLLogLevel {
         my ( $self, $SQLLogLevel ) = @_;
         if (defined $SQLLogLevel) { $self->{"SQLLogLevel"} = $SQLLogLevel; }
         return $self->{"SQLLogLevel"};
+}
+
+
+=head2 XMLNode
+
+Node safe routine for XML replaced by safeXML
+
+=cut
+
+sub XMLNode {
+        my ($self, $XMLNode) = @_;
+        $XMLNode =~ s/&/&amp;/sg;
+        $XMLNode =~ s/\</&lt;/sg;
+        return $XMLNode;
+}
+
+
+=head2 CSVNode
+
+Node safe routine for XML replaced by safeCSV
+
+=cut
+
+sub CSVNode {
+        my ($self, $CSVNode) = @_;
+        $CSVNode =~ s/(,|;)/ /sg;
+        $CSVNode =~ s/(\n|\r)//sg;
+        $CSVNode =~ s/^('|")//sg;
+        return $CSVNode;
 }
 
 

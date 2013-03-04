@@ -2,6 +2,8 @@ package FWS::V2::Database;
 
 use 5.006;
 use strict;
+use warnings;
+no warnings 'uninitialized';
 
 =head1 NAME
 
@@ -72,7 +74,7 @@ sub addExtraHash {
         #
         # only if its populated unthaw it
         #
-        if ($extraValue ne '') { %extraHash = %{thaw($extraValue)} }
+        if ( $extraValue ne '' ) { %extraHash = %{thaw($extraValue)} }
 
         #
         # return the two hashes combined together
@@ -296,6 +298,38 @@ sub alterTable {
 }
 
 
+=head2 autoArray
+
+Return a hash array of make, model, and year from the default automotive tables if they are installed.
+
+=cut
+
+sub autoArray {
+        my ($self,%paramHash) = @_;
+
+        my $whereStatement = '1=1';
+
+        #
+        # add active critiria if appicable
+        #
+        if ($paramHash{'model'} ne '') { $whereStatement .= " and model like '".$self->safeSQL($paramHash{'model'})."'" }
+        if ($paramHash{'year'} ne '') { $whereStatement .= " and year like '".$self->safeSQL($paramHash{'year'})."'" }
+        if ($paramHash{'make'} ne '') { $whereStatement .= " and make like '".$self->safeSQL($paramHash{'make'})."'" }
+
+        my @autoArray = $self->openRS("select make,model,year from auto where ".$whereStatement);
+
+        my @returnArray;
+        while (@autoArray) {
+                my %autoHash;
+                $autoHash{'make'}        = shift(@autoArray);
+                $autoHash{'model'}       = shift(@autoArray);
+                $autoHash{'year'}        = shift(@autoArray);
+                push(@returnArray,{%autoHash});
+        }
+        return @returnArray;
+}
+
+
 =head2 connectDBH
 
 Do the initial database connection via MySQL or SQLite.  This method will return back the DBH it creates, but it is only here for completeness and would normally never be used.  For FWS database routines this is not required as it will be implied when executing those methods.
@@ -314,12 +348,14 @@ sub connectDBH {
 	#
 	# Use defaults if they are not passed
 	#
-	if ($paramHash{'DBType'} eq '') {	$paramHash{'DBType'} 		= $self->{'DBType'} }
-	if ($paramHash{'DBName'} eq '') {	$paramHash{'DBName'} 		= $self->{'DBName'} }
-	if ($paramHash{'DBHost'} eq '') {	$paramHash{'DBHost'} 		= $self->{'DBHost'} }
-	if ($paramHash{'DBUser'} eq '') {	$paramHash{'DBUser'} 		= $self->{'DBUser'} }
-	if ($paramHash{'DBPort'} eq '') {	$paramHash{'DBPort'} 		= $self->{'DBPort'} }
-	if ($paramHash{'DBPassword'} eq '') {	$paramHash{'DBPassword'} 	= $self->{'DBPassword'} }
+	$paramHash{'DBType'} 		||= $self->{'DBType'};
+	$paramHash{'DBName'} 		||= $self->{'DBName'};
+	$paramHash{'DBHost'} 		||= $self->{'DBHost'};
+	$paramHash{'DBUser'} 		||= $self->{'DBUser'};
+	$paramHash{'DBPort'} 		||= $self->{'DBPort'};
+	$paramHash{'DBPassword'} 	||= $self->{'DBPassword'};
+
+	$paramHash{'noCache'} 		||= 0;
 
 	#
 	# fill this up!
@@ -359,7 +395,7 @@ sub connectDBH {
 		#
 		# send an error if we got one
 		#
-		if (DBI->errstr ne '') { $self->FWSLog('DB Connection error: '.DBI->errstr) }
+		if ( DBI->errstr() ) { $self->FWSLog( 'DB Connection error: ' . DBI->errstr() ) }
         }
 
 	#
@@ -371,6 +407,84 @@ sub connectDBH {
 	# in either case return the DBH in case someone wants it for convience
 	#
 	return $DBH;
+}
+
+
+
+=head2 copyData
+
+Make a copy of data hash giving it a unique guid, and appending (Copy) text to name and title if you pass the extra key of addTail.
+
+        my %newHash = $fws->copyData( %dataHash );
+
+=cut
+
+sub copyData {
+        my ($self,%paramHash) = @_;
+        my %dataHash = $self->dataHash(guid=>$paramHash{'guid'});
+        if ($paramHash{'addTail'} eq '1') {
+                $dataHash{'name'} .= " (Copy)";
+                $dataHash{'title'} .= " (Copy)";
+        }
+
+	delete $paramHash{addTail};
+
+        $dataHash{'guid'} = '';
+        $dataHash{'parent'} = $paramHash{'parent'};
+        return $self->saveData(%dataHash);
+}
+
+
+
+=head2 changeUserEmail
+
+Change the email of a user throught the system.
+
+	my $failMessage = $fws->changeUserEmail( 'from@email.com', 'to@eamil.com' );
+
+Fail message will be blank if it worked.
+
+=cut
+
+sub changeUserEmail {
+        my ($self,$emailFrom,$emailTo) = @_;
+
+        #
+        # check to make sure its not already being used
+        #
+        my %userHash = $self->userHash($emailTo);
+
+        #
+        # check to make sure the emails we are chaning it to are valid
+        #
+        if (!$self->isValidEmail($emailTo)) {
+                return 'The email you are chaning to is invalid';
+                }
+
+        #
+        # if its not used, lets do it!
+        #
+        if ($userHash{'guid'} ne '' && $emailFrom ne '') {
+
+                #
+                # THIS NEEDS TO BE EXPORTD SOME HOW TO ECommerce
+                #
+                #my @transArray = $self->transactionArray(email=>$emailFrom);
+                #for my $i (0 .. $#transArray) {
+                #       $self->runSQL(SQL=>"update trans set email='".$self->safeSQL($emailTo)."' where email like '".$self->safeSQL($emailFrom)."'");
+#
+#                       }
+
+                #
+                # update the profile we are changing
+                #
+                $self->runSQL(SQL=>"update profile set email='".$self->safeSQL($emailTo)."' where email like '".$self->safeSQL($emailFrom)."'");
+
+
+
+        }
+        else { return 'Email could not be changed, it is already being used.'; }
+        return '';
 }
 
 
@@ -830,6 +944,23 @@ sub deleteHash {
         return (nfreeze(\@newArray));
 }
 
+
+=head2 deleteUser
+
+Delete a user by passing the guid in as a hash key
+
+=cut
+
+sub deleteUser {
+        my ($self,%paramHash) = @_;
+        %paramHash = $self->runScript('preDeleteUser',%paramHash);
+        $self->runSQL(SQL=>"delete from profile where guid='".$self->safeSQL($paramHash{'guid'})."'");
+        %paramHash = $self->runScript('preDeleteUser',%paramHash);
+        return %paramHash;
+}
+
+
+
 =head2 deleteQueue
 
 Delete from the message and process queue
@@ -847,6 +978,119 @@ sub deleteQueue {
         %paramHash = $self->runScript('postDeleteQueue',%paramHash);
         return %paramHash;
 }
+
+
+
+=head2 elementArray
+
+Return the elements from the database. This will not pull elements from plugins!
+
+=cut
+
+sub elementArray {
+        my ($self,%paramHash) = @_;
+
+        #
+        # array holder for the return
+        #
+        my @elementArrayReturn;
+
+        #
+        # the where satement we will be appending to
+        #
+        my $addToWhere = '';
+
+        #
+        # if we are passed a parent guid we have to match
+        #
+        if ($paramHash{'parent'} ne '') { $addToWhere = " and parent='".$self->safeSQL($paramHash{'parent'})."'" }
+        if ($paramHash{'parent'} eq '0') { $addToWhere = " and parent=''" }
+
+        #
+        # match only with matching siteGUID
+        #
+        if ($paramHash{'siteGUID'} ne '') { $addToWhere .= " and site_guid='".$self->safeSQL($paramHash{'siteGUID'})."'" }
+
+
+        if ($paramHash{'tags'} ne '') {
+                my @tagsArray = split(/,/,$paramHash{'tags'});
+                while (@tagsArray) {
+                        my $checkTag = shift(@tagsArray);
+                        #
+                        # add extra ,'s where any spaces are,  that will fill in gaps for the like
+                        #
+                        $checkTag =~ s/ //sg;
+
+                        #
+                        # add the where with all chanches of like
+                        #
+                        if ($checkTag ne '') {
+                                $addToWhere .= " and (tags like '".$checkTag."' or tags like '".$checkTag.",%' or tags like '%,".$checkTag."' or  tags like '%,".$checkTag.",%')";
+                        }
+                }
+        }
+
+        if ($paramHash{'keywords'} ne '') {
+                my $keywordSQL = $self->_getKeywordSQL($paramHash{'keywords'},"css_devel","js_devel","schema_devel","script_devel","title","type","guid","admin_group");
+                if ($keywordSQL) { $addToWhere .= ' and ( '.$keywordSQL.' ) ' }
+        }
+
+        #
+        # grab the array from the DB
+        #
+        my (@elementArray) = $self->openRS("select ord,admin_group,root_element,site_guid,guid,type,parent,title,schema_devel,script_devel,checkedout from element where 1=1".$addToWhere." order by title");
+
+
+        #
+        # look at element included in plugins
+        #
+        for my $guid ( sort { $self->{elementHash}{$a}{'alphaOrd'} <=> $self->{elementHash}{$b}{'alphaOrd'} } keys %{$self->{elementHash}}) {
+
+                my $addElement = 0;
+                if ($paramHash{'tags'} ne '') {
+                        my @tagsArray = split(/,/,$paramHash{'tags'});
+
+                        while (@tagsArray) {
+                                my $checkTag = shift(@tagsArray);
+                                #
+                                # add extra ,'s where any spaces are,  that will fill in gaps for the like
+                                #
+                                $checkTag =~ s/ //sg;
+                                if ($checkTag ne '' && $self->{elementHash}{$guid}{'tags'} =~ /^$checkTag$/) { $addElement = 1 }
+                        }
+
+                if ($addElement eq '1') { push (@elementArrayReturn,{%{$self->{elementHash}{$guid}}}) }
+                }
+        }
+
+        #
+        # loop though the whole thing and push it into the array for return
+        #
+        my $alphaOrd = 0;
+        while (@elementArray) {
+                my %elementHash;
+                $alphaOrd++;
+                $elementHash{'ord'}             = shift(@elementArray);
+                $elementHash{'adminGroup'}      = shift(@elementArray);
+                $elementHash{'rootElement'}     = shift(@elementArray);
+                $elementHash{'siteGUID'}        = shift(@elementArray);
+                $elementHash{'guid'}            = shift(@elementArray);
+                $elementHash{'type'}            = shift(@elementArray);
+                $elementHash{'parent'}          = shift(@elementArray);
+                $elementHash{'title'}           = shift(@elementArray);
+                $elementHash{'schemaDevel'}     = shift(@elementArray);
+                $elementHash{'scriptDevel'}     = shift(@elementArray);
+                $elementHash{'checkedout'}      = shift(@elementArray);
+                $elementHash{'alphaOrd'}        = $alphaOrd;
+                $elementHash{'label'}           = $elementHash{'type'}.' - '.$elementHash{'title'};
+                if ($elementHash{'type'} eq '') { $elementHash{'label'} = 'element'.$elementHash{'label'} }
+
+                push (@elementArrayReturn,{%elementHash});
+        }
+
+        return @elementArrayReturn;
+}
+
 
 =head2 elementHash
 
@@ -1134,7 +1378,7 @@ sub hashArray {
                 use Storable qw(nfreeze thaw);
                 return @{thaw($paramHash{'hashArray'})};
         }
-        return ();
+        return;
 }
 
 
@@ -1173,6 +1417,7 @@ sub newDBCheck {
                         "<br/><br/>Finished: <a href=\"".$self->{'scriptName'}."\">Click here to continue to</a> -> ".$self->domain().$self->{'scriptName'}.
                         "</body></html>";
         }
+	return;
 }
 
 =head2 queueArray
@@ -1202,12 +1447,12 @@ sub queueArray {
         # queuery by directory or user if needed
         # add other criteria if applicable
         #
-        if ($paramHash{'directoryGUID'} ne '')  { $whereStatement .= " and directory_guid = '".$self->safeSQL($paramHash{'directoryGUID'})."'" }
-        if ($paramHash{'userGUID'} ne '')       { $whereStatement .= " and profile_guid = '".$self->safeSQL($paramHash{'userGUID'})."'" }
-        if ($paramHash{'from'} ne '')           { $whereStatement .= " and queue_from = '".$self->safeSQL($paramHash{'from'})."'" }
-        if ($paramHash{'to'} ne '')             { $whereStatement .= " and queue_to = '".$self->safeSQL($paramHash{'to'})."'" }
-        if ($paramHash{'fromName'} ne '')       { $whereStatement .= " and from_name = '".$self->safeSQL($paramHash{'fromName'})."'" }
-        if ($paramHash{'subject'} ne '')        { $whereStatement .= " and subject = '".$self->safeSQL($paramHash{'subject'})."'" }
+        if ( defined $paramHash{'directoryGUID'} )  { $whereStatement .= " and directory_guid = '".$self->safeSQL($paramHash{'directoryGUID'})."'" }
+        if ( defined $paramHash{'userGUID'} )       { $whereStatement .= " and profile_guid = '".$self->safeSQL($paramHash{'userGUID'})."'" }
+        if ( defined $paramHash{'from'} )           { $whereStatement .= " and queue_from = '".$self->safeSQL($paramHash{'from'})."'" }
+        if ( defined $paramHash{'to'} )             { $whereStatement .= " and queue_to = '".$self->safeSQL($paramHash{'to'})."'" }
+        if ( defined $paramHash{'fromName'} )       { $whereStatement .= " and from_name = '".$self->safeSQL($paramHash{'fromName'})."'" }
+        if ( defined $paramHash{'subject'} )        { $whereStatement .= " and subject = '".$self->safeSQL($paramHash{'subject'})."'" }
 
         #
         # add date critiria if appicable
@@ -1238,7 +1483,8 @@ sub queueArray {
                 $sendHash{'scheduledDate'}      = shift(@$arrayRef);
                 push(@queueArray, {%sendHash});
         }
-        if ($paramHash{'ref'} eq '1') { return \@queueArray } else {return @queueArray }
+        if ($paramHash{'ref'} eq '1') { return \@queueArray }
+	return @queueArray;
 }
 
 =head2 queueHash
@@ -1261,6 +1507,7 @@ sub queueHash {
         my %itemHash = @$arrayRef;
 
         if ($paramHash{'ref'} eq '1') { return \%itemHash } else {return %itemHash }
+	return;
 }
 
 
@@ -1369,6 +1616,39 @@ sub queueHistoryHash {
         if ($paramHash{'ref'} eq '1') { return \%itemHash } else {return %itemHash }
 }
 
+
+=head2 processQueue
+
+Process the internal sending queue
+
+	#
+	# process the internal queue
+        #
+	$fws->processQueue();
+
+=cut
+
+sub processQueue {
+        my ($self) = @_;
+        #
+        # get the queue
+        #
+        my @queueArray = $self->queueArray();
+
+	#
+	# make sure its not a draft, or if the type is blank and sendmail, then ship it off!
+	#
+        for my $i (0 .. $#queueArray) {
+                if ($queueArray[$i]{'draft'} ne '1' && ($queueArray[$i]{'type'} eq '' || $queueArray[$i]{'type'} eq 'sendmail')) {
+                        $queueArray[$i]{'fromQueue'} = 1;
+                        $self->send(%{$queueArray[$i]});
+                        $self->deleteQueue(%{$queueArray[$i]});
+                }
+        }
+	return;
+}
+
+
 =head2 runSQL
 
 Return an reference to an array that contains the results of the SQL ran.  In addition if you pass noUpdate=>1 the method will not run updateDatabase on errors.  This is important if you doing something that could create a recursion problem.
@@ -1410,7 +1690,7 @@ sub runSQL {
 	#
 	# if we pass a DBH lets use it
 	#
-	if ($paramHash{'DBH'} eq '') { $paramHash{'DBH'} = $self->{'_DBH_'.$self->{'DBName'}.$self->{'DBHost'}} }
+	if ( !defined $paramHash{'DBH'} ) { $paramHash{'DBH'} = $self->{'_DBH_'.$self->{'DBName'}.$self->{'DBHost'}} }
 
         #
         # Get this data array ready to slurp
@@ -1715,6 +1995,157 @@ sub saveData {
 }
 
 
+=head2 historyHash
+
+This will eventually get moved to a plugin
+
+=cut
+
+sub historyHash {
+        my ($self, %paramHash) = @_;
+
+        #
+        # grab the data
+        #
+        my @recordData =  $self->openRS("select 'url',url,'hash',hash,'type',type,'guid',guid,'title',title,'name',name,'description',description,'created_date',created_date,'userGUID',profile_guid,'referrerGUID',referrer_guid,'directoryGUID',directory_guid,'latitude',latitude,'longitude' from history where guid='".$self->safeSQL($paramHash{'guid'})."'");
+
+        #
+        # convert it to a hash and return it
+        #
+        my %returnHash = @recordData;
+        return %returnHash;
+}
+
+
+=head2 deleteHistory
+
+This will eventually get moved to a plugin
+
+=cut
+
+sub deleteHistory {
+        my ($self, %paramHash) = @_;
+        %paramHash = $self->runScript('preDeleteHistory',%paramHash);
+        my $guid = $self->safeSQL($paramHash{'guid'});
+        $self->runSQL(SQL=>"delete from history where guid='".$guid."'");
+        %paramHash = $self->runScript('postDeleteHistory',%paramHash);
+        return %paramHash;
+}
+
+
+=head2 historyArray
+
+This will eventually get moved to a plugin
+
+=cut
+
+sub historyArray {
+        my ($self,%paramHash) = @_;
+        my $latitude            = $self->safeSQL($paramHash{'latitude'});
+        my $longitude           = $self->safeSQL($paramHash{'longitude'});
+        my $dateFrom            = $self->safeSQL($paramHash{'dateFrom'});
+        my $type                = $self->safeSQL($paramHash{'type'});
+        my $dateTo              = $self->safeSQL($paramHash{'dateTo'});
+        my $radius              = $self->safeSQL($paramHash{'radius'});
+        my $referrerGUID        = $self->safeSQL($paramHash{'referrerGUID'});
+        my $userGUID            = $self->safeSQL($paramHash{'userGUID'});
+        my $directoryGUID       = $self->safeSQL($paramHash{'directoryGUID'});
+        my $keywords            = $self->safeSQL($paramHash{'keywords'});
+
+
+        my $whereStatement = '1=1';
+        my $score = '1 as score';
+        if ($radius eq '') { $radius = 0.15 }
+
+        #
+        # if type is passed constrain to that
+        #
+        if ($type ne '') { $whereStatement .= " and type = '".$type."'" }
+
+        #
+        # if referrerGUID is passed constrain to that
+        #
+        if ($referrerGUID ne '') { $whereStatement .= " and referrer_guid = '".$referrerGUID."'" }
+
+        #
+        # if zip is passed constrain to that
+        #
+        if ($userGUID ne '') { $whereStatement .= " and profile_guid = '".$userGUID."'" }
+
+        #
+        # add date critiria if appicable
+        #
+        if ($dateFrom ne '') { $whereStatement .= " and created_date >= '".$dateFrom."'" }
+        if ($dateTo ne '') { $whereStatement .= " and created_date <= '".$dateTo."'" }
+
+        #
+        # if city is passed constrain to that
+        #
+        if ($directoryGUID ne '') { $whereStatement .= " and directory_guid = '".$directoryGUID."'" }
+
+        #
+        # if geo set is passed constrain to that
+        #
+        if ($latitude ne '' && $longitude ne '') { $whereStatement .= " and latitude > '".($latitude-$radius)."' and latitude < '".($latitude+$radius)."' and longitude > '".($longitude-$radius)."' and longitude < '".($longitude+$radius)."'"  }
+
+        #
+        # if keywords is passed constrain to that
+        #
+        if ($keywords ne '') {
+                $score = "(match(name) against('".$keywords."' IN NATURAL LANGUAGE MODE))+(match(description) against('".$keywords."' IN NATURAL LANGUAGE MODE))+1 as score";
+                $whereStatement .= " and (match(name) against('".$keywords."' IN NATURAL LANGUAGE MODE) or match(description) against('".$keywords."' IN NATURAL LANGUAGE MODE) or description like '%".$keywords."%' or name like '%".$keywords."%')";
+                }
+
+        my @historyArray = $self->openRS("select url,type,hash,guid,title,name,description,".$score.",created_date,profile_guid,directory_guid,referrer_guid,latitude,longitude from history where ".$whereStatement." order by score,created_date desc");
+
+        my @returnArray;
+        while (@historyArray) {
+                my %historyHash;
+                $historyHash{'url'}             = shift(@historyArray);
+                $historyHash{'type'}            = shift(@historyArray);
+                $historyHash{'hash'}            = shift(@historyArray);
+                $historyHash{'guid'}            = shift(@historyArray);
+                $historyHash{'title'}           = shift(@historyArray);
+                $historyHash{'name'}            = shift(@historyArray);
+                $historyHash{'description'}     = shift(@historyArray);
+                $historyHash{'score'}           = shift(@historyArray);
+                $historyHash{'created_date'}    = shift(@historyArray);
+                $historyHash{'userGUID'}        = shift(@historyArray);
+                $historyHash{'directoryGUID'}   = shift(@historyArray);
+                $historyHash{'referrerGUID'}   = shift(@historyArray);
+                $historyHash{'latitude'}        = shift(@historyArray);
+                $historyHash{'longitude'}       = shift(@historyArray);
+                push(@returnArray,{%historyHash});
+                }
+        return @returnArray;
+}
+
+
+=head2 saveHistory
+
+This will eventually get moved to a plugin
+
+=cut
+
+sub saveHistory {
+        my ($self, %paramHash) = @_;
+
+        %paramHash = $self->runScript('preSaveHistory',%paramHash);
+
+        %paramHash = $self->_recordInit( '_guidLeader'   =>'h',
+                                        '_table'        =>'history',
+                                        %paramHash);
+
+        %paramHash = $self->_recordSave( '_keys'         =>'type|title|url|name|referrerGUID|description|directoryGUID|userGUID|hash|latitude|longitude',
+                                        '_fields'       =>'type|title|url|name|referrer_guid|description|directory_guid|profile_guid|hash|latitude|longitude',
+                                        '_table'        =>'history',
+                                        %paramHash);
+
+        %paramHash = $self->runScript('postSaveHistory',%paramHash);
+
+        return %paramHash;
+}
+
 
 =head2 saveExtra
 
@@ -1797,6 +2228,7 @@ sub saveExtra {
                         $self->updateDataCache($self->dataHash(guid=>$paramHash{'guid'}));
                 }
         #}
+	return;
 }
 
 
@@ -1930,6 +2362,113 @@ sub saveQueueHistory {
         return %paramHash;
 }
 
+
+=head2 saveUser
+
+Save a user and return its hash.
+
+        %userHash = $fws->saveUser( %userHash );
+
+=cut
+
+sub saveUser {
+        my ($self, %paramHash) = @_;
+        %paramHash = $self->runScript('preSaveUser',%paramHash);
+
+        if ($paramHash{'guid'} eq '') {
+                #
+                # if we are not going to make a duplicate lets rock
+                #
+                if (!$self->openRS("select 1 from profile where email like '".$paramHash{'email'}."' LIMIT 1") && $paramHash{'email'} ne '' &&  $paramHash{'password'} ne '' ) {
+                        #
+                        # make sure name will be something
+                        #
+                        if ($paramHash{'name'} eq '') { $paramHash{'name'} = $paramHash{'billingName'} }
+                        if ($paramHash{'name'} eq '') { $paramHash{'name'} = $paramHash{'shippingName'} }
+
+                        #
+                        # if the active is blank, lets make it 1
+                        #
+                        if ($paramHash{'active'} eq '') { $paramHash{'active'} = 1 }
+
+                        #
+                        # lets match these so the update procedure will treat it like a new update
+                        #
+                        $paramHash{'passwordConfirm'} = $paramHash{'password'};
+
+
+                        #
+                        # do the inital insert
+                        #
+                        my $guid = $self->createGUID('u');
+                        $self->runSQL(SQL=>"insert into profile (guid,email,name,active) values ('".$guid."','". $self->safeSQL($paramHash{'email'})."','". $self->safeSQL($paramHash{'name'})."','". $self->safeSQL($paramHash{'active'})."')");
+
+
+                        #
+                        # if the profile is new lets send the admin an email
+                        #
+                        if ($self->siteValue('profileCreationEmail') ne '') {
+                                $self->send(to=>$self->siteValue('profileCreationEmail'),fromName=>$self->{'email'},from=>$self->{'email'},subject=>"New User Created",mimeType=>"text/plain",body=>'Name: '.$paramHash{'name'}."\nEmail: ".$paramHash{'email'}."\n");
+                        }
+
+
+                        #
+                        # Lets add all the extra fields me might have
+                        #
+                        $paramHash{'guid'} = $guid;
+                }
+        }
+
+        #
+        # see if the password needs to be updated and one last check to see if its strong enough
+        #
+        my $insertSQL = '';
+        if ($paramHash{'password'} ne '' && $paramHash{'passwordConfirm'} eq $paramHash{'password'}) {
+
+                #
+                # crypt the password
+                #
+                $paramHash{'password'} = $self->cryptPassword($paramHash{'password'});
+
+                #
+                # add to the insert statement
+                #
+                $insertSQL .= ",profile_password='".$self->safeSQL($paramHash{'password'})."'";
+        }
+
+        #
+        # set the dirived stuff so nobody gets sneeky and tries to pass it to the procedure
+        #
+        if ($paramHash{'pin'} eq '') { $paramHash{'pin'} = $self->createPin() }
+
+        #
+        # update the core of the record
+        #
+        $self->runSQL(SQL=>"update profile set fb_id='".$self->safeSQL($paramHash{'FBId'})."',fb_access_token='".$self->safeSQL($paramHash{'FBAccessToken'})."', pin='".$self->safeSQL($paramHash{'pin'})."',active='".$self->safeSQL($paramHash{'active'})."',name='".$self->safeSQL($paramHash{'name'})."' ".$insertSQL." where guid='".$paramHash{'guid'}."'");
+
+
+        #
+        # loop though and update every one that is diffrent, but you can't touch for security reasons
+        #
+        for my $key ( keys %paramHash ) {
+                if ($key !~ /^(FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid)$/) {
+                        $self->saveExtra(table=>'profile',guid=>$paramHash{'guid'},field=>$key,value=>$paramHash{$key});
+                }
+        }
+
+        #
+        # do a hard reset of the profile so it will load again the next time a proc asks for it
+        #
+        for (keys %{$self->{"profileHash"}}) { delete $self->{"profileHash"}->{$_} }
+
+        #
+        # Not sure if this is needed, but for consistance, the Update doesn't actually Update the hash so it will return its self unaltered
+        #
+        %paramHash = $self->runScript('postSaveUser',%paramHash);
+        return %paramHash;
+}
+
+
 =head2 schemaHash
 
 Return the schema hash for an element.  You can pass either the guid or the element type.
@@ -1939,18 +2478,13 @@ Return the schema hash for an element.  You can pass either the guid or the elem
 =cut
 
 sub schemaHash {
-        my ($fws,$guid) = @_;
+        my ($self,$guid) = @_;
 
 	#
 	# Get it from the element hash, (with caching enabled)
 	#
-	my %elementHash = $fws->elementHash(guid=>$guid);
+	my %elementHash = $self->elementHash(guid=>$guid);
 
-        #
-        # copy the self object to fws
-        #
-        #my $fws = $self;
-        
 	#
         # make sure schemaHash is defined before we run the code
         #
@@ -1959,14 +2493,11 @@ sub schemaHash {
         #
         # run the eval and populate the hash (Including the title)
         #
+	## no critic
         eval $elementHash{'schemaDevel'};
+	## use critic
         my $errorCode = $@;
-        if ($errorCode) { $fws->FWSLog('SCHEMA ERROR: '.$guid.' - '.$errorCode) }
-
-        #
-        # now put it back
-        #
-        #$self = $fws;
+        if ($errorCode) { $self->FWSLog('SCHEMA ERROR: '.$guid.' - '.$errorCode) }
 
         return %dataSchema;
 }
@@ -2013,6 +2544,7 @@ sub setCacheIndex {
 		$self->FWSLog("Setting new site cache index: ".$cacheValue);
         	$self->saveExtra(table=>'site',guid=>$paramHash{'siteGUID'},field=>'dataCacheIndex',value=>$cacheValue);
 	}
+	return;
 }
 
 
@@ -2122,6 +2654,163 @@ sub tableFieldHash {
 
 }
 
+=head2 templateArray
+
+Return a hash array of all the templates available.
+
+=cut
+
+sub templateArray {
+        my ($self) = @_;
+        #
+        # Get the Template array
+        #
+        my (@templateArray) = $self->openRS("select guid,title,site_guid,template_devel,css_devel,js_devel,default_template from templates where site_guid='" . $self->safeSQL( $self->{'siteGUID'} ) . "'");
+
+        my @templateHashArray;
+        while (@templateArray) {
+                #
+                # create the hash and return it
+                #
+                my %templateHash;
+                $templateHash{'guid'}           = shift(@templateArray);
+                $templateHash{'title'}          = shift(@templateArray);
+                $templateHash{'siteGUID'}       = shift(@templateArray);
+                $templateHash{'template'}  	= shift(@templateArray);
+                $templateHash{'css'}       	= shift(@templateArray);
+                $templateHash{'js'}        	= shift(@templateArray);
+                $templateHash{'default'}	= shift(@templateArray);
+
+                push (@templateHashArray,{%templateHash});
+        }
+        return @templateHashArray;
+}
+
+
+=head2 templateHash
+
+Return a hash of all the information about a template.
+
+=cut
+
+sub templateHash {
+
+        my ( $self, %paramHash ) = @_;
+
+        my $templateGUID 	= $paramHash{templateGUID};
+        my $pageId 		= $paramHash{pageGIUD};
+
+        my $template    = "";
+        my $css         = "";
+        my $js          = "";
+        my $title       = "";
+
+        #
+        # get the default template Id
+        #
+        my ( $defaultGUID ) = $self->openRS("select guid from templates where default_template='1' and site_guid='".$self->{'siteGUID'}."'");
+
+        #
+        # get the home page template ID
+        #
+        my ($homePageTemplateId) = $self->openRS("select layout from guid_xref where child='".$self->homeGUID()."'");
+
+        #
+        # if this is the home page then set the page id to the actual home page templates ID
+        #
+        if ($pageId eq $self->homeGUID() && $templateGUID eq "") { $templateGUID = $homePageTemplateId }
+
+
+	#
+	# set some sql defaults
+	#
+	my $returnFields = 'title, template_devel, css_devel, js_devel, templates.guid';
+
+        #
+        # we have a page id, lets see if we can get the template from it. but if the
+        # page id was 0 we know that its the home page template id we want not the "0" template id
+        #
+        if ($pageId ne "" && $pageId ne '0') {
+                ( $title, $template,$css,$js,$templateGUID) = $self->openRS("select " . $returnFields . " from templates left join guid_xref on layout=templates.guid where guid_xref.child='".$self->safeSQL($pageId)."' and guid_xref.site_guid='".$self->{'siteGUID'}."'");
+        }
+
+        #
+        # we wern't given a page lets grab it from the templateGUID
+        #
+        elsif ($templateGUID ne "") {
+                ( $title, $template,$css,$js,$templateGUID) = $self->openRS("select " . $returnFields . " from templates where guid='".$self->safeSQL($templateGUID)."'");
+        }
+
+        #
+        # man, this sucks, we didn't find one yet lets get the default one
+        #
+        if ($templateGUID eq "") {
+                ( $title, $template,$css,$js,$templateGUID) = $self->openRS("select " . $returnFields . "  from templates where guid='" . $self->safeSQL( $defaultGUID ) . "'");
+        }
+
+        #
+        # wtf, still didn't get one yet????  lets build out a basic one so the page will render
+        #
+        if ($templateGUID eq "") {
+
+                $title = "Fail over template";
+                $template = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n".
+                        "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n".
+                        "<head>\n".
+                        "#FWSHead#".
+                        "</head>\n".
+                        "<body>\n".
+                        "#FWSMenu#".
+                        "<div id=\"loc_wrapper\">".
+                        "<div id=\"loc\">".
+                        "<div id=\"loc_1_wrapper\">".
+                        "<div id=\"loc_1\">".
+                        "<div id=\"loc_1_1_wrapper\">".
+                        "<div id=\"loc_1_1\">#FWSShow-header#</div>".
+                        "</div>".
+                        "</div>".
+                        "</div>".
+                        "<div id=\"loc_2_wrapper\">".
+                        "<div id=\"loc_2\">".
+                        "<div id=\"loc_2_1_wrapper\">".
+                        "<div id=\"loc_2_1\">#FWSShow-main#</div>".
+                        "</div>".
+                        "</div>".
+                        "</div>".
+                        "<div id=\"loc_3_wrapper\">".
+                        "<div id=\"loc_3\">".
+                        "<div id=\"loc_3_1_wrapper\">".
+                        "<div id=\"loc_3_1\">#FWSShow-footer#</div>".
+                        "</div>".
+                        "</div>".
+                        "</div>".
+                        "</div>".
+                        "</div>".
+                        "<div style=\"clear:both;\"></div>\n".
+                        "#FWSJavaLoad#".
+                        "</body>\n".
+                        "</html>";
+        }
+
+
+        #
+        # create the hash and return it
+        #
+        my %templateHash;
+        $templateHash{'guid'}           = $templateGUID;
+        $templateHash{'homeGUID'}       = $homePageTemplateId;
+        $templateHash{'title'}          = '';
+        $templateHash{'siteGUID'}       = $self->{'siteGUID'};
+        $templateHash{'template'}       = $template;
+        $templateHash{'css'}            = $css;
+        $templateHash{'js'}             = $js;
+        $templateHash{'defaultGUID'}    = $defaultGUID;
+
+	warn $templateGUID;
+
+        return %templateHash;
+}
+
 
 
 =head2 updateDataCache
@@ -2203,6 +2892,8 @@ sub updateDataCache {
         # add the the new one
         #
         $self->runSQL(SQL=>"insert into data_cache (".$fields.") values (".$values.")");
+
+	return;
 }
 
 =head2 userArray
@@ -2249,8 +2940,208 @@ sub userArray {
                 #
                 push (@userHashArray,{%userHash});
         }
-        if ($paramHash{'ref'} eq '1') { return \@userHashArray } else {return @userHashArray }
+        if ($paramHash{'ref'} eq '1') { return \@userHashArray }
+	return @userHashArray;
 }
+
+
+=head2 userHash
+
+Return the hash for a user.
+
+        %userHash = $fws->userHash(guid=>'guid');
+
+=cut
+
+sub userHash {
+        my ($self,%paramHash) = @_;
+
+        #
+        # store the guid in this, till we figure out what one we are looking up
+        #
+        my $lookupGUID;
+        my $lookupSQL;
+
+        #
+        # if user isn't logged in and we are not passing anything just return - nothing to see here
+        #
+        if (!keys %paramHash && !$self->isUserLoggedIn()) { return () }
+        #
+        # if we have a pin lets do the lookup that way and skip the rest of this crap that is amix of old and new
+        # but make sure we set the lookupGUID to something so we don't do any caching and treat it as disposable
+        #
+        elsif ($paramHash{'pin'} ne '') { $lookupGUID = '_'; $lookupSQL = "pin like '".$self->safeSQL($paramHash{'pin'})."'" }
+        else {
+
+                #
+                #
+                # do some fanageling for old code to see if it is being called the old way, or the new way
+                #
+                if ($paramHash{'guid'} ne '') { $lookupGUID = $paramHash{'guid'} }
+
+                #
+                # if guid isn't defined, then set it to the email address, or the only thing passed
+                #
+                elsif ($paramHash{'email'} eq '') { $lookupGUID = each %paramHash } else { $lookupGUID = $paramHash{'email'} }
+
+                #
+                # if its still blank after that, then we are talking about looking up the guy who is logged in currently
+                #
+                if ($lookupGUID eq '') { $lookupSQL = "email like '".$self->safeSQL($self->{'userLoginId'})."'" }
+
+                #
+                # if the lookupGUID has an @ in it, then look up the guid - least efficient but old stuff still looks for stuff this way
+                #
+                elsif ($lookupGUID =~ /@/) { $lookupSQL = "email like '".$self->safeSQL($lookupGUID)."'"; }
+
+                #
+                # if it doesn't have a @ in it, then we must have a guid to work with, lets find that
+                #
+                else { $lookupSQL = "guid='".$self->safeSQL($lookupGUID)."'" }
+
+        }
+
+        #
+        # create a new variable but leave it blank unless we are using a persistant one
+        #
+        my %userHash;
+
+
+        #
+        # if your not logged in.. lets skip this  But, if we are looking for one thing - then lets do it
+        #
+        if ($self->isUserLoggedIn() || $lookupGUID ne '') {
+
+                #
+                # the profile hash is not disposable see if we already have it if we do, just populate it from the cached
+                # version because this is the current guy logged in
+                #
+                if ($lookupGUID eq '') { %userHash = %{$self->{'profileHash'}} }
+
+                #
+                # see if it is populated,  if it is, skip this and return it.
+                #
+                if (!keys %userHash) {
+
+                        #
+                        # get the goods from the profile table and grab the ID from the front,
+                        # so we can use it to get the profile;
+                        #
+                        my @profileExtArray     = $self->openRS("select profile.extra_value,profile.guid,'pin',profile.pin,'guid',profile.guid,'googleId',profile.google_id,'name',profile.name,'FBId',fb_id,'FBAccessToken',fb_access_token,'email',profile.email,'active',profile.active from profile where ".$lookupSQL);
+                        my $extraValue          = shift(@profileExtArray);
+                        my $guid                = shift(@profileExtArray);
+
+
+                        #
+                        # convert it into the hash
+                        #
+                        %userHash = @profileExtArray;
+
+                        #
+                        # add extra Hash
+                        #
+                        %userHash = $self->addExtraHash($extraValue,%userHash);
+
+
+                        #
+                        # add all the groups I have access too
+                        #
+                        my @groups = $self->openRS("select profile_groups_xref.groups_guid from profile left join profile_groups_xref on profile_groups_xref.profile_guid = profile.guid where profile.guid = '".$self->safeSQL($guid)."'");
+                        while (@groups) {
+                                my $groupId = shift(@groups);
+                                $userHash{'group'}{$groupId} = 1;
+                        }
+
+
+                        #
+                        # if not logged or we are not looking for a particular guid that is disposable
+                        # set the id to 0 and active to 0 and destroy what we have
+                        #
+                        if (!$self->isUserLoggedIn() && $lookupGUID eq '') {
+                                for (keys %{$self->{"profileHash"}}) { delete $self->{"profileHash"}->{$_}}
+                                $userHash{'guid'}    = '';
+                                $userHash{'active'}  = '0';
+                        }
+
+                        #
+                        # set the default for radio buttons
+                        #
+                        if ($userHash{'active'} eq '') { $userHash{'active'} = 0 }
+
+                        #
+                        # if are a disposable record, don't save it as the profile hash, just return it
+                        #
+                        if ($lookupGUID eq '') {
+                                %{$self->{'profileHash'}} = %userHash;
+                        }
+                }
+        }
+        return %userHash;
+}
+
+
+=head2 userGroupHash
+
+Return the hash for a user group by passing the groups guid.
+
+        %userGroupHash = $fws->userGroupHash('somegroupguid');
+
+=cut
+
+sub userGroupHash {
+        my ($self,$guid) = @_;
+        my ($name,$description) = $self->openRS("select name,description from groups where guid='".$self->safeSQL($guid)."'");
+        my %userGroupHash;
+        $userGroupHash{'name'}          = $name;
+        $userGroupHash{'description'}   = $description;
+        $userGroupHash{'guid'}          = $guid;
+
+        #
+        # get a list of users and add that to the hash
+        #
+        my @userList =  $self->openRS("select profile_guid from profile_groups_xref where groups_guid='".$self->safeSQL($guid)."'");
+        while (@userList) {
+                my $userId = shift(@userList);
+                $userGroupHash{'user'}{$userId}         = '1';
+        }
+
+        return %userGroupHash;
+}
+
+
+=head2 userGroupArray
+
+Return the hash array for all of the user groups;
+
+        my @userGroupArray = $fws->userGroupArray();
+
+=cut
+
+sub userGroupArray {
+        my ($self) = @_;
+        my @userGroupHashArray;
+
+        #
+        # get the data from the database and push it into the hash array
+        #
+        my @userGroupArray = $self->openRS("select name,description,guid from groups", 1);
+        while (@userGroupArray) {
+                #
+                # fill in the hash
+                #
+                my %userGroupHash;
+                $userGroupHash{'name'}          = shift(@userGroupArray);
+                $userGroupHash{'description'}   = shift(@userGroupArray);
+                $userGroupHash{'guid'}          = shift(@userGroupArray);
+
+                #
+                # push it into the array
+                #
+                push (@userGroupHashArray,{%userGroupHash});
+        }
+        return @userGroupHashArray;
+}
+
 
 =head2 updateDatabase
 
@@ -2347,7 +3238,74 @@ sub updateModifiedDate {
         if ($type eq 'page' || $type eq 'home') {
                 $self->saveExtra(table=>'data',siteGUID=>$paramHash{'siteGUID'},guid=>$paramHash{'guid'},field=>'dateUpdated',value=>time);
         }
+	return;
 }
+
+
+=head2 homeGUID
+
+need doc
+
+=cut
+
+sub homeGUID {
+        my ($self,$site_guid) = @_;
+
+        #
+        # blindly get the homeGUID of site that isn't our own potently
+        #
+        if ($site_guid ne '') {
+                my ($homeGUID) = @{$self->runSQL(SQL=>"select home_guid from site where guid='".$self->safeSQL($site_guid)."'")};
+                return $homeGUID;
+        }
+
+        #
+        # if is not set, set it and create the page
+        #
+        return $self->siteValue('homeGUID');
+}
+
+
+=head2 randomizeArray
+
+need doc
+
+=cut
+
+sub randomizeArray {
+        my ($self,$dataRef) = @_;
+        my $i = @$dataRef;
+        while ($i--) {
+                my $j = int rand ($i+1);
+                @$dataRef[$i,$j] = @$dataRef[$j,$i];
+        }
+	return $dataRef;
+}
+
+
+=head2 sortDataByAlpha
+
+need doc
+
+=cut
+
+sub sortDataByAlpha {
+        my ($self,$sortId,@data) = @_;
+        return (map{$_->[1]} sort {$a->[0] cmp $b->[0]} map{[$_->{$sortId},$_]} @data)
+}
+
+
+=head2 sortDataByNumber
+
+need doc
+
+=cut
+
+sub sortDataByNumber {
+        my ($self,$sortId,@data) = @_;
+        return (map{$_->[1]} sort {$a->[0] <=> $b->[0]} map{[$_->{$sortId},$_]} @data)
+}
+
 
 
 ############################################################################################
@@ -2389,6 +3347,8 @@ sub _deleteOrphanedData {
 		#
                 ($keepDeleting) = @{$self->runSQL(DBH=>$DBH,SQL=>"select 1 ".$fromSQL)};
         }
+
+	return;
 }
 
 ############################################################################################
@@ -2398,6 +3358,7 @@ sub _deleteOrphanedData {
 sub _deleteXRef {
         my ($self,$child,$parent,$siteGUID) = @_;
         $self->runSQL(SQL=>"delete from guid_xref where child='".$self->safeSQL($child)."' and parent='".$self->safeSQL($parent)."' and site_guid='".$self->safeSQL($siteGUID)."'");
+	return;
 }
 
 ############################################################################################
@@ -2629,7 +3590,7 @@ sub _recordSave {
                         $key !~ /^createdDate$/ &&
                         $key !~ /^siteGUID$/ &&
                         $key !~ /^pin$/) {
-			if ($self->{'dataSchema'}{$paramHash{'_table'}}{'extra_value'}{'type'} ne '') {
+			if (defined $self->{'dataSchema'}{$paramHash{'_table'}}{'extra_value'}{'type'}) {
                         	$self->saveExtra(DBH=>$paramHash{'DBH'},table=>$paramHash{'_table'},guid=>$paramHash{'guid'},field=>$key,value=>$paramHash{$key});
 				}
                 }
@@ -2706,6 +3667,7 @@ sub _saveXRef {
 	#
         $self->runSQL(SQL=>"insert into guid_xref (child,layout,ord,parent,site_guid) values ('".$self->safeSQL($child)."','".$self->safeSQL($layout)."','".$self->safeSQL($ord)."','".$self->safeSQL($parent)."','".$self->safeSQL($siteGUID)."')");
 
+	return;
 }
 
 =head1 AUTHOR

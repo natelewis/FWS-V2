@@ -1,6 +1,7 @@
 .build
 Makefile
 blib
+build
 *~
 MYMETA.json
 MYMETA.yml
