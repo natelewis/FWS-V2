@@ -2,11 +2,6 @@ package FWS::V2;
 
 use 5.006;
 use strict;
-
-
-#
-# not everything will be defined by nature
-#
 no warnings 'uninitialized';
 
 
@@ -348,7 +343,9 @@ The current user id for the site user logged in.  Extra warning: This should nev
 #
 #########################################################################
 
-################## HIDE ##################### Web optimized import block flag
+
+########### HIDE ################
+
 BEGIN {
         our @ISA = (	"FWS::V2::Database",
                         "FWS::V2::Check",
@@ -358,7 +355,11 @@ BEGIN {
                         "FWS::V2::Legacy",
                         "FWS::V2::Session",
                         "FWS::V2::Cache",
-                        "FWS::V2::Safety");
+                        "FWS::V2::Geo",
+                        "FWS::V2::Admin",
+                        "FWS::V2::Display",
+                        "FWS::V2::Safety"
+	);
    
 	use FWS::V2::Database;
 	use FWS::V2::Check;
@@ -368,8 +369,13 @@ BEGIN {
 	use FWS::V2::Legacy;
 	use FWS::V2::Session;
 	use FWS::V2::Cache;
+	use FWS::V2::Geo;
+	use FWS::V2::Admin;
+	use FWS::V2::Display;
 	use FWS::V2::Safety;
 }
+
+########### END HIDE ############
 
 sub new {
 	my ($class, %params) = @_;
@@ -378,7 +384,7 @@ sub new {
         #
         # set the FWS version we are using
         #
-        $self->{'FWSVersion'} = '2.1.0';
+        $self->{'FWSVersion'} = '2.1';
 
         #
         # Major version parse
@@ -413,7 +419,7 @@ sub new {
         $self->{'securityHash'}->{'showQueue'}{'note'}          = 'Access to view email sending queue, and message history.';
 
         $self->{'securityHash'}->{'showSEO'}{'title'}           = 'SEO Controls';
-        $self->{'securityHash'}->{'showSEO'}{'note'}            = 'Access to view SEO Defaults and page properties.';
+        $self->{'securityHash'}->{'showSEO'}{'note'}            = 'Access to change SEO Defaults, content and page properties.';
 
         $self->{'securityHash'}->{'showSiteSettings'}{'title'}  = 'Site Settings Menu';
         $self->{'securityHash'}->{'showSiteSettings'}{'note'}   = 'Generic site settings and 3rd party connector configurations.';
@@ -552,31 +558,6 @@ sub new {
                 "body"                          => { type => "text"     ,key => ""            ,default => ""                  ,AJAXGroup => 'showQueue'},
                 "hash"                          => { type => "text"     ,key => ""            ,default => ""                  },
                 "scheduled_date"                => { type => "datetime" ,key => ""            ,default => "0000-00-00 00:00:00",AJAXGroup => 'showQueue'},
-        };
-
-        $self->{"dataSchema"}{"events"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "price"                         => { type => "double"   ,key => "MUL"         ,default => "0"                 },
-                "profile_guid"                  => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "name"                          => { type => "char(255)",key => "FULLTEXT"    ,default => ""                  },
-                "title"                         => { type => "char(255)",key => "FULLTEXT"    ,default => ""                  },
-                "city"                          => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "state"                         => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "address"                       => { type => "char(255)",key => ""            ,default => ""                  },
-                "address2"                      => { type => "char(255)",key => ""            ,default => ""                  },
-                "zip"                           => { type => "char(255)",key => ""            ,default => ""                  },
-                "location"                      => { type => "char(255)",key => ""            ,default => ""                  },
-                "website"                       => { type => "char(255)",key => ""            ,default => ""                  },
-                "phone"                         => { type => "char(255)",key => ""            ,default => ""                  },
-                "date_from"                     => { type => "datetime" ,key => "MUL"         ,default => "0000-00-00"        },
-                "date_to"                       => { type => "datetime" ,key => "MUL"         ,default => "0000-00-00"        },
-                "created_date"                  => { type => "datetime" ,key => ""            ,default => "0000-00-00"        },
-                "description"                   => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "latitude"                      => { type => "float"    ,key => "MUL"         ,default => "0"                 },
-                "longitude"                     => { type => "float"    ,key => "MUL"         ,default => "0"                 },
-                "directory_guid"                => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "extra_value"                   => { type => "text"     ,key => ""            ,default => ""                  ,AJAXGroup => 'showEvents'},
         };
 
         $self->{"dataSchema"}{"history"} = {
@@ -795,8 +776,6 @@ sub new {
 }
 
 
-############### END HIDE #################### Web optimized import block flag
-
 =head1 FWS PLUGINS
 
 =head2 registerPlugin
@@ -827,7 +806,9 @@ Additionally if you want to check if a plugin is active inside of element or scr
 sub registerPlugin {
         my ($self, $plugin) = @_;
 
+	## no critic
         eval 'use lib "'.$self->{'fileSecurePath'}.'/plugins";';
+	## use critic
         
 	#
         # get the plugin name if it is a server wide plugin
@@ -838,14 +819,25 @@ sub registerPlugin {
         #
         # add the plugin and register the init for it
         #
+	## no critic
         eval 'use '.$plugin.';';
+	## use critic
 
         if($@){ $self->FWSLog($plugin." could not be loaded\n".$@) }
 
+	## no critic
         eval $plugin.'->pluginInit($self);';
+	## use critic
         
 	if($@){ $self->FWSLog($plugin." pluginInit failed\n".$@) }
-	else { $self->{plugins}->{$plugin} = 1 }
+
+
+	#
+	# mark the plugin as active
+	#
+	else { 
+		$self->{plugins}->{$plugin} = 1;
+	}
 }
 
 
