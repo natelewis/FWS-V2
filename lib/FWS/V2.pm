@@ -2,7 +2,7 @@ package FWS::V2;
 
 use 5.006;
 use strict;
-no warnings 'uninitialized';
+use warnings;
 
 
 =head1 NAME
@@ -21,14 +21,14 @@ our $VERSION = '0.0010';
 =head1 SYNOPSIS
 
     use FWS::V2;
-    my $fws = FWS::V2->new(	DBName		=> 'myDB',
-				DBUser		=> 'theUser',
-				DBPassword	=> 'superSecret',
-				DBHost		=> 'localhost',
-				DBType		=> 'MySQL');
+    my $fws = FWS::V2->new( DBName        => 'myDB',
+                            DBUser        => 'theUser',
+                            DBPassword    => 'superSecret',
+                            DBHost        => 'localhost',
+                            DBType        => 'MySQL');
 
 =cut
-	
+    
 =head1 DESCRIPTION
 
 FWS::V2 is the utility counterpart to the web based content management development platform provided at www.frameworksites.com.  The web based version of this module is derived from this source with additional web specific features and packaging.   The web based version enables the FWS to function on most any modern hosting environment, be upgraded in real time via the web based FWS administration, and control shared plugins between all of your installations even on different servers.
@@ -43,7 +43,7 @@ Wait a second... why does FWS V2 seem to have its own home grown methods that ar
 
 One of the main goals of FWS is to have a bundled, autonomous version of the FWS that can be picked up and sat on almost any major ISP or Linux hosting environment without any care for what is present on the server.   Packages the FWS does use have been carefully picked and validated to be supported on most all major ISPs.  For more information on this bundled web optimized version visit http://www.frameworksites.com
 
-=head1 METHODS AND PARAMETERS
+=head1 SUBROUTINES/METHODS
 
 =head2 new
 
@@ -51,30 +51,30 @@ Construct a FWS version 2 object. Like the highly compatible web optimized distr
 
 Example of using FWS with MySQL:
 
-        #
-        # Create FWS with MySQL connectivity
-        #
-	use FWS::V2;
-        my $fws = FWS::V2->new(       DBName          => "theDBName",
-                                      DBUser          => "myUser",
-                                      DBPassword      => "myPass");
+    #
+    # Create FWS with MySQL connectivity
+    #
+    use FWS::V2;
+    my $fws = FWS::V2->new(       DBName          => "theDBName",
+                                  DBUser          => "myUser",
+                                  DBPassword      => "myPass");
 
 Example of using FWS with SQLite:
 
-        #
-        # create FWS with SQLite connectivity
-        #
-	use FWS::V2;
-        my $fws = FWS::V2->new(      DBType          => "SQLite",
-                                     DBName          => "/home/user/your.db");
+    #
+    # create FWS with SQLite connectivity
+    #
+    use FWS::V2;
+    my $fws = FWS::V2->new(      DBType          => "SQLite",
+                                 DBName          => "/home/user/your.db");
 
 Any variable passed or derived can be accessed with the following syntax:
 
-	print $fws->{'someParameter'}."\n";
+    print $fws->{'someParameter'}."\n";
 
 With common uses of FWS, you should never need to change any of these settings.  If for some reason, although it is NOT recommended you can set any of these variables with the following syntax:
 
-	$fws->{'someParameter'} = 'new settings';
+    $fws->{'someParameter'} = 'new settings';
 
 =head2 Required Parameters
 
@@ -317,12 +317,6 @@ The current user id for the site user logged in.  Extra warning: This should nev
 # ELSE CUDDLING
 # Use non cuddled elses unless its all on the same line with the if. 
 #
-# CONDITIONALS PERFER 'ne' 'eq'
-# All conditionals that can be, are treated like strings and in very 
-# limited cases is 'exists', and 'defined' used.  This is due to the
-# anonymous hash structure and creating consistant logic for hashes
-# that might not yet be defined depending on scope.
-#
 # HASH ARRAYS (An array of hashes)
 # If your unfamiliar wit this technique read up on it.  The data model
 # for FWS is based on the idea of arrays of anonymous hashes.  It is
@@ -347,432 +341,404 @@ The current user id for the site user logged in.  Extra warning: This should nev
 ########### HIDE ################
 
 BEGIN {
-        our @ISA = (	"FWS::V2::Database",
-                        "FWS::V2::Check",
-                        "FWS::V2::File",
-                        "FWS::V2::Format",
-                        "FWS::V2::Net",
-                        "FWS::V2::Legacy",
-                        "FWS::V2::Session",
-                        "FWS::V2::Cache",
-                        "FWS::V2::Geo",
-                        "FWS::V2::Admin",
-                        "FWS::V2::Display",
-                        "FWS::V2::Safety"
-	);
-   
-	use FWS::V2::Database;
-	use FWS::V2::Check;
-	use FWS::V2::File;
-	use FWS::V2::Format;
-	use FWS::V2::Net;
-	use FWS::V2::Legacy;
-	use FWS::V2::Session;
-	use FWS::V2::Cache;
-	use FWS::V2::Geo;
-	use FWS::V2::Admin;
-	use FWS::V2::Display;
-	use FWS::V2::Safety;
+    
+    use base "FWS::V2::Database";
+    use base "FWS::V2::Check";
+    use base "FWS::V2::File";
+    use base "FWS::V2::Format";
+    use base "FWS::V2::Net";
+    use base "FWS::V2::Legacy";
+    use base "FWS::V2::Session";
+    use base "FWS::V2::Cache";
+    use base "FWS::V2::Geo";
+    use base "FWS::V2::Admin";
+    use base "FWS::V2::Display";
+    use base "FWS::V2::Safety";
+
 }
 
-########### END HIDE ############
+############ END HIDE ############
 
 sub new {
-	my ($class, %params) = @_;
-	my $self = bless \%params, $class;
+    my ($class, %params) = @_;
+    my $self = bless \%params, $class;
 
-        #
-        # set the FWS version we are using
-        #
-        $self->{'FWSVersion'} = '2.1';
+    #
+    # set the FWS version we are using
+    #
+    $self->{'FWSVersion'} = '2.1';
 
-        #
-        # Major version parse
-        #
-        my @loadVerSplit = split(/\./,$self->{'FWSVersion'});
-        $self->{'FWSMajorVersion'} = $loadVerSplit[0].'.'.$loadVerSplit[1];
+    #
+    # Major version parse
+    #
+    my @loadVerSplit = split /\./msx, $self->{'FWSVersion'};
+    $self->{'FWSMajorVersion'} = $loadVerSplit[0] . q{.} . $loadVerSplit[1];
 
-        #
-        # fake common ENV vars if we don't have them
-        #
-        if (!exists $ENV{"REMOTE_ADDR"}) { $ENV{"REMOTE_ADDR"}  = 'localhost' }
-        if (!exists $ENV{"SERVER_NAME"}) { $ENV{"SERVER_NAME"}  = 'localhost' }
-        if (!exists $ENV{"REQUEST_URI"}) { $ENV{"REQUEST_URI"}  = '' }
+    #
+    # fake common ENV vars if we don't have them
+    #
+    $ENV{"REMOTE_ADDR"} ||= 'localhost';
+    $ENV{"SERVER_NAME"} ||= 'localhost';
+    $ENV{"REQUEST_URI"} ||= q{};
 
+    #
+    # set the default security hash
+    #
+    $self->{'securityHash'}->{'isAdmin'}{'title'}           = 'Super User Account';
+    $self->{'securityHash'}->{'isAdmin'}{'note'}            = 'This user has access to all FWS features, and has the ability to add and remove admin users.  All installations should have one user of this type for security reasons.  Having a user of this type will disable the embedded admin account.';
 
-        #
-        # set the default security hash
-        #
-        $self->{'securityHash'}->{'isAdmin'}{'title'}           = 'Super User Account';
-        $self->{'securityHash'}->{'isAdmin'}{'note'}            = 'This user has access to all FWS features, and has the ability to add and remove admin users.  All installations should have one user of this type for security reasons.  Having a user of this type will disable the embedded admin account.';
+    $self->{'securityHash'}->{'showContent'}{'title'}       = 'Full Edit Mode Access';
+    $self->{'securityHash'}->{'showContent'}{'note'}        = 'Access to view and change the content in edit mode.';
 
-        $self->{'securityHash'}->{'showContent'}{'title'}       = 'Full Edit Mode Access';
-        $self->{'securityHash'}->{'showContent'}{'note'}        = 'Access to view and change the content in edit mode.';
+    $self->{'securityHash'}->{'showDesign'}{'title'}        = 'Designer Access';
+    $self->{'securityHash'}->{'showDesign'}{'note'}         = 'Add and delete pages, layouts, design css, javascript, and files.';
 
-        $self->{'securityHash'}->{'showDesign'}{'title'}        = 'Designer Access';
-        $self->{'securityHash'}->{'showDesign'}{'note'}         = 'Add and delete pages, layouts, design css, javascript, and files.';
+    $self->{'securityHash'}->{'showDeveloper'}{'title'}     = 'Developer Access';
+    $self->{'securityHash'}->{'showDeveloper'}{'note'}      = 'Access to developer controls, element custom element creation and site creation and deletion.';
 
-        $self->{'securityHash'}->{'showDeveloper'}{'title'}     = 'Developer Access';
-        $self->{'securityHash'}->{'showDeveloper'}{'note'}      = 'Access to developer controls, element custom element creation and site creation and deletion.';
+    $self->{'securityHash'}->{'showQueue'}{'title'}         = 'Email Queue Access';
+    $self->{'securityHash'}->{'showQueue'}{'note'}          = 'Access to view email sending queue, and message history.';
 
-        $self->{'securityHash'}->{'showQueue'}{'title'}         = 'Email Queue Access';
-        $self->{'securityHash'}->{'showQueue'}{'note'}          = 'Access to view email sending queue, and message history.';
+    $self->{'securityHash'}->{'showSEO'}{'title'}           = 'SEO Controls';
+    $self->{'securityHash'}->{'showSEO'}{'note'}            = 'Access to change SEO Defaults, content and page properties.';
 
-        $self->{'securityHash'}->{'showSEO'}{'title'}           = 'SEO Controls';
-        $self->{'securityHash'}->{'showSEO'}{'note'}            = 'Access to change SEO Defaults, content and page properties.';
+    $self->{'securityHash'}->{'showSiteSettings'}{'title'}  = 'Site Settings Menu';
+    $self->{'securityHash'}->{'showSiteSettings'}{'note'}   = 'Generic site settings and 3rd party connector configurations.';
 
-        $self->{'securityHash'}->{'showSiteSettings'}{'title'}  = 'Site Settings Menu';
-        $self->{'securityHash'}->{'showSiteSettings'}{'note'}   = 'Generic site settings and 3rd party connector configurations.';
-
-        $self->{'securityHash'}->{'showSiteUsers'}{'title'}     = 'User Account Access';
-        $self->{'securityHash'}->{'showSiteUsers'}{'note'}      = 'Access to create, delete and modify high level information for site accounts and groups.';
-
-
-        # if the admin ID is blank, set it to admin so users can access it via /admin
-	$self->{'adminURL'} 		= defined $self->{'adminURL'} 		? $self->{'adminURL'} 		: 'admin';
-
-        # set the secure domain to a non https because it probably does not have a cert if it was not set
-	$self->{'secureDomain'} 	= defined $self->{'secureDomain'}	? $self->{'secureDomain'} 	: 'http://'.$ENV{"SERVER_NAME"};
-
-        # Change the theme of the ace IDE for developer mode
-	$self->{'aceTheme'} 		= defined $self->{'aceTheme'}		? $self->{'aceTheme'} 		: 'idle_fingers';
-
-        # The subdirectory of where tinyMCE is placed to make upgrading  and testing new versions easier
-	$self->{'tinyMCEPath'} 		= defined $self->{'tinyMCEPath'}	? $self->{'tinyMCEPath'} 	: 'tinymce-3.5.4';
-
-        # Sometimes sites need bigger thatn text blob, 'mediumtext' might be needed
-	$self->{'scriptTextSize'} 	= defined $self->{'scriptTextSize'}	? $self->{'scriptTextSize'} 	: 'text';
-
-        # set the domains to the environment version if it was not set
-	$self->{'sessionCookieName'} 	= defined $self->{'sessionCookieName'}	? $self->{'sessionCookieName'} 	: 'fws_session';
-
-        # set mysql to default
-	$self->{'DBType'} 		= defined $self->{'DBType'}		? $self->{'DBType'} 		: 'mysql';
-        
-	# set mysql default port
-	$self->{'DBPort'} 		= defined $self->{'DBPort'}		? $self->{'DBPort'} 		: '3306';
-
-        # set the domains to the environment version if it was not set
-	$self->{'domain'} 		= defined $self->{'domain'}		? $self->{'domain'} 		: 'http://'.$ENV{"SERVER_NAME"};
-
-        # if the admin ID is blank, set it to admin so users can access it via /admin
-	$self->{'FWSPluginServer'} 	= defined $self->{'FWSPluginServer'}	? $self->{'FWSPluginServer'} 	: 'https://www.frameworksites.com';
-        
-        # the FWS auto update server
-	$self->{'FWSServer'} 		= defined $self->{'FWSServer'}		? $self->{'FWSServer'} 		: 'http://www.frameworksites.com/downloads';
-
-        # set the default seconds to how long a affiliate code will last once it is recieved
-	$self->{'affiliateExpMax'} 	= defined $self->{'affiliateExpMax'}	? $self->{'affiliateExpMax'} 	: 295200;
-
-        # set the default FWS log level
-	$self->{'FWSLogLevel'} 		= defined $self->{'FWSLogLevel'}	? $self->{'FWSLogLevel'} 	: 1;
-
-        # set the default SQL log level
-	$self->{'SQLLogLevel'} 		= defined $self->{'SQLLogLevel'}	? $self->{'SQLLogLevel'} 	: 0;
-
-        # set the default location for sendmail
-	$self->{'sendmailBin'} 		= defined $self->{'sendmailBin'}	? $self->{'sendmailBin'} 	: '/usr/sbin/sendmail';
-
-        #
-        # prepopulate a few things that might be needed so they are not undefined
-        #
-        %{$self->{'_cssHash'}}                  = ();
-        %{$self->{'_jsHash'}}                   = ();
-        %{$self->{'_jqueryHash'}}               = ();
-        %{$self->{'_saveWithSessionHash'}}      = ();
-        %{$self->{'_fullElementHashCache'}}     = ();
-        %{$self->{'_tableFieldHashCache'}}      = ();
-        %{$self->{'_siteScriptCache'}}          = ();
-        %{$self->{'_subscriberCache'}}          = ();
-
-        $self->{'_language'}                    = '';
-        $self->{'_languageArray'}               = '';
-
-	@{$self->{'pluginCSSArray'}}		= ();
-	@{$self->{'pluginJSArray'}}		= ();
-	
-        #
-        # cache fields will be populated on setSiteValues
-        # but in case we need a ph before then
-        #
-        %{$self->{'dataCacheFields'}}           = ();
-        %{$self->{'plugins'}}           	= ();
-
-        #
-        # this will store the currently logged in userHash
-        #
-        %{$self->{'profileHash'}}               = ();
-        
-	#
-        # For plugin added, and cached elementHashes lets predefine this
-        #
-        %{$self->{'elementHash'}}               = ();
+    $self->{'securityHash'}->{'showSiteUsers'}{'title'}     = 'User Account Access';
+    $self->{'securityHash'}->{'showSiteUsers'}{'note'}      = 'Access to create, delete and modify high level information for site accounts and groups.';
 
 
-        #
-        # set this to false, it might be turned on at any time by admin or elements
-        #
-        $self->{'tinyMCEEnable'}                = 0;
+    # if the admin ID is blank, set it to admin so users can access it via /admin
+    $self->{'adminURL'}                     ||= 'admin';
 
+    # set the secure domain to a non https because it probably does not have a cert if it was not set
+    $self->{'secureDomain'}                 ||= 'http://'.$ENV{"SERVER_NAME"};
 
-        #
-        # core database schema
-        #
-        $self->{"dataSchema"}{"queue_history"} = {
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "created_date"                  => { type => "datetime" ,key => ""            ,default => "0000-00-00"        },
-                "queue_guid"                    => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "profile_guid"                  => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "directory_guid"                => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "type"                          => { type => "char(50)" ,key => "MUL"         ,default => ""                  },
-                "queue_from"                    => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "from_name"                     => { type => "char(255)",key => ""            ,default => ""                  },
-                "queue_to"                      => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "subject"                       => { type => "char(255)",key => ""            ,default => ""                  },
-                "success"                       => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "synced"                        => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "body"                          => { type => "text"     ,key => ""            ,default => ""                  },
-                "hash"                          => { type => "text"     ,key => ""            ,default => ""                  },
-                "failure_code"                  => { type => "char(255)",key => ""            ,default => ""                  },
-                "response"                      => { type => "char(255)",key => ""            ,default => ""                  },
-                "sent_date"                     => { type => "datetime" ,key => ""            ,default => "0000-00-00 00:00:00"},
-                "scheduled_date"                => { type => "datetime" ,key => ""            ,default => "0000-00-00 00:00:00"},
-        };
+    # Change the theme of the ace IDE for developer mode
+    $self->{'aceTheme'}                     ||= 'idle_fingers';
 
-        $self->{"dataSchema"}{"queue"} = {
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "created_date"                  => { type => "datetime" ,key => ""            ,default => "0000-00-00"        },
-                "profile_guid"                  => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "directory_guid"                => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "type"                          => { type => "char(50)" ,key => "MUL"         ,default => ""                  },
-                "queue_from"                    => { type => "char(255)",key => "MUL"         ,default => ""                  ,AJAXGroup => 'showQueue'},
-                "queue_to"                      => { type => "char(255)",key => "MUL"         ,default => ""                  ,AJAXGroup => 'showQueue'},
-                "draft"                         => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "from_name"                     => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showQueue'},
-                "subject"                       => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showQueue'},
-                "mime_type"                     => { type => "char(100)",key => ""            ,default => ""                  ,AJAXGroup => 'showQueue'},
-                "transfer_encoding"             => { type => "char(100)",key => ""            ,default => ""                  },
-                "digital_assets"                => { type => "text"     ,key => ""            ,default => ""                  },
-                "body"                          => { type => "text"     ,key => ""            ,default => ""                  ,AJAXGroup => 'showQueue'},
-                "hash"                          => { type => "text"     ,key => ""            ,default => ""                  },
-                "scheduled_date"                => { type => "datetime" ,key => ""            ,default => "0000-00-00 00:00:00",AJAXGroup => 'showQueue'},
-        };
+    # The subdirectory of where tinyMCE is placed to make upgrading  and testing new versions easier
+    $self->{'tinyMCEPath'}                  ||= 'tinymce-3.5.4';
 
-        $self->{"dataSchema"}{"history"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "created_date"                  => { type => "datetime" ,key => ""            ,default => "0000-00-00"        },
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "type"                          => { type => "char(1)"  ,key => "MUL"         ,default => ""                  },
-                "name"                          => { type => "char(255)",key => "FULLTEXT"    ,default => ""                  },
-                "url"                           => { type => "char(255)",key => ""            ,default => ""                  },
-                "title"                         => { type => "char(255)",key => "FULLTEXT"    ,default => ""                  },
-                "latitude"                      => { type => "float"    ,key => "MUL"         ,default => "0"                 },
-                "longitude"                     => { type => "float"    ,key => "MUL"         ,default => "0"                 },
-                "hash"                          => { type => "text"     ,key => ""            ,default => ""                  },
-                "description"                   => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "referrer_guid"                 => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "directory_guid"                => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "profile_guid"                  => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-        };
+    # Sometimes sites need bigger thatn text blob, 'mediumtext' might be needed
+    $self->{'scriptTextSize'}               ||= 'text';
 
-        $self->{"dataSchema"}{"topic"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "created_date"                  => { type => "datetime" ,key => ""            ,default => "0000-00-00"        },
-                "name"                          => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "title"                         => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "tags"                          => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "description"                   => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "content"                       => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "content_1"                     => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "content_2"                     => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "fb_content"                    => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "twitter_content"               => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-                "directory_guid"                => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "active"                        => { type => "int(1)"   ,key => "MUL"         ,default => "0"                 },
-                "draft"                         => { type => "int(1)"   ,key => "MUL"         ,default => "0"                 },
-                "url"                           => { type => "char(255)",key => ""            ,default => ""                  },
-                "image_1"                       => { type => "char(255)",key => ""            ,default => ""                  },
-                "date_to"                       => { type => "date",    ,key => "MUL"         ,default => "0000-00-00"        },
-                "date_from"                     => { type => "date",    ,key => "MUL"         ,default => "0000-00-00"        },
-                "extra_value"                   => { type => "text"     ,key => ""            ,default => ""                  },
-        };
+    # set the domains to the environment version if it was not set
+    $self->{'sessionCookieName'}            ||= 'fws_session';
 
-        $self->{"dataSchema"}{"auto"} = {
-                "make"                          => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "model"                         => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "year"                          => { type => "char(4)"  ,key => "MUL"         ,default => ""                  },
-        };
+    # set mysql to default
+    $self->{'DBType'}                       ||= 'mysql';
 
-        $self->{"dataSchema"}{"country"} = {
-                "name"                          => { type => "char(255)",key => ""            ,default => ""                  },
-                "twoCharacter"                  => { type => "char(2)"  ,key => ""            ,default => ""                  },
-                "threeCharacter"                => { type => "char(3)"  ,key => ""            ,default => ""                  },
-        };
+    # set mysql default port
+    $self->{'DBPort'}                       ||= '3306';
 
-        $self->{"dataSchema"}{"zipcode"} = {
-                "zipCode"                       => { type => "char(7)"  ,key => "MUL"         ,default => ""                  },
-                "zipType"                       => { type => "char(1)"  ,key => ""            ,default => ""                  },
-                "stateAbbr"                     => { type => "char(2)"  ,key => ""            ,default => ""                  },
-                "city"                          => { type => "char(255)",key => "FULLTEXT"    ,default => ""                  },
-                "areaCode"                      => { type => "char(3)"  ,key => ""            ,default => ""                  },
-                "timeZone"                      => { type => "char(12)" ,key => ""            ,default => ""                  },
-                "UTC"                           => { type => "int(10)"  ,key => ""            ,default => "0"                 },
-                "DST"                           => { type => "char(1)"  ,key => ""            ,default => ""                  },
-                "latitude"                      => { type => "float"    ,key => "MUL"         ,default => "0"                 },
-                "longitude"                     => { type => "float"    ,key => "MUL"         ,default => "0"                 },
-                "loc_id"                        => { type => "int(11)"  ,key => "MUL"         ,default => "0"                 },
-        };
+    # set the domains to the environment version if it was not set
+    $self->{'domain'}                       ||= 'http://'.$ENV{"SERVER_NAME"};
 
-        $self->{"dataSchema"}{"geo_block"} = {
-                "start_ip"                      => { type => "int(11)"  ,key => "MUL"         ,default => "0"                 },
-                "end_ip"                        => { type => "int(11)"  ,key => "MUL"         ,default => "0"                 },
-                "loc_id"                        => { type => "int(11)"  ,key => "MUL"         ,default => "0"                 },
-        };
+    # if the admin ID is blank, set it to admin so users can access it via /admin
+    $self->{'FWSPluginServer'}              ||= 'https://www.frameworksites.com';
 
-        $self->{"dataSchema"}{"templates"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "title"                         => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showDesign'},
-                "default_template"              => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "template_devel"                => { type => "text"     ,key => ""            ,default => ""                  },
-                "css_devel"                     => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "js_devel"                      => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-        };
+    # the FWS auto update server
+    $self->{'FWSServer'}                    ||= 'http://www.frameworksites.com/downloads';
 
-        $self->{"dataSchema"}{"data_cache"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "name"                          => { type => "char(255)",key => "FULLTEXT"    ,default => ""                  },
-                "title"                         => { type => "char(255)",key => "FULLTEXT"    ,default => ""                  },
-                "pageIdOfElement"               => { type => "char(36)" ,key => ""            ,default => ""                  },
-                "pageDescription"               => { type => "text"     ,key => "FULLTEXT"    ,default => ""                  },
-        };
+    # set the default seconds to how long a affiliate code will last once it is recieved
+    $self->{'affiliateExpMax'}              ||= '295200';
 
-        $self->{"dataSchema"}{"data"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "name"                          => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "title"                         => { type => "char(255)",key => "MUL"         ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "nav_name"                      => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "active"                        => { type => "int(1)"   ,key => "MUL"         ,default => "0"                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "lang"                          => { type => "char(2)"  ,key => "MUL"         ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "disable_title"                 => { type => "int(1)"   ,key => "MUL"         ,default => "0"                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "element_type"                  => { type => "char(50)" ,key => "MUL"         ,default => ""                  },
-                "groups_guid"                   => { type => "char(36)" ,key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "created_date"                  => { type => "datetime" ,key => ""            ,default => "0000-00-00"        },
-                "disable_edit_mode"             => { type => "int(1)"   ,key => ""            ,default => "0"                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "default_element"               => { type => "int(2)"   ,key => ""            ,default => "0"                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "show_login"                    => { type => "int(1)"   ,key => ""            ,default => "1"                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
- 		"show_mobile"                   => { type => "int(2)"   ,key => ""            ,default => "0"                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "show_resubscribe"              => { type => "int(1)"   ,key => ""            ,default => "1"                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "friendly_url"                  => { type => "char(255)",key => "MUL"         ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-		"page_friendly_url"             => { type => "char(255)",key => "MUL"         ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-                "extra_value"                   => { type => "text"     ,key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
-        };
+    # set the default FWS log level
+    $self->{'FWSLogLevel'}                  ||= 1;
 
-        $self->{"dataSchema"}{"admin_user"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "user_id"                       => { type => "char(50)" ,key => "MUL"         ,default => ""                  },
-                "name"                          => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'isAdmin'},
-                "email"                         => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'isAdmin'},
-                "admin_user_password"           => { type => "char(50)" ,key => "MUL"         ,default => ""                  ,cryptPassword => 1},
-                "active"                        => { type => "int(1)"   ,key => "MUL"         ,default => "1"                 },
-                "extra_value"                   => { type => "text"     ,key => ""            ,default => ""                  ,AJAXGroup => 'isAdmin'},
-        };
+    # set the default SQL log level
+    $self->{'SQLLogLevel'}                  ||= 0;
 
-        $self->{"dataSchema"}{"profile_groups_xref"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "profile_guid"                  => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "groups_guid"                   => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-        };
+    # set the default location for sendmail
+    $self->{'sendmailBin'}                  ||= '/usr/sbin/sendmail';
 
-        $self->{"dataSchema"}{"profile"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "pin"                           => { type => "char(6)"  ,key => "MUL"         ,default => ""                  },
-                "profile_password"              => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteUsers',cryptPassword => 1},
-                "fb_access_token"               => { type => "char(255)",key => ""            ,default => ""                  },
-                "fb_id"                         => { type => "char(255)",key => ""            ,default => ""                  },
-                "email"                         => { type => "char(255)",key => "MUL"         ,default => ""                  },
-                "name"                          => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteUsers'},
-                "active"                        => { type => "int(1)"   ,key => ""            ,default => "1"                 ,AJAXGroup => 'showSiteUsers'},
-                "google_id"                     => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteUsers'},
-                "extra_value"                   => { type => "text"     ,key => ""            ,default => ""                  ,AJAXGroup => 'showSiteUsers'},
-        };
+    #
+    # prepopulate a few things that might be needed so they are not undefined
+    #
+    %{$self->{'_cssHash'}}                  = ();
+    %{$self->{'_jsHash'}}                   = ();
+    %{$self->{'_jqueryHash'}}               = ();
+    %{$self->{'_saveWithSessionHash'}}      = ();
+    %{$self->{'_fullElementHashCache'}}     = ();
+    %{$self->{'_tableFieldHashCache'}}      = ();
+    %{$self->{'_siteScriptCache'}}          = ();
+    %{$self->{'_subscriberCache'}}          = ();
 
-        $self->{"dataSchema"}{"fws_sessions"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "ip"                            => { type => "char(50)" ,key => "MUL"         ,default => ""                  },
-		"fws_lang"                      => { type => "char(2)"  ,key => ""            ,default => ""                  },
-                "b"                             => { type => "char(255)",key => ""            ,default => ""                  },
-                "l"                             => { type => "char(50)" ,key => ""            ,default => ""                  },
-                "bs"                            => { type => "char(50)" ,key => ""            ,default => ""                  },
-                "e"                             => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "s"                             => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "a"                             => { type => "char(50)" ,key => ""            ,default => ""                  },
-                "a_exp"                         => { type => "int(11)"  ,key => ""            ,default => "0"                 },
-                "extra"                         => { type => "text"     ,key => ""            ,default => ""                  },
-                "created"                       => { type => "timestamp",key => ""            ,default => "CURRENT_TIMESTAMP" },
-        };
+    $self->{'_language'}                    = q{};
+    $self->{'_languageArray'}               = q{};
 
-        $self->{"dataSchema"}{"guid_xref"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "child"                         => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "parent"                        => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "ord"                           => { type => "int(11)"  ,key => "MUL"         ,default => "0"                 },
-                "layout"                        => { type => "char(50)" ,key => "MUL"         ,default => ""                  },
-        };
+    @{$self->{'pluginCSSArray'}}            = ();
+    @{$self->{'pluginJSArray'}}             = ();
 
-        $self->{"dataSchema"}{"element"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "type"                          => { type => "char(50)" ,key => "MUL"         ,default => ""                  ,AJAXGroup => 'showDeveloper'},
-                "parent"                        => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,AJAXGroup => 'showDeveloper'},
-                "title"                         => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper'},
-                "tags"                          => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper'},
-                "class_prefix"                  => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper'},
-                "admin_group"                   => { type => "char(50)" ,key => ""            ,default => ""                  ,AJAXGroup => 'showDeveloper'},
-                "ord"                           => { type => "int(11)"  ,key => "MUL"         ,default => "0"                 ,AJAXGroup => 'showDeveloper'},
-                "public"                        => { type => "int(1)"   ,key => ""            ,default => "0"                 ,AJAXGroup => 'showDeveloper'},
-                "css_devel"                     => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "js_devel"                      => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "script_devel"                  => { type => $self->{'scriptTextSize'},key=>"",default => ""                  },
-                "schema_devel"                  => { type => "text"     ,key => ""            ,default => ""                  },
-                "active"                        => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "checkedout"                    => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "root_element"                  => { type => "int(1)"   ,key => ""            ,default => "0"                 ,AJAXGroup => 'showDeveloper'},
-        };
+    #
+    # cache fields will be populated on setSiteValues
+    # but in case we need a ph before then
+    #
+    %{$self->{'dataCacheFields'}}           = ();
+    %{$self->{'plugins'}}                   = ();
 
-        $self->{"dataSchema"}{"groups"} = {
-                "site_guid"                     => { type => "char(36)" ,key => "MUL"         ,default => ""                  ,noSite => 1},
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "name"                          => { type => "char(50)" ,key => ""            ,default => ""                  ,AJAXGroup => 'showSiteUsers'},
-                "description"                   => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteUsers'},
-        };
+    #
+    # this will store the currently logged in userHash
+    #
+    %{$self->{'profileHash'}}               = ();
 
-        $self->{"dataSchema"}{"site"} = {
-                "site_guid"                     => { type => "char(36)" ,key => ""            ,default => ""                  ,noSite => 1},
-                "guid"                          => { type => "char(36)" ,key => "MUL"         ,default => ""                  },
-                "email"                         => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteSettings'},
-                "name"                          => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteSettings'},
-                "language_array"                => { type => "char(255)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteSettings'},
-                "sid"                           => { type => "char(50)" ,key => "MUL"         ,default => ""                  },
-                "created_date"                  => { type => "datetime" ,key => ""            ,default => "0000-00-00"        },
-                "gateway_type"                  => { type => "char(10)" ,key => ""            ,default => ""                  ,AJAXGroup => 'showSiteSettings'},
-                "gateway_user_id"               => { type => "char(150)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteSettings'},
-                "gateway_password"              => { type => "char(150)",key => ""            ,default => ""                  ,AJAXGroup => 'showSiteSettings', encrypt=> 1},
-                "home_guid"                     => { type => "char(36)" ,key => ""            ,default => ""                  },
-                "js_devel"                      => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "css_devel"                     => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "default_site"                  => { type => "int(1)"   ,key => ""            ,default => "0"                 },
-                "extra_value"                   => { type => "text"     ,key => ""            ,default => ""                  ,AJAXGroup => 'showSiteSettings'},
-        };
+    #
+    # For plugin added, and cached elementHashes lets predefine this
+    #
+    %{$self->{'elementHash'}}               = ();
 
-        return $self;
+    #
+    # set this to false, it might be turned on at any time by admin or elements
+    #
+    $self->{'tinyMCEEnable'}                = 0;
+
+    #
+    # use this for readability
+    #
+    my $EMPTY = q{};
+
+    #
+    # set scriptsize
+    #
+    my $SSIZE = $self->{'scriptTextSize'};
+
+    #
+    # core database schema
+    #
+    $self->{dataSchema}{queue_history} = {
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        created_date          => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00'        },
+        queue_guid            => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        profile_guid          => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        directory_guid        => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        type                  => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
+        queue_from            => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              },
+        from_name             => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        queue_to              => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              },
+        subject               => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        success               => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        synced                => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        body                  => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        hash                  => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        failure_code          => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        response              => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        sent_date             => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00 00:00:00'},
+        scheduled_date        => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00 00:00:00'},
+    };
+
+    $self->{dataSchema}{queue} = {
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        created_date          => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00'        },
+        profile_guid          => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        directory_guid        => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        type                  => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
+        queue_from            => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showQueue'},
+        queue_to              => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showQueue'},
+        draft                 => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        from_name             => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showQueue'},
+        subject               => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showQueue'},
+        mime_type             => { type => 'char(100)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showQueue'},
+        transfer_encoding     => { type => 'char(100)',key => $EMPTY        ,default => $EMPTY              },
+        digital_assets        => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        body                  => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showQueue'},
+        hash                  => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        scheduled_date        => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00 00:00:00',AJAXGroup => 'showQueue'},
+    };
+
+    $self->{dataSchema}{history} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
+        created_date          => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00'        },
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        type                  => { type => 'char(1)'  ,key => 'MUL'         ,default => $EMPTY              },
+        name                  => { type => 'char(255)',key => 'FULLTEXT'    ,default => $EMPTY              },
+        url                   => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        title                 => { type => 'char(255)',key => 'FULLTEXT'    ,default => $EMPTY              },
+        latitude              => { type => 'float'    ,key => 'MUL'         ,default => '0'                 },
+        longitude             => { type => 'float'    ,key => 'MUL'         ,default => '0'                 },
+        hash                  => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        description           => { type => 'text'     ,key => 'FULLTEXT'    ,default => $EMPTY              },
+        referrer_guid         => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        directory_guid        => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        profile_guid          => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+    };
+
+    $self->{dataSchema}{auto} = {
+        make                  => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              },
+        model                 => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              },
+        year                  => { type => 'char(4)'  ,key => 'MUL'         ,default => $EMPTY              },
+    };
+
+    $self->{dataSchema}{country} = {
+        name                  => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        twoCharacter          => { type => 'char(2)'  ,key => $EMPTY        ,default => $EMPTY              },
+        threeCharacter        => { type => 'char(3)'  ,key => $EMPTY        ,default => $EMPTY              },
+    };
+
+    $self->{dataSchema}{zipcode} = {
+        zipCode               => { type => 'char(7)'  ,key => 'MUL'         ,default => $EMPTY              },
+        zipType               => { type => 'char(1)'  ,key => $EMPTY        ,default => $EMPTY              },
+        stateAbbr             => { type => 'char(2)'  ,key => $EMPTY        ,default => $EMPTY              },
+        city                  => { type => 'char(255)',key => 'FULLTEXT'    ,default => $EMPTY              },
+        areaCode              => { type => 'char(3)'  ,key => $EMPTY        ,default => $EMPTY              },
+        timeZone              => { type => 'char(12)' ,key => $EMPTY        ,default => $EMPTY              },
+        UTC                   => { type => 'int(10)'  ,key => $EMPTY        ,default => '0'                 },
+        DST                   => { type => 'char(1)'  ,key => $EMPTY        ,default => $EMPTY              },
+        latitude              => { type => 'float'    ,key => 'MUL'         ,default => '0'                 },
+        longitude             => { type => 'float'    ,key => 'MUL'         ,default => '0'                 },
+        loc_id                => { type => 'int(11)'  ,key => 'MUL'         ,default => '0'                 },
+    };
+
+    $self->{dataSchema}{geo_block} = {
+        start_ip              => { type => 'int(11)'  ,key => 'MUL'         ,default => '0'                 },
+        end_ip                => { type => 'int(11)'  ,key => 'MUL'         ,default => '0'                 },
+        loc_id                => { type => 'int(11)'  ,key => 'MUL'         ,default => '0'                 },
+    };
+
+    $self->{dataSchema}{templates} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        title                 => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDesign'},
+        default_template      => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        template_devel        => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        css_devel             => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        js_devel              => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+    };
+
+    $self->{dataSchema}{data_cache} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        name                  => { type => 'char(255)',key => 'FULLTEXT'    ,default => $EMPTY              },
+        title                 => { type => 'char(255)',key => 'FULLTEXT'    ,default => $EMPTY              },
+        pageIdOfElement       => { type => 'char(36)' ,key => $EMPTY        ,default => $EMPTY              },
+        pageDescription       => { type => 'text'     ,key => 'FULLTEXT'    ,default => $EMPTY              },
+    };
+
+    $self->{dataSchema}{data} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        name                  => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        title                 => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        nav_name              => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        active                => { type => 'int(1)'   ,key => 'MUL'         ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        lang                  => { type => 'char(2)'  ,key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        disable_title         => { type => 'int(1)'   ,key => 'MUL'         ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        element_type          => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
+        groups_guid           => { type => 'char(36)' ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        created_date          => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00'        },
+        disable_edit_mode     => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        default_element       => { type => 'int(2)'   ,key => $EMPTY        ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        show_login            => { type => 'int(1)'   ,key => $EMPTY        ,default => '1'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        show_mobile           => { type => 'int(2)'   ,key => $EMPTY        ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        show_resubscribe      => { type => 'int(1)'   ,key => $EMPTY        ,default => '1'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        friendly_url          => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        page_friendly_url     => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        extra_value           => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+    };
+
+    $self->{dataSchema}{admin_user} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        user_id               => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
+        name                  => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'isAdmin'},
+        email                 => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'isAdmin'},
+        admin_user_password   => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              ,cryptPassword => 1},
+        active                => { type => 'int(1)'   ,key => 'MUL'         ,default => '1'                 },
+        extra_value           => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'isAdmin'},
+    };
+
+    $self->{dataSchema}{profile_groups_xref} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        profile_guid          => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        groups_guid           => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+    };
+
+    $self->{dataSchema}{profile} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        pin                   => { type => 'char(6)'  ,key => 'MUL'         ,default => $EMPTY              },
+        profile_password      => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteUsers',cryptPassword => 1},
+        fb_access_token       => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        fb_id                 => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        email                 => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              },
+        name                  => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteUsers'},
+        active                => { type => 'int(1)'   ,key => $EMPTY        ,default => '1'                 ,AJAXGroup => 'showSiteUsers'},
+        google_id             => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteUsers'},
+        extra_value           => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteUsers'},
+    };
+
+    $self->{dataSchema}{fws_sessions} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        ip                    => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
+        fws_lang              => { type => 'char(2)'  ,key => $EMPTY        ,default => $EMPTY              },
+        b                     => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
+        l                     => { type => 'char(50)' ,key => $EMPTY        ,default => $EMPTY              },
+        bs                    => { type => 'char(50)' ,key => $EMPTY        ,default => $EMPTY              },
+        e                     => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        s                     => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        a                     => { type => 'char(50)' ,key => $EMPTY        ,default => $EMPTY              },
+        a_exp                 => { type => 'int(11)'  ,key => $EMPTY        ,default => '0'                 },
+        extra                 => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        created               => { type => 'timestamp',key => $EMPTY        ,default => 'CURRENT_TIMESTAMP' },
+    };
+
+    $self->{dataSchema}{guid_xref} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        child                 => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        parent                => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        ord                   => { type => 'int(11)'  ,key => 'MUL'         ,default => '0'                 },
+        layout                => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
+    };
+
+    $self->{dataSchema}{element} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        type                  => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper'},
+        parent                => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper'},
+        title                 => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper'},
+        tags                  => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper'},
+        class_prefix          => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper'},
+        admin_group           => { type => 'char(50)' ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper'},
+        ord                   => { type => 'int(11)'  ,key => 'MUL'         ,default => '0'                 ,AJAXGroup => 'showDeveloper'},
+        public                => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 ,AJAXGroup => 'showDeveloper'},
+        css_devel             => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        js_devel              => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        script_devel          => { type => $SSIZE     ,key=> $EMPTY         ,default => $EMPTY              },
+        schema_devel          => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        active                => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        checkedout            => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        root_element          => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 ,AJAXGroup => 'showDeveloper'},
+    };
+
+    $self->{dataSchema}{groups} = {
+        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        name                  => { type => 'char(50)' ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteUsers'},
+        description           => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteUsers'},
+    };
+
+    $self->{dataSchema}{site} = {
+        site_guid             => { type => 'char(36)' ,key => $EMPTY        ,default => $EMPTY              ,noSite => 1},
+        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        email                 => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteSettings'},
+        name                  => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteSettings'},
+        language_array        => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteSettings'},
+        sid                   => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
+        created_date          => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00'        },
+        gateway_type          => { type => 'char(10)' ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteSettings'},
+        gateway_user_id       => { type => 'char(150)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteSettings'},
+        gateway_password      => { type => 'char(150)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteSettings', encrypt=> 1},
+        home_guid             => { type => 'char(36)' ,key => $EMPTY        ,default => $EMPTY              },
+        js_devel              => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        css_devel             => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        default_site          => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
+        extra_value           => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showSiteSettings'},
+    };
+
+    return $self;
 }
 
 
@@ -782,62 +748,63 @@ sub new {
 
 If server wide plugins are being added for this instance they will be under the FWS::V2 Namespace, if not they can be added just as the plugin name.
 
-	#
-	# register plugins that are available server wide 
-	#
-        $fws->registerPlugin('FWS::V2::SomePlugin');
-	
-	#
-	# register some plugin added via the FWS 2.1 Plugin manager
-        #
-	$fws->registerPlugin('somePlugin');
+    #
+    # register plugins that are available server wide 
+    #
+    $fws->registerPlugin('FWS::V2::SomePlugin');
+    
+    #
+    # register some plugin added via the FWS 2.1 Plugin manager
+    #
+    $fws->registerPlugin('somePlugin');
 
 Additionally if you want to check if a plugin is active inside of element or scripts you can use the following conditional:
 
-	#
-	# check to see if ECommerce is loaded and active
-	#
-	if ($fws->{plugins}->{'ECommerce'} eq '1') { 	print "ECommerce is installed!\n" }
-	else { 						print "No ECommerce for you!\n" }
+    #
+    # check to see if ECommerce is loaded and active
+    #
+    if ($fws->{plugins}->{'ECommerce'} eq '1') {     print "ECommerce is installed!\n" }
+    else {                                           print "No ECommerce for you!\n" }
 
 
 =cut
 
 sub registerPlugin {
-        my ($self, $plugin) = @_;
+    my ($self, $plugin) = @_;
 
-	## no critic
-        eval 'use lib "'.$self->{'fileSecurePath'}.'/plugins";';
-	## use critic
-        
-	#
-        # get the plugin name if it is a server wide plugin
-        #
-        my $pluginName = $plugin;
-        $pluginName =~ s/.*:://sg;
+    ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
+    eval 'use lib "'.$self->{'fileSecurePath'}.'/plugins";';
+    ## use critic
 
-        #
-        # add the plugin and register the init for it
-        #
-	## no critic
-        eval 'use '.$plugin.';';
-	## use critic
+    #
+    # get the plugin name if it is a server wide plugin
+    #
+    my $pluginName = $plugin;
+    $pluginName =~ s/.*:://xmsg;
 
-        if($@){ $self->FWSLog($plugin." could not be loaded\n".$@) }
+    #
+    # add the plugin and register the init for it
+    #
+    ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
+    eval 'use ' . $plugin . q{;};
+    ## use critic
 
-	## no critic
-        eval $plugin.'->pluginInit($self);';
-	## use critic
-        
-	if($@){ $self->FWSLog($plugin." pluginInit failed\n".$@) }
+    if( $@ ){ $self->FWSLog($plugin." could not be loaded\n".$@) }
 
+    ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
+    eval $plugin.'->pluginInit($self);';
+    ## use critic
 
-	#
-	# mark the plugin as active
-	#
-	else { 
-		$self->{plugins}->{$plugin} = 1;
-	}
+    if($@){
+        $self->FWSLog($plugin." pluginInit failed\n".$@);
+        return 0;
+    }
+
+    #
+    # mark the plugin as active
+    #
+    $self->{plugins}->{$plugin} = 1;
+    return 1;
 }
 
 
@@ -845,55 +812,55 @@ sub registerPlugin {
 
 With the full web optimized version of FWS, the following sequence can be executed in this order to render web based content after new() is called:
 
-	#
-	# Get the form values from the environment
-	#
-	$fws->getFormValues();
-	
-	#
-	# 404 page descisions
-	#
-	$fws->setSiteFriendly();
-	
-	#
-	# run any site specific init scripts
-	#
-	$fws->runInit();
-	
-	#
-	# get or set the session ID and restore retained information
-	#
-	$fws->setSession();
-	
-	#
-	# set site values based on what we know now
-	#
-	$fws->setSiteValues();
+    #
+    # Get the form values from the environment
+    #
+    $fws->getFormValues();
+    
+    #
+    # 404 page descisions
+    #
+    $fws->setSiteFriendly();
+    
+    #
+    # run any site specific init scripts
+    #
+    $fws->runInit();
+    
+    #
+    # get or set the session ID and restore retained information
+    #
+    $fws->setSession();
+    
+    #
+    # set site values based on what we know now
+    #
+    $fws->setSiteValues();
 
-	#
-	# Do login procedures and set permissions
-	#
-	$fws->processLogin();
-	
-	#
-	# Download files procedures if we are here to send a file
-	#
-	$fws->processDownloads();
-	
-	#
-	# Run site actions that don't require security to use
-	#
-	$fws->runSiteActions();
-	
-	#
-	# Run admin actions that require security to access
-	#
-	$fws->runAdminAction();
-	
-	#
-	# Display the content we just created to the browser
-	#
-	$fws->displayContent();
+    #
+    # Do login procedures and set permissions
+    #
+    $fws->processLogin();
+    
+    #
+    # Download files procedures if we are here to send a file
+    #
+    $fws->processDownloads();
+    
+    #
+    # Run site actions that don't require security to use
+    #
+    $fws->runSiteActions();
+    
+    #
+    # Run admin actions that require security to access
+    #
+    $fws->runAdminAction();
+    
+    #
+    # Display the content we just created to the browser
+    #
+    $fws->displayContent();
 
 NOTE: This version of the module is not capable of doing web based rendering.   For the web based version of this module visit www.frameworksites.com
 
