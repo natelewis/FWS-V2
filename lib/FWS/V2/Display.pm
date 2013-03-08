@@ -129,35 +129,40 @@ Return the processed FWS Page,  this can be used for any content type and is not
 =cut
 
 sub printPage {
-    my ($self,%paramHash) = @_;
+    my ( $self, %paramHash ) = @_;
+    
+    #
+    # default stop processing to off
+    #
+    $self->{stopProcessing} ||= 0;
 
-    if ($self->{'stopProcessing'} ne '1') {
 
-        my $theContent          = $paramHash{'content'};
-        my $fileName            = $paramHash{'fileName'};
-        my $contentLength       = $paramHash{'contentLength'};
-        my $headData            = $paramHash{'head'};
-        
-        $paramHash{'contentDisposition'}     ||= 'attachment';
+    if ( !$self->{stopProcessing} ) {
 
+        #
+        # set default content dispoistion
+        #
+        $paramHash{'contentDisposition'}    ||= 'attachment';
 
         #
         # set the content type if we didn't get it in
         #
-        $paramHash{'contentType'} ||= "text/html; charset=UTF-8";
+        $paramHash{'contentType'}           ||= "text/html; charset=UTF-8";
 
         #
         # bust out of here if there is nothing to do
         #
         if ( $self->formValue('returnAndDoNothing') ) { return }
 
+        #
+        # do reverse friendly logic to turn friendly URLs to non friendlies
+        #
         if ( $self->siteValue('noFriendlies') && $self->formValue("p") !~ /^fws_/ ) {
-
             my @friendlyArray = $self->openRS("SELECT friendly_url FROM data WHERE site_guid='".$self->{'siteGUID'}."'  and (element_type='page')",1);
             while (@friendlyArray) {
                 my $FURL = shift(@friendlyArray);
                 my $nonFURL = $self->{'scriptName'}.$self->{'queryHead'}."p=".$FURL;
-                $theContent =~ s/"\/$FURL"/"$nonFURL"/g;
+                $paramHash{'content'} =~ s/"\/$FURL"/"$nonFURL"/g;
             }
         }
 
@@ -175,17 +180,17 @@ sub printPage {
         #
         # set the editMode in range if it is blank
         #
-        if ($self->formValue('editMode') eq '') { $self->formValue('editMode',0) }
+        if ( $self->formValue('editMode') eq '' ) { $self->formValue('editMode',0) }
 
         #
         # Set the cookie and update the session.. and other groovy header rutines
         # only if it is diffrent lets update it
         #
-        if ($self->formValue("FWS_SESSION") ne $self->{'userLoginId'}."|".$self->language()."|".$self->{'adminLoginId'}."|".$ENV{"REMOTE_ADDR"}."|".$self->formValue('editMode')."|".$self->{'affiliateId'}."|".$self->{'affiliateExp'}."|".$self->{'adminSafeMode'}."|".$sessionScript) {
+        if ( $self->formValue("FWS_SESSION") ne $self->{'userLoginId'}."|".$self->language()."|".$self->{'adminLoginId'}."|".$ENV{"REMOTE_ADDR"}."|".$self->formValue('editMode')."|".$self->{'affiliateId'}."|".$self->{'affiliateExp'}."|".$self->{'adminSafeMode'}."|".$sessionScript ) {
             #
             # run the SQL to update the session
             #
-            $self->runSQL(SQL=>"update fws_sessions set fws_lang='".$self->safeSQL($self->language())."',b='".$self->safeSQL($self->{'userLoginId'})."',s='".$self->safeSQL($self->{'adminSafeMode'})."',bs='".$self->safeSQL($self->{'adminLoginId'})."',ip='".$self->safeSQL($ENV{"REMOTE_ADDR"})."',e='".$self->safeSQL($self->formValue('editMode'))."',a='".$self->safeSQL($self->{'affiliateId'})."',a_exp='".$self->safeSQL($self->{'affiliateExp'})."',extra='".$self->safeSQL($sessionScript)."' where id='".$self->safeSQL($self->formValue("session"))."'");
+            $self->runSQL( SQL => "update fws_sessions set fws_lang='".$self->safeSQL($self->language())."',b='".$self->safeSQL($self->{'userLoginId'})."',s='".$self->safeSQL($self->{'adminSafeMode'})."',bs='".$self->safeSQL($self->{'adminLoginId'})."',ip='".$self->safeSQL($ENV{"REMOTE_ADDR"})."',e='".$self->safeSQL($self->formValue('editMode'))."',a='".$self->safeSQL($self->{'affiliateId'})."',a_exp='".$self->safeSQL($self->{'affiliateExp'})."',extra='".$self->safeSQL($sessionScript)."' where id='".$self->safeSQL($self->formValue("session"))."'" );
         }
 
         #
@@ -195,36 +200,33 @@ sub printPage {
         #
         my $cookieDomain;
         my $cookie;
-        if ($self->cookieDomainName() ne ''){
-            $cookieDomain = 'domain='.$self->cookieDomainName().';';
+        if ( $self->cookieDomainName() ){
+            $cookieDomain = 'domain=' . $self->cookieDomainName().';';
         }
 
-        $cookie .= "Set-Cookie: ".$self->{'sessionCookieName'}."=".$self->formValue('session').";"." ".$cookieDomain." Path=/;"." Expires=".$self->formatDate(format=>'cookie',monthMod=>1)."\n";
-        $cookie .= "Set-Cookie: fbsr_".$self->siteValue("facebookAppId")."=deleted;"." Path=/;"." Expires=Thu, 01-Jan-1970 00:00:01 GMT\n";
+        $cookie .= "Set-Cookie: " . $self->{'sessionCookieName'}."=".$self->formValue('session').";"." ".$cookieDomain." Path=/;"." Expires=".$self->formatDate(format=>'cookie',monthMod=>1)."\n";
+        $cookie .= "Set-Cookie: fbsr_" . $self->siteValue("facebookAppId")."=deleted;"." Path=/;"." Expires=Thu, 01-Jan-1970 00:00:01 GMT\n";
 
         #
         # simple page rendering
         #
-        if ($headData ne '') {
-            $theContent = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n<head>\n".$headData."</head>\n<body>\n".$theContent."\n</body>\n</html>";
+        if ( $paramHash{'head'} ) {
+            $paramHash{'content'} = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n<head>\n".$paramHash{'head'}."</head>\n<body>\n".$paramHash{'content'}."\n</body>\n</html>";
         }
 
+        #
+        # always return a 200
+        #
         my $theHeader   = "Status: 200 OK\n";
 
         #
         # if the contentType doesn't have HTML in it, lets not pass the cookies
         #
-        if ($paramHash{'contentType'}   =~ /html/i)       { $theHeader .= $cookie }
-        $theHeader                      .= "Accept-Ranges: bytes\n";
-        if ($contentLength ne '')       { $theHeader .= "Content-Length: ".$contentLength."\n" }
-        if ($fileName ne '')            { $theHeader .= "Content-disposition: " . $paramHash{'contentDisposition'} . ";"." filename=\"".$fileName."\"\n" }
-
-        $theHeader                      .= "Content-Type: ".$paramHash{'contentType'}."\n\n";
-
-        #
-        # eat the header
-        #
-        #if ($self->formValue("pageAction") eq 'importSite' && $self->formValue("statusNote") eq '' ) { $theHeader = '' }
+        if ( $paramHash{'contentType'} =~ /html/i )  { $theHeader .= $cookie }
+                                                       $theHeader .= "Accept-Ranges: bytes\n";
+        if ($paramHash{'contentLength'} ne '')       { $theHeader .= "Content-Length: ".$paramHash{'contentLength'}."\n" }
+        if ($paramHash{'fileName'} ne '')            { $theHeader .= "Content-disposition: " . $paramHash{'contentDisposition'} . ";"." filename=\"".$paramHash{'fileName'}."\"\n" }
+                                                       $theHeader .= "Content-Type: ".$paramHash{'contentType'}."\n\n";
 
         #
         # in case this was sent via a eval from an eplement, lets set the formvalue
@@ -233,14 +235,18 @@ sub printPage {
 
         if ($self->formValue('redirect')) {
             print "Status: 301 Moved Permanantly\n";
-            print "Location: ".$self->urlDecode($self->formValue('redirect')) ."\n\n";
+            print "Location: " . $self->urlDecode( $self->formValue('redirect') ) . "\n\n";
             $self->processQueue();
-            }
+        }
         else {
-            print $theHeader .$theContent;
+            print $theHeader .$paramHash{'content'};
             $self->processQueue();
-            }
-        $self->{'stopProcessing'} = 1;
+        }
+
+        #
+        # shut off processing so we never do this more than once
+        #
+        $self->{stopProcessing} = 1;
     }
     return;
 }
@@ -249,35 +255,36 @@ sub printPage {
 sub _FWSContent {
     my ($self) = @_;
 
+
     my $pageHTML;
 
-    if ($self->{'stopProcessing'} ne '1') {
+    if ( !$self->{stopProcessing} ) {
         my $pageId = $self->safeSQL($self->formValue('p'));
 
         #
         # this flag will suppress any access wrapping around the element
         #
         my $showElementOnly = 0;
-        my $addFriendlyWhere = "";
+        my $addFriendlyWhere;;
 
         #
         # if this is an admin url move to a adminLogin
         #
-        if ($pageId eq $self->{'adminURL'}) { $self->displayAdminLogin() }
+        if ( $pageId eq $self->{'adminURL'} ) { $self->displayAdminLogin() }
 
         #
         # if this is an ispadmin contorl process the page differntly
         #
-        if ($pageId =~ /^fws_/) { $self->displayAdminPage() }
+        if ( $pageId =~ /^fws_/ ) { $self->displayAdminPage() }
 
 
-        if ($pageId eq "favicon.ico") {
+        if ( $pageId eq 'favicon.ico' ) {
             print "Status: 404 Not Found\n";
             print "Connection: close\n";
             print "Content-Type: text/html\n\n";
             print "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">";
             print "<HTML><HEAD>\n<TITLE>404 Not Found</TITLE>\n</HEAD><BODY>\n<H1>Not Found</H1>\n<P>The requested file is not available or does not exist.</P>\n</BODY></HTML>";
-            $self->{'stopProcessing'} = 1;
+            $self->{stopProcessing} = 1;
         }
 
 
@@ -292,10 +299,10 @@ sub _FWSContent {
             print "Content-Length: ".length($robotsContent)."\n";
             print "Content-Type:text/plain\n\n";
             print $robotsContent;
-            $self->{'stopProcessing'} = 1;
+            $self->{stopProcessing} = 1;
         }
 
-        if ($self->{'stopProcessing'} ne '1') {
+        if ( !$self->{stopProcessing} ) {
 
             my $addToUnion;
             for my $table ( keys %{$self->{'dataSchema'}} ) {
@@ -354,17 +361,9 @@ sub _FWSContent {
             #
             # set the intial page type to be used to determin if we should be putting columns
             #
-            my $pageHead             = '';
+            my $pageHead;
             my $somethingIsOnThePage = 0;
             my %templateHash         = $self->templateHash(pageGIUD=>$pageId);
-
-
-            my $templateId = $templateHash{'guid'};
-            my $homePageTemplateId = $templateHash{'homeGUID'};
-            my $theTemplate = $templateHash{'template'};
-            my $templateCSS = $templateHash{'css'};
-            my $templateJS = $templateHash{'js'};
-            my $defaultTemplateId = $templateHash{'defaultGUID'};
 
             #
             # lets not change this stuff around if we are on an aadmin page of some sort
@@ -387,17 +386,14 @@ sub _FWSContent {
             #
             # Template level CSS
             #
-            if ($templateCSS > 0) {
-                $self->_cssEnable($self->{'siteGUID'}."/".$templateId."/FWSElement-".$templateCSS);
+            if ($templateHash{'css'} > 0) {
+                $self->_cssEnable($self->{'siteGUID'}."/".$templateHash{'guid'}."/FWSElement-".$templateHash{'css'} );
                 $somethingIsOnThePage = 1;
             }
-
-
-            if ($templateJS > 0) {
-                $self->_jsEnable($self->{'siteGUID'}."/".$templateId."/FWSElement-".$templateJS);
+            if ($templateHash{'js'} > 0) {
+                $self->_jsEnable($self->{'siteGUID'}."/".$templateHash{'guid'}."/FWSElement-".$templateHash{'js'} );
                 $somethingIsOnThePage = 1;
             }
-
 
             #
             # site level css and js
@@ -407,7 +403,6 @@ sub _FWSContent {
                 $self->_cssEnable($self->{'siteGUID'}."/assets/FWSElement-".$self->siteValue('cssDevel'));
                 $somethingIsOnThePage = 1;
             }
-
             if ($self->siteValue('jsDevel') > 0) {
                 $self->_jsEnable($self->{'siteGUID'}."/assets/FWSElement-".$self->siteValue('jsDevel'));
                 $somethingIsOnThePage = 1;
@@ -416,29 +411,26 @@ sub _FWSContent {
             #
             # Page level CSS
             #
-
             $pageHead .= $pageHash{'pageHead'};
             if ($pageHash{'cssDevel'} > 0) {
                 $self->_cssEnable($self->{'siteGUID'}."/".$pageId."/FWSElement-".$pageHash{'cssDevel'});
                 $somethingIsOnThePage = 1;
             }
-
             if ($pageHash{'jsDevel'} > 0) {
                 $self->_jsEnable($self->{'siteGUID'}."/".$pageId."/FWSElement-".$pageHash{'jsDevel'});
                 $somethingIsOnThePage = 1;
             }
 
+            #
+            # set page head
+            #
             $self->siteValue('pageHead', $pageHead );
 
             #
             # if the pageTitle ends with ' - ' then eat it
             #
-            my $cleanTitle = $self->siteValue('pageTitle');
-            $cleanTitle =~ s/ $//sg;
-            $cleanTitle =~ s/ -$//sg;
-            $cleanTitle =~ s/ \|$//sg;
+            ( my $cleanTitle = $self->siteValue('pageTitle') ) =~ s/(\s-|\s\|\s)$//sg;
             $self->siteValue('pageTitle',$cleanTitle);
-
 
             my @elements = $self->openRS("select distinct d1.extra_value,d1.site_guid,x2.layout,d1.active,x1.ord+(d1.default_element*100000) as real_ord,x1.layout, d1.disable_edit_mode, d1.groups_guid, d1.guid, d1.element_type,d1.name,d1.title,d1.show_resubscribe,d1.show_login,d1.show_mobile,d1.lang,d1.friendly_url,d1.page_friendly_url,d1.default_element,d1.disable_title,d1.nav_name  from data d1 LEFT JOIN guid_xref x1 ON (d1.guid = x1.child) left join guid_xref x2 on (x2.child = x1.parent) left join data d2 on (x2.child=d2.guid) where (d1.site_guid = '".$self->safeSQL($self->{'siteGUID'})."' or d1.site_guid = '".$self->safeSQL($self->fwsGUID())."') and d1.element_type <> 'data' and d1.element_type <> 'url' and d1.element_type <> 'page' and (x1.parent='' or d1.guid='".$pageId."' or (d2.element_type='page')) and (((x1.parent='".$pageId."') or d1.default_element <> '0') or d1.guid='".$pageId."') order by x1.layout, real_ord", 1);
 
@@ -544,14 +536,14 @@ sub _FWSContent {
                     #
                     my $layoutCount                 = $layoutCountHash{$valueHash{"layout"}};
                     $layoutCountHash{$valueHash{"layout"}} ++;
-                    if ($elementTemplateId eq '') {         $elementTemplateId = $homePageTemplateId }
-                    if ($elementTemplateId eq '0') {        $elementTemplateId = $defaultTemplateId }
+                    if ($elementTemplateId eq '') {         $elementTemplateId = $templateHash{'homeGUID'} }
+                    if ($elementTemplateId eq '0') {        $elementTemplateId = $templateHash{'defaultGUID'} }
 
                     #
                     # make sure we are talking about the element on a compatable page... or we are cool if the element is the dirived element because it was
                     # accessed via p=theElementId or p=theFriendlyUrl or /theElementsFriendlyURL
                     #
-                    if ($elementTemplateId eq $templateId || $valueHash{'guid'} eq $pageId) {
+                    if ($elementTemplateId eq $templateHash{'guid'} || $valueHash{'guid'} eq $pageId) {
 
                         #
                         # Check to see if we already spit out this element to the page
@@ -797,7 +789,7 @@ sub _FWSContent {
 
             if (!$showElementOnly) {
 
-                $pageHTML = $theTemplate;
+                $pageHTML = $templateHash{'template'};
 
                 #
                 # Put in the edit mode box if we are in edit mod and loged in as the correct user for this site
@@ -885,7 +877,7 @@ sub _FWSContent {
                 #
                 # but all non-main info in the page
                 #
-                while ($theTemplate =~ /#FWSShow-(.*?)#/g) {
+                while ($templateHash{'template'} =~ /#FWSShow-(.*?)#/g) {
                 my $columnName = $1;
                 if ($columnName ne "main") {
 
@@ -905,7 +897,7 @@ sub _FWSContent {
                 #
                 # but all non-main info in the page
                 #
-                while ($theTemplate =~ /#FWSShowNoHeader-(.*?)#/g) {
+                while ($templateHash{'template'} =~ /#FWSShowNoHeader-(.*?)#/g) {
                     my $columnName = $1;
                     if ($columnName ne "main") {
 
@@ -933,7 +925,7 @@ sub _FWSContent {
                 #
                 # add main to the page
                 #
-                while ($theTemplate =~ /#FWSShow-main#/g) {
+                while ($templateHash{'template'} =~ /#FWSShow-main#/g) {
                     $pageHTML = $self->_replaceContentColumn("main",$pageHTML,$columnContent{"main"},$pageId,$boxColor,"FWSShow",$pageHash{'type'},$pageHash{'siteGUID'});
                 }
 
