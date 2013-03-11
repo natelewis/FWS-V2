@@ -3423,4 +3423,61 @@ sub _convertImportTags {
 	return $conversionString;
 }
 
-1;
+
+=head1 AUTHOR
+
+Nate Lewis, C<< <nlewis at gnetworks.com> >>
+
+=head1 BUGS
+
+Please report any bugs or feature requests to C<bug-fws-v2 at rt.cpan.org>, or through
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=FWS-V2>.  I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+
+
+
+=head1 SUPPORT
+
+You can find documentation for this module with the perldoc command.
+
+    perldoc FWS::V2::Admin
+
+
+You can also look for information at:
+
+=over 4
+
+=item * RT: CPAN's request tracker (report bugs here)
+
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=FWS-V2>
+
+=item * AnnoCPAN: Annotated CPAN documentation
+
+L<http://annocpan.org/dist/FWS-V2>
+
+=item * CPAN Ratings
+
+L<http://cpanratings.perl.org/d/FWS-V2>
+
+=item * Search CPAN
+
+L<http://search.cpan.org/dist/FWS-V2/>
+
+=back
+
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2012 Nate Lewis.
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
+
+=cut
+
+1; # End of FWS::V2::Admin
