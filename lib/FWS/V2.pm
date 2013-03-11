@@ -284,11 +284,11 @@ The query head used for links that will maintain session and have a unique rando
 
 =over 4
 
-=item * {'adminLoginId'}
+=item * {adminLoginId}
 
 The current user id for the admin user logged in.  Extra warning: This should never be set externally!
 
-=item * {'userLoginId'}
+=item * {userLoginId}
 
 The current user id for the site user logged in.  Extra warning: This should never be set externally!
 
@@ -331,7 +331,7 @@ The current user id for the site user logged in.  Extra warning: This should nev
 #
 # LEGACY GET/SET SUBROUTINES
 # A lot of get/set type functions were also in the original source
-# those are getting phased out to only use the $fws->{'theSetting'} = '1'
+# those are getting phased out to only use the $fws->{theSetting} = '1'
 # syntax.   Make note of the legacy functions in the POD and use the
 # more current syntax when available#
 #
@@ -366,133 +366,141 @@ sub new {
     #
     # set the FWS version we are using
     #
-    $self->{'FWSVersion'} = '2.1';
+    $self->{FWSVersion} = '2.1';
 
     #
     # Major version parse
     #
-    my @loadVerSplit = split /\./msx, $self->{'FWSVersion'};
-    $self->{'FWSMajorVersion'} = $loadVerSplit[0] . q{.} . $loadVerSplit[1];
+    my @loadVerSplit = split /\./msx, $self->{FWSVersion};
+    $self->{FWSMajorVersion} = $loadVerSplit[0] . q{.} . $loadVerSplit[1];
 
     #
     # fake common ENV vars if we don't have them
     #
-    $ENV{"REMOTE_ADDR"} ||= 'localhost';
-    $ENV{"SERVER_NAME"} ||= 'localhost';
-    $ENV{"REQUEST_URI"} ||= q{};
+    $ENV{REMOTE_ADDR} ||= 'localhost';
+    $ENV{SERVER_NAME} ||= 'localhost';
+    $ENV{REQUEST_URI} ||= q{};
 
     #
     # set the default security hash
     #
-    $self->{'securityHash'}->{'isAdmin'}{'title'}           = 'Super User Account';
-    $self->{'securityHash'}->{'isAdmin'}{'note'}            = 'This user has access to all FWS features, and has the ability to add and remove admin users.  All installations should have one user of this type for security reasons.  Having a user of this type will disable the embedded admin account.';
+    $self->{securityHash}->{isAdmin}{title}           = 'Super User Account';
+    $self->{securityHash}->{isAdmin}{note}            = 'This user has access to all FWS features, and has the ability to add and remove admin users.  All installations should have one user of this type for security reasons.  Having a user of this type will disable the embedded admin account.';
 
-    $self->{'securityHash'}->{'showContent'}{'title'}       = 'Full Edit Mode Access';
-    $self->{'securityHash'}->{'showContent'}{'note'}        = 'Access to view and change the content in edit mode.';
+    $self->{securityHash}->{showContent}{title}       = 'Full Edit Mode Access';
+    $self->{securityHash}->{showContent}{note}        = 'Access to view and change the content in edit mode.';
 
-    $self->{'securityHash'}->{'showDesign'}{'title'}        = 'Designer Access';
-    $self->{'securityHash'}->{'showDesign'}{'note'}         = 'Add and delete pages, layouts, design css, javascript, and files.';
+    $self->{securityHash}->{showDesign}{title}        = 'Designer Access';
+    $self->{securityHash}->{showDesign}{note}         = 'Add and delete pages, layouts, design css, javascript, and files.';
 
-    $self->{'securityHash'}->{'showDeveloper'}{'title'}     = 'Developer Access';
-    $self->{'securityHash'}->{'showDeveloper'}{'note'}      = 'Access to developer controls, element custom element creation and site creation and deletion.';
+    $self->{securityHash}->{showDeveloper}{title}     = 'Developer Access';
+    $self->{securityHash}->{showDeveloper}{note}      = 'Access to developer controls, element custom element creation and site creation and deletion.';
 
-    $self->{'securityHash'}->{'showQueue'}{'title'}         = 'Email Queue Access';
-    $self->{'securityHash'}->{'showQueue'}{'note'}          = 'Access to view email sending queue, and message history.';
+    $self->{securityHash}->{showQueue}{title}         = 'Email Queue Access';
+    $self->{securityHash}->{showQueue}{note}          = 'Access to view email sending queue, and message history.';
 
-    $self->{'securityHash'}->{'showSEO'}{'title'}           = 'SEO Controls';
-    $self->{'securityHash'}->{'showSEO'}{'note'}            = 'Access to change SEO Defaults, content and page properties.';
+    $self->{securityHash}->{showSEO}{title}           = 'SEO Controls';
+    $self->{securityHash}->{showSEO}{note}            = 'Access to change SEO Defaults, content and page properties.';
 
-    $self->{'securityHash'}->{'showSiteSettings'}{'title'}  = 'Site Settings Menu';
-    $self->{'securityHash'}->{'showSiteSettings'}{'note'}   = 'Generic site settings and 3rd party connector configurations.';
+    $self->{securityHash}->{showSiteSettings}{title}  = 'Site Settings Menu';
+    $self->{securityHash}->{showSiteSettings}{note}   = 'Generic site settings and 3rd party connector configurations.';
 
-    $self->{'securityHash'}->{'showSiteUsers'}{'title'}     = 'User Account Access';
-    $self->{'securityHash'}->{'showSiteUsers'}{'note'}      = 'Access to create, delete and modify high level information for site accounts and groups.';
+    $self->{securityHash}->{showSiteUsers}{title}     = 'User Account Access';
+    $self->{securityHash}->{showSiteUsers}{note}      = 'Access to create, delete and modify high level information for site accounts and groups.';
 
 
     # if the admin ID is blank, set it to admin so users can access it via /admin
-    $self->{'adminURL'}                     ||= 'admin';
+    $self->{adminURL}                     ||= 'admin';
 
     # set the secure domain to a non https because it probably does not have a cert if it was not set
-    $self->{'secureDomain'}                 ||= 'http://'.$ENV{"SERVER_NAME"};
+    $self->{secureDomain}                 ||= 'http://'.$ENV{"SERVER_NAME"};
 
     # Change the theme of the ace IDE for developer mode
-    $self->{'aceTheme'}                     ||= 'idle_fingers';
+    $self->{aceTheme}                     ||= 'idle_fingers';
 
     # The subdirectory of where tinyMCE is placed to make upgrading  and testing new versions easier
-    $self->{'tinyMCEPath'}                  ||= 'tinymce-3.5.4';
+    $self->{tinyMCEPath}                  ||= 'tinymce-3.5.4';
 
     # Sometimes sites need bigger thatn text blob, 'mediumtext' might be needed
-    $self->{'scriptTextSize'}               ||= 'text';
+    $self->{scriptTextSize}               ||= 'text';
 
     # set the domains to the environment version if it was not set
-    $self->{'sessionCookieName'}            ||= 'fws_session';
+    $self->{sessionCookieName}            ||= 'fws_session';
 
     # set mysql to default
-    $self->{'DBType'}                       ||= 'mysql';
+    $self->{DBType}                       ||= 'mysql';
 
     # set mysql default port
-    $self->{'DBPort'}                       ||= '3306';
+    $self->{DBPort}                       ||= '3306';
 
     # set the domains to the environment version if it was not set
-    $self->{'domain'}                       ||= 'http://'.$ENV{"SERVER_NAME"};
+    $self->{domain}                       ||= 'http://'.$ENV{"SERVER_NAME"};
 
     # if the admin ID is blank, set it to admin so users can access it via /admin
-    $self->{'FWSPluginServer'}              ||= 'https://www.frameworksites.com';
+    $self->{FWSPluginServer}              ||= 'https://www.frameworksites.com';
 
     # the FWS auto update server
-    $self->{'FWSServer'}                    ||= 'http://www.frameworksites.com/downloads';
+    $self->{FWSServer}                    ||= 'http://www.frameworksites.com/downloads';
 
     # set the default seconds to how long a affiliate code will last once it is recieved
-    $self->{'affiliateExpMax'}              ||= '295200';
+    $self->{affiliateExpMax}              ||= '295200';
 
     # set the default FWS log level
-    $self->{'FWSLogLevel'}                  ||= 1;
+    $self->{FWSLogLevel}                  ||= 1;
 
     # set the default SQL log level
-    $self->{'SQLLogLevel'}                  ||= 0;
+    $self->{SQLLogLevel}                  ||= 0;
 
     # set the default location for sendmail
-    $self->{'sendmailBin'}                  ||= '/usr/sbin/sendmail';
+    $self->{sendmailBin}                  ||= '/usr/sbin/sendmail';
+
+    # set the default send method to sendmail
+    $self->{sendMethod}                   ||= 'sendmail';
+
+    # set the default email so we have sometihng to try if we need to
+    # this will get overwritten when siteValues is ran but here for
+    # completeness
+    $self->{email}                        ||= 'webmaster@' . $self->{domain};
 
     #
     # prepopulate a few things that might be needed so they are not undefined
     #
-    %{$self->{'_cssHash'}}                  = ();
-    %{$self->{'_jsHash'}}                   = ();
-    %{$self->{'_jqueryHash'}}               = ();
-    %{$self->{'_saveWithSessionHash'}}      = ();
-    %{$self->{'_fullElementHashCache'}}     = ();
-    %{$self->{'_tableFieldHashCache'}}      = ();
-    %{$self->{'_siteScriptCache'}}          = ();
-    %{$self->{'_subscriberCache'}}          = ();
+    %{$self->{_cssHash}}                  = ();
+    %{$self->{_jsHash}}                   = ();
+    %{$self->{_jqueryHash}}               = ();
+    %{$self->{_saveWithSessionHash}}      = ();
+    %{$self->{_fullElementHashCache}}     = ();
+    %{$self->{_tableFieldHashCache}}      = ();
+    %{$self->{_siteScriptCache}}          = ();
+    %{$self->{_subscriberCache}}          = ();
 
-    $self->{'_language'}                    = q{};
-    $self->{'_languageArray'}               = q{};
+    $self->{_language}                    = q{};
+    $self->{_languageArray}               = q{};
 
-    @{$self->{'pluginCSSArray'}}            = ();
-    @{$self->{'pluginJSArray'}}             = ();
+    @{$self->{pluginCSSArray}}            = ();
+    @{$self->{pluginJSArray}}             = ();
 
     #
     # cache fields will be populated on setSiteValues
     # but in case we need a ph before then
     #
-    %{$self->{'dataCacheFields'}}           = ();
-    %{$self->{'plugins'}}                   = ();
+    %{$self->{dataCacheFields}}           = ();
+    %{$self->{plugins}}                   = ();
 
     #
     # this will store the currently logged in userHash
     #
-    %{$self->{'profileHash'}}               = ();
+    %{$self->{profileHash}}               = ();
 
     #
     # For plugin added, and cached elementHashes lets predefine this
     #
-    %{$self->{'elementHash'}}               = ();
+    %{$self->{elementHash}}               = ();
 
     #
     # set this to false, it might be turned on at any time by admin or elements
     #
-    $self->{'tinyMCEEnable'}                = 0;
+    $self->{tinyMCEEnable}                = 0;
 
     #
     # use this for readability
@@ -502,7 +510,7 @@ sub new {
     #
     # set scriptsize
     #
-    my $SSIZE = $self->{'scriptTextSize'};
+    my $SSIZE = $self->{scriptTextSize};
 
     #
     # core database schema
@@ -773,7 +781,7 @@ sub registerPlugin {
     my ($self, $plugin) = @_;
 
     ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
-    eval 'use lib "'.$self->{'fileSecurePath'}.'/plugins";';
+    eval 'use lib "'.$self->{fileSecurePath}.'/plugins";';
     ## use critic
 
     #
