@@ -20,20 +20,20 @@ our $VERSION = '0.004';
 
 =head1 SYNOPSIS
 
-	use FWS::V2;
-	
-	my $fws = FWS::V2->new();
+    use FWS::V2;
+    
+    my $fws = FWS::V2->new();
 
-	#
-	# each one of these statements will clean the string up to make it "safe"
-	# depending on its context
-	#	
+    #
+    # each one of these statements will clean the string up to make it "safe"
+    # depending on its context
+    #    
 
-	print $fws->safeDir("../../this/could/be/dangrous");
-	
-        print $fws->safeFile("../../i-am-trying-to-change-dir.ext");
-	
-        print $fws->safeSQL("this ' or 1=1 or ' is super bad");
+    print $fws->safeDir("../../this/could/be/dangrous");
+    
+    print $fws->safeFile("../../i-am-trying-to-change-dir.ext");
+    
+    print $fws->safeSQL("this ' or 1=1 or ' is super bad");
 
 
 =head1 DESCRIPTION
@@ -47,22 +47,22 @@ FWS version 2 safety methods are used for security when using unknown parameters
 
 All directories should be wrapped in this method before being applied.  It will remove any context that could change its scope to higher than its given location.  When using directories ALWAYS prepend them with $fws->{"fileDir"} or $fws->{"secureFileDir"} to ensure they root path is always in a known location to further prevent any tampering.  NEVER use a directory that is not prepended with a known depth!
 
-        #
-        # will return //this/could/be/dangerous
-        #
-        print $fws->safeDir("../../this/could/be/dangrous");
+    #
+    # will return //this/could/be/dangerous
+    #
+    print $fws->safeDir("../../this/could/be/dangrous");
 
-        #
-        # will return this/is/fine
-        #
-        print $fws->safeDir("this/is/fine");
+    #
+    # will return this/is/fine
+    #
+    print $fws->safeDir("this/is/fine");
 
 =cut
 
 sub safeDir {
-        my ($self, $incomingText) = @_;
-        $incomingText =~ s/(\.\.|\||;)//sg;
-        return $incomingText;
+    my ($self, $incomingText) = @_;
+    $incomingText =~ s/(\.\.|\||;)//sg;
+    return $incomingText;
 }
 
 
@@ -70,38 +70,38 @@ sub safeDir {
 
 All files should be wrapped in this method before being applied.  It will remove any context that could change its scope to a different directory.
 
-        #
-        # will return ....i-am-trying-to-change-dir.ext
-        #
-        print $fws->safeFile("../../i-am-trying-to-change-dir.ext");
+    #
+    # will return ....i-am-trying-to-change-dir.ext
+    #
+    print $fws->safeFile("../../i-am-trying-to-change-dir.ext");
 
 =cut
 
 
 sub safeFile {
-        my ($self, $incomingText) = @_;
-        $incomingText =~ s/(\/|\\|;|\|)//sg;
-        return $incomingText;
+    my ($self, $incomingText) = @_;
+    $incomingText =~ s/(\/|\\|;|\|)//sg;
+    return $incomingText;
 }
 
 =head2 safeNumber
 
 Make sure a number is a valid number and strip anything that would make it not.  The first character in the string has to be a '-' for the number to maintain its negative status.
 
-        #
-        # will return -34663.43
-        #
-        print $fws->safeNumber("- $34,663.43");
+    #
+    # will return -34663.43
+    #
+    print $fws->safeNumber("- $34,663.43");
 
 =cut
 
 sub safeNumber {
-        my ($self,$number) = @_;
-        my $negative = 0;
-        if ($number =~ /^-/) { $negative = 1 }
-        $number =~ s/[^\d.]+//g;
-        if ($negative) { return '-'.($number+0) }
-        else { return $number+0 }
+    my ($self,$number) = @_;
+    my $negative = 0;
+    if ( $number =~ /^-/ ) { $negative = 1 }
+    $number =~ s/[^\d.]+//g;
+    if ( $negative ) { return '-' . ( $number + 0 ) }
+    return $number + 0;
 }
 
 
@@ -110,18 +110,18 @@ sub safeNumber {
 
 All fields and dynamic content in SQL statements should be wrapped in this method before being applied.  It will add double tics and escape any escapes so you can not break out of a statement and inject anything not intended.
 
-        #
-        # will return this '' or 1=1 or '' is super bad
-        #
-        print $fws->safeSQL("this ' or 1=1 or ' is super bad");
+    #
+    # will return this '' or 1=1 or '' is super bad
+    #
+    print $fws->safeSQL("this ' or 1=1 or ' is super bad");
 
 =cut
 
 sub safeSQL {
-        my ($self, $incomingText) = @_;
-        $incomingText =~ s/\'/\'\'/sg;
-        $incomingText =~ s/\\/\\\\/sg;
-        return $incomingText;
+    my ($self, $incomingText) = @_;
+    $incomingText =~ s/\'/\'\'/sg;
+    $incomingText =~ s/\\/\\\\/sg;
+    return $incomingText;
 }
 
 
@@ -129,20 +129,19 @@ sub safeSQL {
 
 Remove anything from a query string that could advocate a cross site scripting attack
 
-        #
-        # Do something that could be used for evil
-        #
-        my $querySting = 'id=<script>alert('bo!')</script>url&this=that';
-        $valueHash{'html'} .= '<a href="http://www.frameworksites.com/cgi-bin/go.pl?'.$fws->safeQuery($queryString).'">Click Me</a>';
+    #
+    # Do something that could be used for evil
+    #
+    my $querySting = 'id=<script>alert('bo!')</script>url&this=that';
+    $valueHash{'html'} .= '<a href="http://www.frameworksites.com/cgi-bin/go.pl?'.$fws->safeQuery($queryString).'">Click Me</a>';
 
 =cut
 
 sub safeQuery {
-        my ($self, $incomingText) = @_;
-        $incomingText =~ s/\%3C/\</sg;
-        $incomingText =~ s/\%3E/\>/sg;
-        $incomingText = $self->removeHTML($incomingText);
-        return $incomingText;
+    my ($self, $incomingText) = @_;
+    $incomingText =~ s/\%3C/\</sg;
+    $incomingText =~ s/\%3E/\>/sg;
+    return $self->removeHTML( $incomingText );
 }
 
 
@@ -150,26 +149,26 @@ sub safeQuery {
 
 Switch a string into a safe url by replacing all non 0-9 a-z A-Z with a dash but not start with a dash.  For SEO reasons this will also switch any & with the word "and".
 
-        #
-        # change the product name into a safe url
-        #
-        my $productName = 'My super cool product & title';
-	my $frindlyURL = $fws->safeURL($productName).'.html';
+    #
+    # change the product name into a safe url
+    #
+    my $productName = 'My super cool product & title';
+    my $frindlyURL = $fws->safeURL($productName).'.html';
 
-	#
-	# change an name into a safe class name
-	#
-	my $productAttribute = 'Size: Large';
-	my $className = 'productAttribute_'.$fws->safeURL($productAttribute);
+    #
+    # change an name into a safe class name
+    #
+    my $productAttribute = 'Size: Large';
+    my $className = 'productAttribute_'.$fws->safeURL($productAttribute);
 
 =cut
 
 sub safeURL {
-        my ($self, $incomingText) = @_;
-        $incomingText =~ s/\&/and/sg;
-        $incomingText =~ s/[^0-9a-zA-Z]/_/sg;
-	$incomingText =~ s/^\s+//;
-        return $incomingText;
+    my ($self, $incomingText) = @_;
+    $incomingText =~ s/\&/and/sg;
+    $incomingText =~ s/[^0-9a-zA-Z]/_/sg;
+    $incomingText =~ s/^\s+//;
+    return $incomingText;
 }
 
 
@@ -177,53 +176,48 @@ sub safeURL {
 
 Replace any thing harmful to an JSON node that could cause it to fail.  It will escape stuff like quotes and such.
 
-        #
-        # make a node safe
-        #
-        my $sillyNode = 'This "Can not" be in json';
-        my $safeSillyNode = $fws->safeJSON($sillyNode);
-        print 'Safe JSON: '.$sillyNode;
+    #
+    # make a node safe
+    #
+    my $sillyNode = 'This "Can not" be in json';
+    my $safeSillyNode = $fws->safeJSON($sillyNode);
+    print 'Safe JSON: '.$sillyNode;
 
 =cut
 
 
 sub safeJSON {
-        my ($self, $incomingText) = @_;
-        $incomingText =~ s/\\/\\\\/sg;
-        $incomingText =~ s/"/\\"/sg;
-        $incomingText =~ s/\//\\\//sg;
-        return $incomingText;
+    my ($self, $incomingText) = @_;
+    $incomingText =~ s/\\/\\\\/sg;
+    $incomingText =~ s/"/\\"/sg;
+    $incomingText =~ s/\//\\\//sg;
+    return $incomingText;
 }
-
-
-
-
-
 
 =head2 safeXML
 
 Replace any thing harmful to an XML node that could cause it to fail validation.   & and < will be converted to &amp; and &lt;
 
-        #
-        # make a node safe
-        #
-        my $sillyNode = '55 is < 66 & 77';
-        my $safeSillyNode = $fws->safeXML($sillyNode);
-	print '<silly>'.$safeSillyNode.'</silly>';
-        
-	#
-        # all in one
-        #
-	print '<silly>'.$fws->safeXML('55 is < 66 & 77').'</silly>';
+    #
+    # make a node safe
+    #
+    my $sillyNode = '55 is < 66 & 77';
+    my $safeSillyNode = $fws->safeXML($sillyNode);
+    print '<silly>'.$safeSillyNode.'</silly>';
+    
+    #
+    # all in one
+    #
+    print '<silly>'.$fws->safeXML('55 is < 66 & 77').'</silly>';
 
 
 =cut
 
 sub safeXML {
-        my ($self, $incomingText) = @_;
-        $incomingText =~ s/&/&amp;/sg;
-        $incomingText =~ s/</&lt;/sg;
-        return $incomingText;
+    my ($self, $incomingText) = @_;
+    $incomingText =~ s/&/&amp;/sg;
+    $incomingText =~ s/</&lt;/sg;
+    return $incomingText;
 }
 
 
