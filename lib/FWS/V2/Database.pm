@@ -135,7 +135,7 @@ sub adminUserHash {
     my ($self,%paramHash) = @_;
     my $extArray        = $self->runSQL(SQL=>"select extra_value,'email',email,'userId',user_id,'name',name from admin_user where guid='".$self->safeSQL($paramHash{'guid'})."'");
     my $extraValue      = shift(@$extArray);
-    my %adminUserHash       = @$extArray;
+    my %adminUserHash   = @$extArray;
     %adminUserHash      = $self->addExtraHash($extraValue,%adminUserHash);
     if ($paramHash{'ref'} eq '1') { return \%adminUserHash } else {return %adminUserHash }
 }
@@ -150,11 +150,12 @@ It is not recommended you would use the alterTable method outside of its intende
     # Note: It is not recommended to change the data structure of
     # FWS default tables
     #
-    print $fws->alterTable( table   =>"table_name",     # case sensitive table name
-                field   =>"field_name",     # case sensitive field name
-                type    =>"char(255)",      # Any standard cross platform type
-                key     =>"",           # MUL, PRIMARY KEY, FULL TEXT
-                default =>"");          # '0000-00-00', 1, 'this default value'...
+    print $fws->alterTable( 
+                table   => 'table_name',     # case sensitive table name
+                field   => 'field_name',     # case sensitive field name
+                type    => 'char(255)',      # Any standard cross platform type
+                key     => '',               # MUL, PRIMARY KEY, FULL TEXT
+                default => '');              # '0000-00-00', 1, 'this default value'...
 
 =cut
 
@@ -172,20 +173,20 @@ sub alterTable {
     # is the norm, we will groom things that need to be groomed
     #
     my $sqlReturn;
-    my $autoIncrement       = "AUTO_INCREMENT ";
-    my $indexStatement      = "alter table ".$paramHash{'table'}." add INDEX ".$paramHash{'table'}."_".$paramHash{'field'}." (".$paramHash{'field'}.")";
+    my $autoIncrement       = 'AUTO_INCREMENT ';
+    my $indexStatement      = 'alter table ' . $paramHash{'table'} . ' add INDEX ' . $paramHash{'table'} . '_' . $paramHash{'field'} . ' (' . $paramHash{'field'} . ')';
 
     #
     # if default is timestamp lets not put tic's around it
     #
     if ($paramHash{'default'} ne 'CURRENT_TIMESTAMP') { 
         $paramHash{'default'} =
-                        "'".
-                        $paramHash{'default'}.
+                        "'" .
+                        $paramHash{default} .
                         "'" }
 
-    my $addStatement        = "alter table ".$paramHash{'table'}." add ".$paramHash{'field'}." ".$paramHash{'type'}." NOT NULL default ".$paramHash{'default'};
-    my $changeStatement     = "alter table ".$paramHash{'table'}." change ".$paramHash{'field'}." ".$paramHash{'field'}." ".$paramHash{'type'}." NOT NULL default ".$paramHash{'default'};
+    my $addStatement        = "alter table ".$paramHash{table}." add ".$paramHash{field}." ".$paramHash{type}." NOT NULL default ".$paramHash{default};
+    my $changeStatement     = "alter table ".$paramHash{table}." change ".$paramHash{field}." ".$paramHash{field}." ".$paramHash{type}." NOT NULL default ".$paramHash{default};
 
 
     #
@@ -201,10 +202,10 @@ sub alterTable {
     #
     # do SQLLite changes
     #
-    if ($self->{'DBType'}   =~ /^sqlite$/i) {
-        $autoIncrement      = "";
-        $indexStatement     = "create index ".$paramHash{'table'}."_".$paramHash{'field'}." on ".$paramHash{'table'}." (".$paramHash{'field'}.")";
-        $showTablesStatement = "select name from sqlite_master where type='table'";
+    if ($self->{'DBType'} =~ /^sqlite$/i) {
+        $autoIncrement          = "";
+        $indexStatement         = "create index ".$paramHash{'table'}."_".$paramHash{'field'}." on ".$paramHash{'table'}." (".$paramHash{'field'}.")";
+        $showTablesStatement    = "select name from sqlite_master where type='table'";
     }
 
 
@@ -250,8 +251,8 @@ sub alterTable {
     my %tableHash;
     my @tableList = @{$self->runSQL(SQL=>$showTablesStatement,noUpdate=>1)};
     while (@tableList) {
-        my $fieldInc               = shift(@tableList);
-        $tableHash{$fieldInc} = 1;
+        my $fieldInc            = shift(@tableList);
+        $tableHash{$fieldInc}   = 1;
     }
 
     #
@@ -344,6 +345,12 @@ The first time this is ran, it will cache the DBH and not ask for another.   If 
 
 sub connectDBH {
     my ($self,%paramHash) = @_;
+        
+    #
+    # hook up with some DBI
+    #
+    use DBI;
+
 
     #
     # Use defaults if they are not passed
@@ -365,11 +372,6 @@ sub connectDBH {
     # grab the DBI if we don't have it yet, or if noCache is passed do it again
     #
     if (!defined $self->{'_DBH_'.$paramHash{'DBName'}.$paramHash{'DBHost'}} || $paramHash{'noCache'} eq '1') {
-
-        #
-        # hook up with some DBI
-        #
-        use DBI;
 
         #
         # DBType for mysql is always lower case
@@ -422,13 +424,13 @@ sub copyData {
     my ($self,%paramHash) = @_;
     my %dataHash = $self->dataHash(guid=>$paramHash{'guid'});
     if ($paramHash{'addTail'} eq '1') {
-        $dataHash{'name'} .= " (Copy)";
-        $dataHash{'title'} .= " (Copy)";
+        $dataHash{'name'}   .= " (Copy)";
+        $dataHash{'title'}  .= " (Copy)";
     }
 
     delete $paramHash{addTail};
 
-    $dataHash{'guid'} = '';
+    $dataHash{'guid'}   = '';
     $dataHash{'parent'} = $paramHash{'parent'};
     return $self->saveData(%dataHash);
 }
@@ -693,31 +695,30 @@ sub dataArray {
     while (@{$arrayRef}) {
         my %dataHash;
 
-        my $keywordScore            = shift(@{$arrayRef});
-        my $pageIdOfElement         = shift(@{$arrayRef});
+        my $keywordScore                  = shift(@{$arrayRef});
+        my $pageIdOfElement               = shift(@{$arrayRef});
 
-        my $extraValue              = shift(@{$arrayRef});
+        my $extraValue                    = shift(@{$arrayRef});
 
-        $dataHash{'guid'}           = shift(@{$arrayRef});
-        $dataHash{'createdDate'}    = shift(@{$arrayRef});
-        $dataHash{'showMobile'}     = shift(@{$arrayRef});
-        $dataHash{'lang'}           = shift(@{$arrayRef});
-        $dataHash{'guid_xref_site_guid'}= shift(@{$arrayRef});
-        $dataHash{'siteGUID'}       = shift(@{$arrayRef});
-        $dataHash{'site_guid'}      = shift(@{$arrayRef});
-        $dataHash{'active'}         = shift(@{$arrayRef});
-        $dataHash{'friendlyURL'}    = shift(@{$arrayRef});
-        $dataHash{'pageFriendlyURL'}= shift(@{$arrayRef});
-        $dataHash{'title'}          = shift(@{$arrayRef});
-        $dataHash{'disableTitle'}   = shift(@{$arrayRef});
-        $dataHash{'defaultElement'} = shift(@{$arrayRef});
-        #$dataHash{'tags'}          = shift(@{$arrayRef});
-        $dataHash{'disableEditMode'}= shift(@{$arrayRef});
-        $dataHash{'type'}           = shift(@{$arrayRef});
-        $dataHash{'navigationName'} = shift(@{$arrayRef});
-        $dataHash{'name'}           = shift(@{$arrayRef});
-        $dataHash{'parent'}         = shift(@{$arrayRef});
-        $dataHash{'layout'}         = shift(@{$arrayRef});
+        $dataHash{guid}                   = shift(@{$arrayRef});
+        $dataHash{createdDate}            = shift(@{$arrayRef});
+        $dataHash{showMobile}             = shift(@{$arrayRef});
+        $dataHash{lang}                   = shift(@{$arrayRef});
+        $dataHash{guid_xref_site_guid}    = shift(@{$arrayRef});
+        $dataHash{siteGUID}               = shift(@{$arrayRef});
+        $dataHash{site_guid}              = shift(@{$arrayRef});
+        $dataHash{active}                 = shift(@{$arrayRef});
+        $dataHash{friendlyURL}            = shift(@{$arrayRef});
+        $dataHash{pageFriendlyURL}        = shift(@{$arrayRef});
+        $dataHash{title}                  = shift(@{$arrayRef});
+        $dataHash{disableTitle}           = shift(@{$arrayRef});
+        $dataHash{defaultElement}         = shift(@{$arrayRef});
+        $dataHash{disableEditMode}        = shift(@{$arrayRef});
+        $dataHash{type}                   = shift(@{$arrayRef});
+        $dataHash{navigationName}         = shift(@{$arrayRef});
+        $dataHash{name}                   = shift(@{$arrayRef});
+        $dataHash{parent}                 = shift(@{$arrayRef});
+        $dataHash{layout}                 = shift(@{$arrayRef});
 
         
 
@@ -800,8 +801,8 @@ sub dataHash {
     #
     # do some legacy data type switching around.  some call it type (wich it should be, and some call it element_type
     #
-    $dataHash{"type"}           = $dataType;
-    $dataHash{"element_type"}       = $dataType;
+    $dataHash{type}         = $dataType;
+    $dataHash{element_type} = $dataType;
 
     #
     # combine the hash
@@ -1068,19 +1069,19 @@ sub elementArray {
     while (@elementArray) {
         my %elementHash;
         $alphaOrd++;
-        $elementHash{'ord'}         = shift(@elementArray);
-        $elementHash{'adminGroup'}  = shift(@elementArray);
-        $elementHash{'rootElement'} = shift(@elementArray);
-        $elementHash{'siteGUID'}    = shift(@elementArray);
-        $elementHash{'guid'}        = shift(@elementArray);
-        $elementHash{'type'}        = shift(@elementArray);
-        $elementHash{'parent'}      = shift(@elementArray);
-        $elementHash{'title'}       = shift(@elementArray);
-        $elementHash{'schemaDevel'} = shift(@elementArray);
-        $elementHash{'scriptDevel'} = shift(@elementArray);
-        $elementHash{'checkedout'}  = shift(@elementArray);
-        $elementHash{'alphaOrd'}    = $alphaOrd;
-        $elementHash{'label'}       = $elementHash{'type'}.' - '.$elementHash{'title'};
+        $elementHash{ord}         = shift(@elementArray);
+        $elementHash{adminGroup}  = shift(@elementArray);
+        $elementHash{rootElement} = shift(@elementArray);
+        $elementHash{siteGUID}    = shift(@elementArray);
+        $elementHash{guid}        = shift(@elementArray);
+        $elementHash{type}        = shift(@elementArray);
+        $elementHash{parent}      = shift(@elementArray);
+        $elementHash{title}       = shift(@elementArray);
+        $elementHash{schemaDevel} = shift(@elementArray);
+        $elementHash{scriptDevel} = shift(@elementArray);
+        $elementHash{checkedout}  = shift(@elementArray);
+        $elementHash{alphaOrd}    = $alphaOrd;
+        $elementHash{label}       = $elementHash{'type'}.' - '.$elementHash{'title'};
         if ($elementHash{'type'} eq '') { $elementHash{'label'} = 'element'.$elementHash{'label'} }
 
         push (@elementArrayReturn,{%elementHash});
@@ -1175,7 +1176,7 @@ sub exportCSV {
     # kill the trailing comma and return the string
     #
     $returnString =~ s/,$//sg;
-    return $returnString. "\n";;
+    return $returnString. "\n";
 }
 
 
@@ -1271,7 +1272,7 @@ sub fwsGUID {
     #
     # I already know it, just return the result
     #
-    else { return $self->siteValue('fwsGUID') }
+    return $self->siteValue('fwsGUID');
 }
 
 
@@ -1369,13 +1370,16 @@ doc needed
 
 sub hashArray {
     my ($self,%paramHash) = @_;
+
+    use Storable qw(nfreeze thaw);
+
     if ($paramHash{'hashArray'} ne '') {
         #
         # get the current array, and clear the loc string
         #
-        use Storable qw(nfreeze thaw);
         return @{thaw($paramHash{'hashArray'})};
     }
+
     return;
 }
 
@@ -1464,24 +1468,24 @@ sub queueArray {
     my @queueArray;
     while (@$arrayRef) {
         my %sendHash;
-        $sendHash{'userGUID'}       = shift(@$arrayRef);
-        $sendHash{'directoryGUID'}  = shift(@$arrayRef);
-        $sendHash{'guid'}           = shift(@$arrayRef);
-        $sendHash{'type'}           = shift(@$arrayRef);
-        $sendHash{'hash'}           = shift(@$arrayRef);
-        $sendHash{'draft'}          = shift(@$arrayRef);
-        $sendHash{'fromName'}       = shift(@$arrayRef);
-        $sendHash{'from'}           = shift(@$arrayRef);
-        $sendHash{'to'}             = shift(@$arrayRef);
-        $sendHash{'body'}           = shift(@$arrayRef);
-        $sendHash{'subject'}        = shift(@$arrayRef);
-        $sendHash{'digitalAssets'}  = shift(@$arrayRef);
-        $sendHash{'transferEncoding'} = shift(@$arrayRef);
-        $sendHash{'mimeType'}       = shift(@$arrayRef);
-        $sendHash{'scheduledDate'}  = shift(@$arrayRef);
+        $sendHash{userGUID}         = shift(@$arrayRef);
+        $sendHash{directoryGUID}    = shift(@$arrayRef);
+        $sendHash{guid}             = shift(@$arrayRef);
+        $sendHash{type}             = shift(@$arrayRef);
+        $sendHash{hash}             = shift(@$arrayRef);
+        $sendHash{draft}            = shift(@$arrayRef);
+        $sendHash{fromName}         = shift(@$arrayRef);
+        $sendHash{from}             = shift(@$arrayRef);
+        $sendHash{to}               = shift(@$arrayRef);
+        $sendHash{body}             = shift(@$arrayRef);
+        $sendHash{subject}          = shift(@$arrayRef);
+        $sendHash{digitalAssets}    = shift(@$arrayRef);
+        $sendHash{transferEncoding} = shift(@$arrayRef);
+        $sendHash{mimeType}         = shift(@$arrayRef);
+        $sendHash{scheduledDate}    = shift(@$arrayRef);
         push(@queueArray, {%sendHash});
     }
-    if ($paramHash{'ref'} eq '1') { return \@queueArray }
+    if ($paramHash{ref} eq '1') { return \@queueArray }
     return @queueArray;
 }
 
@@ -1497,7 +1501,7 @@ sub queueHash {
     #
     # get an array of the all stuff we need,  in a name\value pair format
     #
-    my $arrayRef = $self->runSQL(SQL=>"select 'directoryGUID',directory_guid,'userGUID',profile_guid,'hash',hash,'guid',guid,'draft',draft,'fromName',from_name,'from',queue_from,'to',queue_to,'body',body,'subject',subject,'digitalAssets',digital_assets,'transferEncoding',transfer_encoding,'mimeType',mime_type,'scheduledDate',scheduled_date from queue where guid='".$self->safeSQL($paramHash{'guid'})."'");
+    my $arrayRef = $self->runSQL( SQL => "select 'directoryGUID',directory_guid,'userGUID',profile_guid,'hash',hash,'guid',guid,'draft',draft,'fromName',from_name,'from',queue_from,'to',queue_to,'body',body,'subject',subject,'digitalAssets',digital_assets,'transferEncoding',transfer_encoding,'mimeType',mime_type,'scheduledDate',scheduled_date from queue where guid='".$self->safeSQL($paramHash{'guid'})."'" );
 
     #
     # convert the array to a hash
@@ -1564,25 +1568,25 @@ sub queueHistoryArray {
 
     while (@$arrayRef) {
         my %sendHash;
-        $sendHash{'guidGUID'}       = shift(@$arrayRef);
-        $sendHash{'userGUID'}       = shift(@$arrayRef);
-        $sendHash{'queueGUID'}      = shift(@$arrayRef);
-        $sendHash{'directoryGUID'}  = shift(@$arrayRef);
-        $sendHash{'guid'}           = shift(@$arrayRef);
-        $sendHash{'hash'}           = shift(@$arrayRef);
-        $sendHash{'from'}           = shift(@$arrayRef);
-        $sendHash{'to'}             = shift(@$arrayRef);
-        $sendHash{'type'}           = shift(@$arrayRef);
-        $sendHash{'subject'}        = shift(@$arrayRef);
-        $sendHash{'success'}        = shift(@$arrayRef);
-        $sendHash{'synced'}         = shift(@$arrayRef);
-        $sendHash{'failureCode'}    = shift(@$arrayRef);
-        $sendHash{'response'}       = shift(@$arrayRef);
-        $sendHash{'sentDate'}       = shift(@$arrayRef);
-        $sendHash{'scheduledDate'}  = shift(@$arrayRef);
+        $sendHash{guidGUID}       = shift(@$arrayRef);
+        $sendHash{userGUID}       = shift(@$arrayRef);
+        $sendHash{queueGUID}      = shift(@$arrayRef);
+        $sendHash{directoryGUID}  = shift(@$arrayRef);
+        $sendHash{guid}           = shift(@$arrayRef);
+        $sendHash{hash}           = shift(@$arrayRef);
+        $sendHash{from}           = shift(@$arrayRef);
+        $sendHash{to}             = shift(@$arrayRef);
+        $sendHash{type}           = shift(@$arrayRef);
+        $sendHash{subject}        = shift(@$arrayRef);
+        $sendHash{success}        = shift(@$arrayRef);
+        $sendHash{synced}         = shift(@$arrayRef);
+        $sendHash{failureCode}    = shift(@$arrayRef);
+        $sendHash{response}       = shift(@$arrayRef);
+        $sendHash{sentDate}       = shift(@$arrayRef);
+        $sendHash{scheduledDate}  = shift(@$arrayRef);
         push(@historyArray, {%sendHash});
     }
-    if ($paramHash{'ref'} eq '1') { return \@historyArray } else {return @historyArray }
+    if ($paramHash{ref} eq '1') { return \@historyArray } else {return @historyArray }
 }
 
 =head2 queueHistoryHash
@@ -1695,19 +1699,19 @@ sub runSQL {
     # and set the failFlag for future use to autocreate a dB schema
     # based on a default setting
     #
-    my @data = ();
+    my @data;
     my $errorResponse;
 
     #
     # send this off to the log
     #
-    $self->SQLLog($paramHash{'SQL'});
+    $self->SQLLog( $paramHash{SQL} );
 
     #
     # prepare the SQL and loop though the arrays
     #
 
-    my $sth = $paramHash{'DBH'}->prepare($paramHash{'SQL'});
+    my $sth = $paramHash{DBH}->prepare( $paramHash{SQL} );
     if ($sth ne '') {
         $sth->{PrintError} = 0;
         $sth->execute();
@@ -1971,8 +1975,8 @@ sub saveData {
     # loop though and update every one that is diffrent
     #
     for my $key ( keys %paramHash ) {
-        if ($key !~ /^(ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid)$/) {
-            $self->saveExtra(table=>'data',siteGUID=>$paramHash{'siteGUID'},guid=>$paramHash{'guid'},field=>$key,value=>$paramHash{$key});
+        if ($key !~ /^ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid$/) {
+            $self->saveExtra( table => 'data', siteGUID => $paramHash{'siteGUID'}, guid => $paramHash{'guid'}, field => $key, value => $paramHash{$key} );
         }
     }
 
@@ -2024,8 +2028,7 @@ This will eventually get moved to a plugin
 sub deleteHistory {
     my ($self, %paramHash) = @_;
     %paramHash = $self->runScript('preDeleteHistory',%paramHash);
-    my $guid = $self->safeSQL($paramHash{'guid'});
-    $self->runSQL(SQL=>"delete from history where guid='".$guid."'");
+    $self->runSQL(SQL=>"delete from history where guid='". $self->safeSQL( $paramHash{'guid'} ) ."'");
     %paramHash = $self->runScript('postDeleteHistory',%paramHash);
     return %paramHash;
 }
@@ -2222,9 +2225,6 @@ sub saveExtra {
 }
 
 
-
-
-
 =head2 saveHash
 
 Save a generic hash to a hash object in the same fasion as other FWS save objects.  If the object exists already it will udpate it, or add a new one if it did not exist
@@ -2232,16 +2232,15 @@ Save a generic hash to a hash object in the same fasion as other FWS save object
     #
     # add a new object
     #
-    $someHash{'someArray'} = $fws->saveHash( hashArray       => $someHash{'someArray'},
-                         date        => $fws->dateTime(format=>'SQL'),
+    $someHash{'someArray'} = $fws->saveHash( hashArray  => $someHash{'someArray'},
+                                             date       => $fws->dateTime(format=>'SQL'),
 
     #
     # update a object that contains its perspective guid
     #
-    $someHash{'someArray'} = $fws->saveHash( hashArray       => $someHash{'someArray'},%existingDataThatIsUpdated );
+    $someHash{'someArray'} = $fws->saveHash( hashArray  => $someHash{'someArray'},%existingDataThatIsUpdated );
 
 =cut
-
 
 sub saveHash {
     my ($self,%paramHash) = @_;
@@ -2266,7 +2265,7 @@ sub saveHash {
         #
         # update the loc with the same guid with the new hash
         #
-        if ($paramHash{'guid'} eq $hashArray[$i]{'guid'}) {
+        if ( $paramHash{guid} eq $hashArray[$i]{guid} ) {
 
             #
             # update the flag, to know we are NOT talking about adding a new one and append to the line
@@ -2284,10 +2283,10 @@ sub saveHash {
     # if we dindn't update then this is an add
     #
     if (!$hashUpdated) {
-        $paramHash{'guid'} = $self->createGUID('h');
-        push(@newArray,{%paramHash})
+        $paramHash{guid} = $self->createGUID( 'h' );
+        push( @newArray,{%paramHash} )
     }
-    return (nfreeze(\@newArray));
+    return ( nfreeze(\@newArray) );
 }
 
 
@@ -2338,15 +2337,17 @@ sub saveQueueHistory {
     #
     if ($paramHash{'sentDate'} eq '' || $paramHash{'sentDate'}  =~ /^0000.00.00/) { $paramHash{'sentDate'} = $self->safeSQL($self->formatDate(format=>"SQL")) }
 
-    %paramHash = $self->_recordInit('_guidLeader'   =>'q',
-                    '_table'    =>'queue_history',
-                    %paramHash);
+    %paramHash = $self->_recordInit(
+                '_guidLeader'   => 'q',
+                '_table'        => 'queue_history',
+                %paramHash);
 
-    %paramHash = $self->_recordSave('_fields'       =>'synced|queue_guid|directory_guid|profile_guid|hash|scheduled_date|queue_from|from_name|queue_to|body|type|subject|success|failure_code|response|sent_date',
-                    '_keys'     =>'synced|queueGUID|directoryGUID|profileGUID|hash|scheduledDate|from|fromName|to|body|type|subject|success|failureCode|response|sentDate',
-                    '_table'    =>'queue_history',
-                    '_noExtra'      =>'1',
-                    %paramHash);
+    %paramHash = $self->_recordSave(
+                '_fields'       => 'synced|queue_guid|directory_guid|profile_guid|hash|scheduled_date|queue_from|from_name|queue_to|body|type|subject|success|failure_code|response|sent_date',
+                '_keys'         => 'synced|queueGUID|directoryGUID|profileGUID|hash|scheduledDate|from|fromName|to|body|type|subject|success|failureCode|response|sentDate',
+                '_table'        => 'queue_history',
+                '_noExtra'      => '1',
+                %paramHash);
 
     %paramHash = $self->runScript('postSaveQueueHistory',%paramHash);
 
@@ -2387,13 +2388,11 @@ sub saveUser {
             #
             $paramHash{'passwordConfirm'} = $paramHash{'password'};
 
-
             #
             # do the inital insert
             #
             my $guid = $self->createGUID('u');
             $self->runSQL(SQL=>"insert into profile (guid,email,name,active) values ('".$guid."','". $self->safeSQL($paramHash{'email'})."','". $self->safeSQL($paramHash{'name'})."','". $self->safeSQL($paramHash{'active'})."')");
-
 
             #
             # if the profile is new lets send the admin an email
@@ -2401,7 +2400,6 @@ sub saveUser {
             if ($self->siteValue('profileCreationEmail') ne '') {
                 $self->send(to=>$self->siteValue('profileCreationEmail'),fromName=>$self->{'email'},from=>$self->{'email'},subject=>"New User Created",mimeType=>"text/plain",body=>'Name: '.$paramHash{'name'}."\nEmail: ".$paramHash{'email'}."\n");
             }
-
 
             #
             # Lets add all the extra fields me might have
@@ -2437,13 +2435,12 @@ sub saveUser {
     #
     $self->runSQL(SQL=>"update profile set fb_id='".$self->safeSQL($paramHash{'FBId'})."',fb_access_token='".$self->safeSQL($paramHash{'FBAccessToken'})."', pin='".$self->safeSQL($paramHash{'pin'})."',active='".$self->safeSQL($paramHash{'active'})."',name='".$self->safeSQL($paramHash{'name'})."' ".$insertSQL." where guid='".$paramHash{'guid'}."'");
 
-
     #
     # loop though and update every one that is diffrent, but you can't touch for security reasons
     #
     for my $key ( keys %paramHash ) {
-        if ($key !~ /^(FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid)$/) {
-            $self->saveExtra(table=>'profile',guid=>$paramHash{'guid'},field=>$key,value=>$paramHash{$key});
+        if ($key !~ /^FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid$/) {
+            $self->saveExtra( table => 'profile', guid => $paramHash{'guid'}, field => $key,value=>$paramHash{$key} );
         }
     }
 
@@ -2484,7 +2481,7 @@ sub schemaHash {
     #
     # run the eval and populate the hash (Including the title)
     #
-    ## no critic
+    ## no critic (RequireCheckingReturnValueOfEval ProhibitStringyEval)
     eval $elementHash{'schemaDevel'};
     ## use critic
     my $errorCode = $@;
@@ -2606,36 +2603,37 @@ sub tableFieldHash {
             while (@$tableData) {
                 $fieldOrd++;
                 my $fieldInc                                = shift(@$tableData);
-                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{'type'}          = shift(@$tableData);
-                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{'ord'}           = $fieldOrd;
-                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{'null'}          = shift(@$tableData);
-                $self->{'_'.$table.'FieldCache'}->{$table."_".$fieldInc}{'key'}    = shift(@$tableData);
-                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{'default'}       = shift(@$tableData);
-                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{'extra'}         = shift(@$tableData);
+                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{type}             = shift(@$tableData);
+                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{ord}              = $fieldOrd;
+                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{null}             = shift(@$tableData);
+                $self->{'_'.$table.'FieldCache'}->{$table."_".$fieldInc}{key}   = shift(@$tableData);
+                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{default}          = shift(@$tableData);
+                $self->{'_'.$table.'FieldCache'}->{$fieldInc}{extra}            = shift(@$tableData);
             }
         }
 
         #
         # grab the table def hash for sqlite
         #
-        if ($self->{'DBType'} =~ /^sqlite$/i) {
-            my $tableData = $self->runSQL(SQL=>"PRAGMA table_info(".$self->safeSQL($table).")");
+        if ($self->{DBType} =~ /^sqlite$/i) {
+            my $tableData = $self->runSQL( SQL => "PRAGMA table_info(".$self->safeSQL($table).")");
             while (@$tableData) {
                 $fieldOrd++;
-                                            shift(@$tableData);
-                my $fieldInc =                      shift(@$tableData);
-                                                   shift(@$tableData);
-                                                   shift(@$tableData);
-                                                   shift(@$tableData);
+                                   shift(@$tableData);
+                my $fieldInc =     shift(@$tableData);
+                                   shift(@$tableData);
+                                   shift(@$tableData);
+                                   shift(@$tableData);
+
                 $self->{'_'.$table.'FieldCache'}->{$fieldInc}{'type'} =  shift(@$tableData);
                 $self->{'_'.$table.'FieldCache'}->{$fieldInc}{'ord'}  = $fieldOrd;
             }
 
             $tableData = $self->runSQL(SQL=>"PRAGMA index_list(".$self->safeSQL($table).")");
             while (@$tableData) {
-                                            shift(@$tableData);
-                my $fieldInc =                      shift(@$tableData);
-                                            shift(@$tableData);
+                                   shift(@$tableData);
+                my $fieldInc =     shift(@$tableData);
+                                   shift(@$tableData);
 
                 $self->{'_'.$table.'FieldCache'}->{$fieldInc}{"key"} =     "MUL";
             }
@@ -2666,10 +2664,10 @@ sub templateArray {
         my %templateHash;
         $templateHash{'guid'}       = shift(@templateArray);
         $templateHash{'title'}      = shift(@templateArray);
-        $templateHash{'siteGUID'}       = shift(@templateArray);
-        $templateHash{'template'}      = shift(@templateArray);
-        $templateHash{'css'}           = shift(@templateArray);
-        $templateHash{'js'}        = shift(@templateArray);
+        $templateHash{'siteGUID'}   = shift(@templateArray);
+        $templateHash{'template'}   = shift(@templateArray);
+        $templateHash{'css'}        = shift(@templateArray);
+        $templateHash{'js'}         = shift(@templateArray);
         $templateHash{'default'}    = shift(@templateArray);
 
         push (@templateHashArray,{%templateHash});
@@ -2688,13 +2686,13 @@ sub templateHash {
 
     my ( $self, %paramHash ) = @_;
 
-    my $templateGUID     = $paramHash{templateGUID};
-    my $pageId         = $paramHash{pageGIUD};
+    my $templateGUID    = $paramHash{templateGUID};
+    my $pageId          = $paramHash{pageGIUD};
 
-    my $template    = "";
-    my $css     = "";
-    my $js      = "";
-    my $title       = "";
+    my $template;
+    my $css;
+    my $js;
+    my $title;
 
     #
     # get the default template Id
@@ -2710,7 +2708,6 @@ sub templateHash {
     # if this is the home page then set the page id to the actual home page templates ID
     #
     if ($pageId eq $self->homeGUID() && $templateGUID eq "") { $templateGUID = $homePageTemplateId }
-
 
     #
     # set some sql defaults
@@ -2788,16 +2785,14 @@ sub templateHash {
     # create the hash and return it
     #
     my %templateHash;
-    $templateHash{'guid'}       = $templateGUID;
+    $templateHash{'guid'}           = $templateGUID;
     $templateHash{'homeGUID'}       = $homePageTemplateId;
-    $templateHash{'title'}      = '';
+    $templateHash{'title'}          = '';
     $templateHash{'siteGUID'}       = $self->{'siteGUID'};
     $templateHash{'template'}       = $template;
-    $templateHash{'css'}        = $css;
-    $templateHash{'js'}         = $js;
+    $templateHash{'css'}            = $css;
+    $templateHash{'js'}             = $js;
     $templateHash{'defaultGUID'}    = $defaultGUID;
-
-    warn $templateGUID;
 
     return %templateHash;
 }
@@ -2839,8 +2834,8 @@ sub updateDataCache {
     #
     # we will be building these up while we loop
     #
-    my $fields = '';
-    my $values = '';
+    my $fields;
+    my $values;
 
     #
     # make any fields that "might" be needed
@@ -2914,7 +2909,7 @@ sub userArray {
         #
         my %userHash;
         $userHash{'FBId'}           = shift(@$userArray);
-        $userHash{'FBAccessToken'}      = shift(@$userArray);
+        $userHash{'FBAccessToken'}  = shift(@$userArray);
         $userHash{'name'}           = shift(@$userArray);
         $userHash{'email'}          = shift(@$userArray);
         $userHash{'guid'}           = shift(@$userArray);
@@ -3019,8 +3014,8 @@ sub userHash {
             # so we can use it to get the profile;
             #
             my @profileExtArray     = $self->openRS("select profile.extra_value,profile.guid,'pin',profile.pin,'guid',profile.guid,'googleId',profile.google_id,'name',profile.name,'FBId',fb_id,'FBAccessToken',fb_access_token,'email',profile.email,'active',profile.active from profile where ".$lookupSQL);
-            my $extraValue      = shift(@profileExtArray);
-            my $guid        = shift(@profileExtArray);
+            my $extraValue          = shift(@profileExtArray);
+            my $guid                = shift(@profileExtArray);
 
 
             #
@@ -3033,7 +3028,6 @@ sub userHash {
             #
             %userHash = $self->addExtraHash($extraValue,%userHash);
 
-
             #
             # add all the groups I have access too
             #
@@ -3042,7 +3036,6 @@ sub userHash {
                 my $groupId = shift(@groups);
                 $userHash{'group'}{$groupId} = 1;
             }
-
 
             #
             # if not logged or we are not looking for a particular guid that is disposable
@@ -3083,9 +3076,9 @@ sub userGroupHash {
     my ($self,$guid) = @_;
     my ($name,$description) = $self->openRS("select name,description from groups where guid='".$self->safeSQL($guid)."'");
     my %userGroupHash;
-    $userGroupHash{'name'}      = $name;
+    $userGroupHash{'name'}          = $name;
     $userGroupHash{'description'}   = $description;
-    $userGroupHash{'guid'}      = $guid;
+    $userGroupHash{'guid'}          = $guid;
 
     #
     # get a list of users and add that to the hash
@@ -3121,9 +3114,9 @@ sub userGroupArray {
         # fill in the hash
         #
         my %userGroupHash;
-        $userGroupHash{'name'}      = shift(@userGroupArray);
+        $userGroupHash{'name'}          = shift(@userGroupArray);
         $userGroupHash{'description'}   = shift(@userGroupArray);
-        $userGroupHash{'guid'}      = shift(@userGroupArray);
+        $userGroupHash{'guid'}          = shift(@userGroupArray);
 
         #
         # push it into the array
@@ -3155,8 +3148,8 @@ sub updateDatabase {
 
     for my $table ( keys %{$self->{'dataSchema'}} ) {
         for my $field ( keys %{$self->{'dataSchema'}{$table}} ) {
-                my $type     = $self->{'dataSchema'}{$table}{$field}{'type'};
-                my $key     = $self->{'dataSchema'}{$table}{$field}{'key'};
+                my $type        = $self->{'dataSchema'}{$table}{$field}{'type'};
+                my $key         = $self->{'dataSchema'}{$table}{$field}{'key'};
                 my $default     = $self->{'dataSchema'}{$table}{$field}{'default'};
 
             #
@@ -3390,7 +3383,7 @@ sub _fullElementHash {
             $self->{'_fullElementHashCache'}->{$guid}{'title'}          = shift(@$elementArray);
             $self->{'_fullElementHashCache'}->{$guid}{'tags'}           = shift(@$elementArray);
             $self->{'_fullElementHashCache'}->{$guid}{'parent'}         = shift(@$elementArray);
-            $self->{'_fullElementHashCache'}->{$guid}{'ord'}        = shift(@$elementArray);
+            $self->{'_fullElementHashCache'}->{$guid}{'ord'}            = shift(@$elementArray);
             $self->{'_fullElementHashCache'}->{$guid}{'siteGUID'}       = shift(@$elementArray);
             $self->{'_fullElementHashCache'}->{$guid}{'rootElement'}    = shift(@$elementArray);
             $self->{'_fullElementHashCache'}->{$guid}{'public'}         = shift(@$elementArray);
@@ -3427,6 +3420,7 @@ sub _recordInit {
     # lets make sure we are not updateing the same record or adding a new one we shouldn't
     #
     if ($paramHash{'guid'} eq '') {
+
         #
         # set the dirived stuff so nobody gets sneeky and tries to pass it to the procedure
         #
@@ -3437,7 +3431,12 @@ sub _recordInit {
         $self->runSQL(DBH=>$paramHash{'DBH'},SQL=>"insert into ".$self->safeSQL($paramHash{'_table'})." (guid,site_guid,created_date) values ('".$paramHash{'guid'}."','".$paramHash{'siteGUID'}."','".$self->formatDate(format=>"SQL")."')");
     }
 
+
+    #
+    # TODO: this shouldn't be here.  They need to be exported out to the plugins that need them
+    #
     if (($paramHash{'_table'} eq 'directory' || $paramHash{'_table'} eq 'profile') && $paramHash{'pin'} eq '') {
+
         #
         # set the dirived stuff so nobody gets sneeky and tries to pass it to the procedure
         #
@@ -3538,7 +3537,7 @@ sub _recordSave {
     # make arrays usable
     #
     my @fields     = split(/\|/,$paramHash{'_fields'});
-    my @fieldKeys     = split(/\|/,$paramHash{'_keys'});
+    my @fieldKeys  = split(/\|/,$paramHash{'_keys'});
 
     #
     # add each field thats a core field
@@ -3583,7 +3582,7 @@ sub _recordSave {
             $key !~ /^pin$/) {
             if (defined $self->{'dataSchema'}{$paramHash{'_table'}}{'extra_value'}{'type'}) {
                 $self->saveExtra(DBH=>$paramHash{'DBH'},table=>$paramHash{'_table'},guid=>$paramHash{'guid'},field=>$key,value=>$paramHash{$key});
-                }
+            }
         }
     }
     return %paramHolder;
@@ -3614,7 +3613,6 @@ sub _getKeywordSQL {
     my @keywordsSplit = split(' ',$keywords);
     push (@keywordsSplit,@exactMatches);
 
-
     #
     # build the SQL
     #
@@ -3625,7 +3623,7 @@ sub _getKeywordSQL {
             foreach my $likeField (@likeFields) {
                 $fieldSQL .= $self->safeSQL($likeField)." LIKE '%".
                 $self->safeSQL($keyword)."%' or ";
-                }
+            }
             $fieldSQL =~ s/ or $//sg;
             if ($fieldSQL ne '') {
                 $keywordSQL .= "( ".$fieldSQL." )";
