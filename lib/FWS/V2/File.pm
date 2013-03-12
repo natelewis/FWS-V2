@@ -19,14 +19,14 @@ our $VERSION = '0.006';
 
 =head1 SYNOPSIS
 
-	use FWS::V2;
-	
-	my $fws = FWS::V2->new();
-	
-	#
-        # retrieve a reference to an array of data we asked for
-        #
-        my $fileArrayRef = $fws->fileArray( directory   =>"/home/directory" );
+    use FWS::V2;
+    
+    my $fws = FWS::V2->new();
+    
+    #
+    # retrieve a reference to an array of data we asked for
+    #
+    my $fileArrayRef = $fws->fileArray( directory   =>"/home/directory" );
 
 
 
@@ -42,78 +42,78 @@ Framework Sites version 2 file writing, reading and manipulation methods.
 Create a backup of the filesSecurePath, filesPath and the database and place it under the filesSecurePath backups directory.  The file names will be date keyed and be processed by the restoreFWS method by they keyed date string.  This will exclude any table that has the word 'session' in it, or anything that starts with 'admin_'.  
 
 Parameters:
-	id: file name of files - the date string in numbers will be used if no id is passed
-	excludeTables: Comma delimited list of tables you do not want to back up
-	excludeFiles: Do not backup the FWS web accessable files
-	excludeSiteFiles: Backup site files related to plugins and the fws instance, but not the once related to the site
-	excludeSecureFiles: Do not backup the secure files
+    id: file name of files - the date string in numbers will be used if no id is passed
+    excludeTables: Comma delimited list of tables you do not want to back up
+    excludeFiles: Do not backup the FWS web accessable files
+    excludeSiteFiles: Backup site files related to plugins and the fws instance, but not the once related to the site
+    excludeSecureFiles: Do not backup the secure files
 
 Usage: 
-        $fws->backupFWS(%params);
+    $fws->backupFWS(%params);
 
 Inside of the go.pl if you add certain site wide paramaters it will alter the behaviour of the backup"
 
-	$fws->{FWSBackupExcludeTables} = 'notThisSiteTableThatsSpecial,orThisOne';
+    $fws->{FWSBackupExcludeTables} = 'notThisSiteTableThatsSpecial,orThisOne';
 
 =cut
 
 sub backupFWS {
-        my ( $self, %paramHash ) = @_;
+    my ( $self, %paramHash ) = @_;
 
-	#
-	# set or use the default id
-	#
-	$paramHash{id} ||= $self->formatDate( format => 'number' );
+    #
+    # set or use the default id
+    #
+    $paramHash{id} ||= $self->formatDate( format => 'number' );
 
-	#
-	# build inital directories where this will be stored
-	#
-        my $backupDir = $self->{'fileSecurePath'} . '/backups';
-        my $backupFile = $backupDir . '/' . $paramHash{id};
-        $self->makeDir( $backupDir );
+    #
+    # build inital directories where this will be stored
+    #
+    my $backupDir = $self->{'fileSecurePath'} . '/backups';
+    my $backupFile = $backupDir . '/' . $paramHash{id};
+    $self->makeDir( $backupDir );
 
-	#
-	# turn the exclude table into a ha to compare against
-	#
-	my %excludeTables;
-	map { $excludeTables{$_} = 1 } split ( ',', $paramHash{excludeTables} );
+    #
+    # turn the exclude table into a ha to compare against
+    #
+    my %excludeTables;
+    map { $excludeTables{$_} = 1 } split ( ',', $paramHash{excludeTables} );
 
-        #
-        # Dump the database
-        #
-        open ( my $SQLFILE, ">", $backupFile . ".sql" );
-        my $tables = $self->runSQL(SQL=>"SHOW TABLES");
-        while (@$tables) {
-                my $table = shift( @$tables );
-		if ( $table !~ /session/ && $table !~ /^admin_/ && !$excludeTables{$table} ) {
-	                print $SQLFILE "DROP TABLE IF EXISTS " . $self->safeSQL( $table ) . ";" . "\n";
-	                print $SQLFILE $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->selectall_arrayref( "SHOW CREATE TABLE " . $self->safeSQL( $table ) )->[0][1] . ";" . "\n";
-	                my $sth = $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->prepare("SELECT * FROM " . $table);
-	                $sth->execute();
-	                while ( my @data = $sth->fetchrow_array() ) {
-	                        map ( $_ = "'".$self->safeSQL($_)."'", @data );
-                                map ( $_ =~ s/\0/\\0/sg, @data );
-                                map ( $_ =~ s/\n/\\n/sg, @data );
-	                        print $SQLFILE "INSERT INTO " . $table . " VALUES (" . join( ',', @data ) . ");" . "\n";
-	                }
-                }
+    #
+    # Dump the database
+    #
+    open ( my $SQLFILE, ">", $backupFile . ".sql" );
+    my $tables = $self->runSQL(SQL=>"SHOW TABLES");
+    while (@$tables) {
+        my $table = shift( @$tables );
+        if ( $table !~ /session/ && $table !~ /^admin_/ && !$excludeTables{$table} ) {
+            print $SQLFILE "DROP TABLE IF EXISTS " . $self->safeSQL( $table ) . ";" . "\n";
+            print $SQLFILE $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->selectall_arrayref( "SHOW CREATE TABLE " . $self->safeSQL( $table ) )->[0][1] . ";" . "\n";
+            my $sth = $self->{'_DBH_' . $self->{'DBName'} . $self->{'DBHost'} }->prepare("SELECT * FROM " . $table);
+            $sth->execute();
+            while ( my @data = $sth->fetchrow_array() ) {
+                map ( $_ = "'".$self->safeSQL($_)."'", @data );
+                map ( $_ =~ s/\0/\\0/sg, @data );
+                map ( $_ =~ s/\n/\\n/sg, @data );
+                print $SQLFILE "INSERT INTO " . $table . " VALUES (" . join( ',', @data ) . ");" . "\n";
+            }
         }
-        close $SQLFILE;
+    }
+    close $SQLFILE;
 
-	if ( !$paramHash{'excludeFiles'} ) {
-		if ( !$paramHash{'excludeSiteFiles'} ) {
-	       		$self->packDirectory( fileName => $backupFile . ".files", directory => $self->{'filePath'} );
-		}
-		else {
-	       		$self->packDirectory( directoryList => '/fws,/plugins', fileName => $backupFile . ".files", directory => $self->{'filePath'} );
-		}
-	}
+    if ( !$paramHash{excludeFiles} ) {
+        if ( !$paramHash{excludeSiteFiles} ) {
+                   $self->packDirectory( fileName => $backupFile . ".files", directory => $self->{filePath} );
+        }
+        else {
+                   $self->packDirectory( directoryList => '/fws,/plugins', fileName => $backupFile . ".files", directory => $self->{filePath} );
+        }
+    }
 
-	if ( !$paramHash{'excludeSecureFiles'} ) {
-	        $self->packDirectory( fileName => $backupFile . ".secureFiles", directory => $self->{'fileSecurePath'}, baseDirectory => $self->{fileSecurePath} );
-	}
+    if ( !$paramHash{excludeSecureFiles} ) {
+        $self->packDirectory( fileName => $backupFile . ".secureFiles", directory => $self->{fileSecurePath}, baseDirectory => $self->{fileSecurePath} );
+    }
 
-	return $paramHash{id};
+    return $paramHash{id};
 }
 
 
@@ -121,199 +121,199 @@ sub backupFWS {
 
 Restore a backup created by backupFWS.  This will overwrite the files in place that are the same, and will replace all database tables with the one from the restore that are restored.   All tables, and files not part of the restore will be left untouched.
 
-        $fws->restoreFWS( id=> 'someID' );
+    $fws->restoreFWS( id=> 'someID' );
 
 =cut
 
 sub restoreFWS {
-        my ( $self, %paramHash ) = @_;
+    my ( $self, %paramHash ) = @_;
 
-        $self->unpackDirectory( fileName => $self->{'fileSecurePath'} . '/backups/' . $paramHash{'id'} . '.files',       directory => $self->{'filePath'} );
-        $self->unpackDirectory( fileName => $self->{'fileSecurePath'} . '/backups/' . $paramHash{'id'} . '.secureFiles', directory => $self->{'fileSecurePath'} );
+    $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.files',       directory => $self->{filePath} );
+    $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.secureFiles', directory => $self->{fileSecurePath} );
 
-        open ( my $SQLFILE, "<", $self->{'fileSecurePath'} . '/backups/' . $paramHash{'id'} . '.sql' );
-        my $statement;
-        my $endTest;
-        while ( <$SQLFILE> ) {
-                $statement      .= $_;
-                $endTest        .= $_;
+    open ( my $SQLFILE, "<", $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.sql' );
+    my $statement;
+    my $endTest;
+    while ( <$SQLFILE> ) {
+        $statement      .= $_;
+        $endTest    .= $_;
 
-                #
-                # git rid of all the escaped tics, and then eat the
-                #
-                $endTest =~ s/''//sg;
-                $endTest =~ s/'(.*?)'//sg;
+        #
+        # git rid of all the escaped tics, and then eat the
+        #
+        $endTest =~ s/''//sg;
+        $endTest =~ s/'(.*?)'//sg;
 
-                #
-                # if there is no tick, reset for next pass, and keep going
-                #
-                if ($endTest !~ /'/ && $endTest =~ /;$/) {
-                        $self->runSQL( SQL=> $statement );
-                        $statement      = '';
-                        $endTest        = '';
-                }
+        #
+        # if there is no tick, reset for next pass, and keep going
+        #
+        if ($endTest !~ /'/ && $endTest =~ /;$/) {
+            $self->runSQL( SQL=> $statement );
+            $statement      = '';
+            $endTest    = '';
         }
+    }
 
-	close $SQLFILE;
-	return;
+    close $SQLFILE;
+    return;
 }
 
 =head2 createSizedImages
 
 Create all of the derived images from a file upload based on its schema definition
 
-	my %dataHashToUpdate = $fws->dataHash(guid=>'someGUIDThatHasImagesToUpdate');
-	$fws->createSizedImages(%dataHashToUpdate);
+    my %dataHashToUpdate = $fws->dataHash(guid=>'someGUIDThatHasImagesToUpdate');
+    $fws->createSizedImages(%dataHashToUpdate);
 
 If the data hash might not be correct because it is actually stored in a different table you can pass the field name you wish to update
 
-	$fws->createSizedImages(guid=>'someGUID',image_1=>'/someImage/image.jpg');
+    $fws->createSizedImages(guid=>'someGUID',image_1=>'/someImage/image.jpg');
 
 =cut
 
 sub createSizedImages {
-        my ($self,%paramHash) = @_;
+    my ($self,%paramHash) = @_;
+
+    #
+    # going to need the current hash plus its derived schema to figure out what we should be making
+    #
+    my %dataHash    = (%paramHash,$self->dataHash(guid=>$paramHash{guid}));
+    my %schemaHash  = $self->schemaHash($dataHash{type});
+
+    #
+    # if siteGUID is blank, lets get the one of the site we are on
+    #
+    if ($paramHash{siteGUID} eq '') { $paramHash{siteGUID} = $self->{siteGUID} }
+
+    #
+    # bust though all the fields and see if we need to do anything with them
+    #
+    for my $field ( keys %dataHash ) {
 
         #
-        # going to need the current hash plus its derived schema to figure out what we should be making
+        # for non secure files lets prune the 640,custom, and thumb fields
         #
-        my %dataHash    = (%paramHash,$self->dataHash(guid=>$paramHash{'guid'}));
-        my %schemaHash  = $self->schemaHash($dataHash{'type'});
+        my $dataType = $schemaHash{$field}{fieldType};
+        if ($dataType eq 'file' || $dataType eq 'secureFile') {
+        
 
-        #
-        # if siteGUID is blank, lets get the one of the site we are on
-        #
-        if ($paramHash{'siteGUID'} eq '') { $paramHash{'siteGUID'} = $self->{'siteGUID'} }
+            #
+            # get just the file name... we will use this a few times
+            #
+            my $fileName = $self->justFileName($dataHash{$field});
 
-        #
-        # bust though all the fields and see if we need to do anything with them
-        #
-        for my $field ( keys %dataHash ) {
+            #
+            # set the file path based on secure or not
+            #
+            my $dirPath = $self->{filePath};
+            if ($dataType eq 'secureFile') { $dirPath = $self->{fileSecurePath} }
 
-                #
-                # for non secure files lets prune the 640,custom, and thumb fields
-                #
-                my $dataType = $schemaHash{$field}{fieldType};
-                if ($dataType eq 'file' || $dataType eq 'secureFile') {
-		
+            #
+            # check for thumb creation... if so lets do it!
+            #
+            for my $fieldName ( keys %schemaHash ) {
+                if ($schemaHash{$fieldName}{fieldParent} eq $field && $schemaHash{$fieldName}{fieldParent} ne '' ){
 
+
+
+                    #
+                    # A directive to create a new image exists!  lets figure out where and how, and do it
+                    #
+                    my $directory       = $self->safeDir($dirPath.'/'.$paramHash{siteGUID}.'/'.$paramHash{guid});
+                    my $newDirectory    = $self->safeDir($dirPath.'/'.$paramHash{siteGUID}.'/'.$paramHash{guid}.'/'.$fieldName);
+                    my $newFile         = $newDirectory.'/'.$fileName;
+                    my $webFile         = $self->{fileWebPath}.'/'.$paramHash{siteGUID}.'/'.$paramHash{guid}.'/'.$fieldName.'/'.$fileName;
+
+
+                    #
+                    # make the image width 100, if its not specified
+                    #
+                    if ($schemaHash{$fieldName}{imageWidth} < 1) { $schemaHash{$fieldName}{imageWidth} = 100 }
+
+                    #
+                    # Make the subdir if its not already there
+                    #
+                    $self->makeDir( $newDirectory, '0755' );
+
+                    #
+                    # create the new image
+                    #
+                    $self->saveImage(sourceFile=>$directory.'/'.$fileName,fileName=>$newFile,width=>$schemaHash{$fieldName}{imageWidth});
+
+                    #
+                    # if its a secure file, we only save it from site guid on...
+                    #
+                    if ($dataType eq 'secureFile') { $webFile = '/'.$paramHash{siteGUID}.'/'.$paramHash{guid}.'/'.$fileName }
+
+                    #
+                    # if the new image is not there, then lets blank out the file
+                    #
+                    if (!-e $newFile) { $webFile = '' }
+                
+                    if ($paramHash{guid} ne '') {
                         #
-                        # get just the file name... we will use this a few times
+                        # save a blank one, or save a good one
                         #
-                        my $fileName = $self->justFileName($dataHash{$field});
-
-                        #
-                        # set the file path based on secure or not
-                        #
-                        my $dirPath = $self->{'filePath'};
-                        if ($dataType eq 'secureFile') { $dirPath = $self->{'fileSecurePath'} }
-
-			#
-                        # check for thumb creation... if so lets do it!
-                        #
-                        for my $fieldName ( keys %schemaHash ) {
-                                if ($schemaHash{$fieldName}{'fieldParent'} eq $field && $schemaHash{$fieldName}{'fieldParent'} ne '' ){
-
-
-
-                                        #
-                                        # A directive to create a new image exists!  lets figure out where and how, and do it
-                                        #
-                                        my $directory           = $self->safeDir($dirPath.'/'.$paramHash{'siteGUID'}.'/'.$paramHash{'guid'});
-                                        my $newDirectory        = $self->safeDir($dirPath.'/'.$paramHash{'siteGUID'}.'/'.$paramHash{'guid'}.'/'.$fieldName);
-                                        my $newFile             = $newDirectory."/".$fileName;
-                                        my $webFile             = $self->{'fileWebPath'}.'/'.$paramHash{'siteGUID'}.'/'.$paramHash{'guid'}.'/'.$fieldName.'/'.$fileName;
-
-
-                                        #
-                                        # make the image width 100, if its not specified
-                                        #
-                                        if ($schemaHash{$fieldName}{'imageWidth'} < 1) { $schemaHash{$fieldName}{'imageWidth'} = 100 }
-
-                                        #
-                                        # Make the subdir if its not already there
-                                        #
-                                        $self->makeDir( $newDirectory, "0755" );
-
-                                        #
-                                        # create the new image
-                                        #
-                                        $self->saveImage(sourceFile=>$directory.'/'.$fileName,fileName=>$newFile,width=>$schemaHash{$fieldName}{'imageWidth'});
-
-                                        #
-                                        # if its a secure file, we only save it from site guid on...
-                                        #
-                                        if ($dataType eq 'secureFile') { $webFile = '/'.$paramHash{'siteGUID'}.'/'.$paramHash{'guid'}.'/'.$fileName }
-
-                                        #
-                                        # if the new image is not there, then lets blank out the file
-                                        #
-                                        if (!-e $newFile) { $webFile = '' }
-				
-					if ($paramHash{'guid'} ne '') {
-	                                        #
-	                                        # save a blank one, or save a good one
-	                                        #
-	                                        $self->saveExtra(table=>'data',siteGUID=>$paramHash{'siteGUID'},guid=>$paramHash{'guid'},field=>$fieldName,value=>$webFile);
-                                	}
-                                }
-                        }
+                        $self->saveExtra(table=>'data',siteGUID=>$paramHash{siteGUID},guid=>$paramHash{guid},field=>$fieldName,value=>$webFile);
+                    }
                 }
+            }
         }
+    }
 
-	return;
+    return;
 }
 
 =head2 fileArray
 
 Return a directory listing into a FWS hash array reference.
 
-        #
-        # retrieve a reference to an array of data we asked for
-        #
-        my $fileArray = $fws->fileArray( directory   =>"/home/directory" );
+    #
+    # retrieve a reference to an array of data we asked for
+    #
+    my $fileArray = $fws->fileArray( directory   =>'/home/directory' );
 
-        #
-        # loop though the array printing the files we found
-        #
-        for my $i (0 .. $#$fileArray) {
-                print $fileArray->[$i]{"file"}. "\n";
-        }
+    #
+    # loop though the array printing the files we found
+    #
+    for my $i (0 .. $#$fileArray) {
+        print $fileArray->[$i]{file}. "\n";
+    }
 
 =cut
 
 sub fileArray {
-        my ($self,%paramHash) =@_;
+    my ($self,%paramHash) =@_;
 
-        #
-        # ensure nothing scary is in the directory
-        #
-        $paramHash{'directory'} = $self->safeDir($paramHash{'directory'});
+    #
+    # ensure nothing scary is in the directory
+    #
+    $paramHash{directory} = $self->safeDir($paramHash{directory});
 
-        #
-        # pull the directory into an array
-        #
-        opendir ( my $DIR, $paramHash{'directory'} );
-        my @getDir = grep( !/^\.\.?$/, readdir( $DIR ));
-        closedir $DIR;
+    #
+    # pull the directory into an array
+    #
+    opendir ( my $DIR, $paramHash{directory} );
+    my @getDir = grep( !/^\.\.?$/, readdir( $DIR ));
+    closedir $DIR;
 
-        my @fileHashArray;
-        foreach my $dirFile (@getDir) {
-                if (-f $paramHash{'directory'}.'/'.$dirFile) {
+    my @fileHashArray;
+    foreach my $dirFile (@getDir) {
+        if (-f $paramHash{directory}.'/'.$dirFile) {
 
-                        my %fileHash;
-                        $fileHash{'file'}           = $dirFile;
-                        $fileHash{'fullFile'}       = $paramHash{'directory'}.'/'.$dirFile;
-                        $fileHash{'size'}           = (stat $fileHash{'fullFile'})[7];
-                        $fileHash{'date'}           = (stat $fileHash{'fullFile'})[9];
+            my %fileHash;
+            $fileHash{file}       = $dirFile;
+            $fileHash{fullFile}   = $paramHash{directory}.'/'.$dirFile;
+            $fileHash{size}       = (stat $fileHash{fullFile})[7];
+            $fileHash{date}       = (stat $fileHash{fullFile})[9];
 
-                        #
-                        # push it to the array
-                        #
-                        push (@fileHashArray,{%fileHash});
-                }
+            #
+            # push it to the array
+            #
+            push (@fileHashArray,{%fileHash});
         }
-        return \@fileHashArray;
+    }
+    return \@fileHashArray;
 }
 
 
@@ -323,69 +323,60 @@ Return a reference to a hash array from its human readable formMap.    The forma
 
 Example: 
 
-	title 1~type~type 1|sub title 1a|sub title 1b
-	title 2~something~extra|sub title 2a~extaKey~extra value|sub title 2b
+    title 1~type~type 1|sub title 1a|sub title 1b
+    title 2~something~extra|sub title 2a~extaKey~extra value|sub title 2b
 
-Will return: 	
+Will return:     
 
-        [
-          {
-            'name' => 'title 1',
-            'type' => 'type 1',
-            'optionArray' => [
-                               {
-                                 'name' => 'sub title 1a'
-                               },
-                               {
-                                 'name' => 'sub title 1b'
-                               }
-                             ]
-          },
-          {
-            'name' => 'title 2',
-            'something' => 'extra',
-            'optionArray' => [
-                               {
-                                 'name' => 'sub title 2a',
-                                 'extaKey' => 'extra value'
-                               },
-                               {
-                                 'name' => 'sub title 2b'
-                               }
-                             ]
-          }
-        ];
+    [
+      {
+        'name' => 'title 1',
+        'type' => 'type 1',
+        'optionArray' => [
+                   { 'name' => 'sub title 1a' },
+                   { 'name' => 'sub title 1b' }
+                 ]
+      },
+      {
+        'name' => 'title 2',
+        'something' => 'extra',
+        'optionArray' => [
+                   { 'name' => 'sub title 2a', 'extaKey' => 'extra value' },
+                   { 'name' => 'sub title 2b' }
+                 ]
+      }
+    ];
 
 =cut
 
 sub formMapToHashArray {
-        my ( $self, $obj ) = @_;
+    my ( $self, $obj ) = @_;
 
-        my @formArray;
-        for my $line ( split ( /\n/, $obj ) ) {
+    my @formArray;
+    for my $line ( split ( /\n/, $obj ) ) {
 
-                my @optionArray;;
-                my @items = split ( /\|/, $line );
+        my @optionArray;;
+        my @items = split ( /\|/, $line );
 
-                my %item;
-                my %itemExt;
-                ( $item{name}, %itemExt ) = split( /~/, shift( @items ) );
-                %item = ( %itemExt, %item );
+        my %item;
+        my %itemExt;
+        ( $item{name}, %itemExt ) = split( /~/, shift( @items ) );
+        %item = ( %itemExt, %item );
 
-                my @optionArray;
-                while (@items ) {
-                        my %option;
-                        my %optionExt;
-                        ( $option{name}, %optionExt) = split( /~/, shift( @items ) );
-                        %option = ( %optionExt, %option );
-                        push( @optionArray,  {%option} );
-                }
-
-                $item{'optionArray'} = \@optionArray;
-                push( @formArray, {%item} );
+        my @optionArray;
+        while (@items ) {
+            my %option;
+            my %optionExt;
+            ( $option{name}, %optionExt) = split( /~/, shift( @items ) );
+            %option = ( %optionExt, %option );
+            push( @optionArray,  {%option} );
         }
 
-        return \@formArray;
+        $item{'optionArray'} = \@optionArray;
+        push( @formArray, {%item} );
+    }
+
+    return \@formArray;
 }
 
 
@@ -393,277 +384,276 @@ sub formMapToHashArray {
 
 Retrive a file and convert it into a base 64 encoded binary.
 
-        #
-        # Get the file
-        #
-        my $base64String = $fws->getEncodedBinary($someFileWeWantToConvert);
+    #
+    # Get the file
+    #
+    my $base64String = $fws->getEncodedBinary($someFileWeWantToConvert);
 
 =cut
 
 sub getEncodedBinary {
-        my ($self,$fileName) = @_;
+    my ($self,$fileName) = @_;
 
-        #
-        #convert file to base64
-        #
-        use MIME::Base64;
-        my $rawFile;
+    #
+    #convert file to base64
+    #
+    use MIME::Base64;
+    my $rawFile;
 
-        open ( my $FILE, "<", $fileName ) or die "Can not open file:". $fileName;
-        binmode $FILE;
-        while ( read ( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
-        close $FILE;
+    open ( my $FILE, '<', $fileName ) or die 'Can not open file:'. $fileName;
+    binmode $FILE;
+    while ( read ( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
+    close $FILE;
 
-	my $rawfile = encode_base64($rawFile);
-	return $rawfile;
+    my $rawfile = encode_base64($rawFile);
+    return $rawfile;
 }
 
 =head2 savePlugin
 
 Save a plugin and publish it to frameworksites.com.  All information needs to be known to save it.   If any paramater isn't passed it will be considered blank.
 
-        #
-        # save a plugin
-       	# 
-        my $status = $fws->savePlugin( plugin          => $fws->formValue("plugin"),
-                                       scriptInit      => $fws->formValue("scriptInit"),
-                                       script          => $fws->formValue("script"),
-                                       css             => $fws->formValue("css"),
-                                       js              => $fws->formValue("js"),
-                                       authorEmail     => $fws->formValue("authorEmail"),
-                                       version         => $fws->formValue("version"),
-                                       changeLog       => $fws->formValue("change"),
-                                       changeMessage   => $fws->formValue("changeLog"),
-                                       publish         => 0,
-                                       publishPassword => $fws->formValue("auth"),
-        );
+    #
+    # save a plugin
+    # 
+    my $status = $fws->savePlugin( 
+                    plugin          => $fws->formValue('plugin'),
+                    scriptInit      => $fws->formValue('scriptInit'),
+                    script          => $fws->formValue('script'),
+                    css             => $fws->formValue('css'),
+                    js              => $fws->formValue('js'),
+                    authorEmail     => $fws->formValue('authorEmail'),
+                    version         => $fws->formValue('version'),
+                    changeLog       => $fws->formValue('change'),
+                    changeMessage   => $fws->formValue('changeLog'),
+                    publish         => 0,
+                    publishPassword => $fws->formValue('auth'),
+    )
 
 When publish is set to 1, you must also ensure you have a valid FWSKey and domain set for the fws object.   The publish password is your frameworksites.com password for the account that owns the domain.
 
 =cut
 
 sub savePlugin {
-        my ( $self, %paramHash ) = @_;
+    my ( $self, %paramHash ) = @_;
 
-        my $pluginName  = $self->safeFile( $paramHash{plugin} );
-        my $pluginDir   = $self->{'filePath'}.'/plugins';
-        my $pluginFile  = $self->{'fileSecurePath'}.'/plugins/'.$pluginName.'.pm';
-        my $pluginLog   = $self->{'fileSecurePath'}.'/plugins/'.$pluginName.'.log';
+    my $pluginName  = $self->safeFile( $paramHash{plugin} );
+    my $pluginDir   = $self->{filePath}.'/plugins';
+    my $pluginFile  = $self->{fileSecurePath}.'/plugins/'.$pluginName.'.pm';
+    my $pluginLog   = $self->{fileSecurePath}.'/plugins/'.$pluginName.'.log';
+
+    #
+    # clean up trailing spaces so they don't expand
+    #
+    ( my $scriptInit =  $paramHash{scriptInit} )    =~ s/\n*$//sg;
+    ( my $script     =  $paramHash{script} )    =~ s/\n*$//sg;
+
+    #
+    # make the author email so it is less spammy
+    #
+    ( my $authorEmail = $paramHash{authorEmail} ) =~ s/\@/ at /g;
+
+    # this is broken up goofy because the source compressor gets silly on 's inside of "s and use and the POD
+    # as a reserved word.  this was easier than fixing the web code compressor for now
+    my $pluginScript    = "package " . $pluginName . ";\n" .
+                  'u' . 'se 5.006;' . "\n" . 'u' . 'se strict;' . "\n" .
+                  "no warnings \"uninitialized\";\n" .
+                  "BEGIN { push \@FWS::V2::ISA, '" .
+                  $pluginName .
+                  "' }\n" .
+                  "our \$VERSION = '" .
+                  $paramHash{version} .
+                  "';\n\n=" . "head2 pluginInit\n\n".
+                  "The pluginInit will be executed as a result of using \$fws->registerPlugin( \"".$pluginName . "\" );\n\n" .
+                  "=" . "cut\n\nsub pluginInit {\nmy (\$" .
+                  "self,\$fws) = \@_;\n" .
+                  "( my \$"  .
+                  "distName = __PACKAGE__ ) ".
+                  " =~ s/.*:://sg;\n" .
+                  "\$fws->_cssEnable(\"plugins/\".\$" .
+                  "distName.\"/FWSElement-\".\$VERSION);\n" .
+                  "\$fws->_jsEnable(\"plugins/\".\$" .
+                  "distName.\"/FWSElement-\".\$VERSION);\n\n" .
+                  $scriptInit . "\n\nreturn \$fws;\n}\n\n=" .
+                  "head1 ELEMENTS AND METHODS\n\n" .
+                  $script . "\n\n=".
+                  "head1 AUTHOR\n\n" .
+                  $paramHash{authorName} .
+                  ',' . ' ' . 'C<<' . ' ' . '<' . $authorEmail . ' ' . '>' . ' ' . '>>' .
+                  "\n\n=" .
+                  "cut\n\n1;";
+
+
+    #
+    # validate the perl before we save it, but we will need VERSION
+    #
+    my $fws         = $self;
+    my $VERSION     = 0;
+    my $distName    = '';
+
+    ## no critic
+    eval $paramHash{scriptInit};
+    ## use critic
+
+    my $initFailed = 0;
+    if ( $@ ) { return 'INIT: ' . $@ }
+
+    ## no critic
+    eval $paramHash{script};
+    ## use critic
+
+    if ( $@ ) { return 'METHOD: ' . $@ }
+
+    #
+    # Make any directory we might need
+    #
+    $self->makeDir($self->{'fileSecurePath'}.'/plugins');
+    $self->makeDir($pluginDir);
+    $self->makeDir($pluginDir.'/'.$pluginName);
+
+    #
+    # Save plugin
+    #
+    open( my $FILE, ">", $pluginFile );
+    print $FILE $pluginScript;
+    close $FILE;
+
+    #
+    # get its version
+    #
+    my $pluginVer = $self->getPluginVersion($pluginFile);
+
+
+    #
+    # save its changelog
+    #
+    my $changeLog = $paramHash{changeLog};
+    if ( $paramHash{publish} ) {
+        $changeLog = $pluginVer . " " . $self->formatDate(format => 'yearFirstDate') . "\n\t- " . $paramHash{changeMessage} . "\n" . $changeLog;
+    }
+    open( my $CHANGEFILE, ">", $pluginLog );
+    print $CHANGEFILE $changeLog;
+    close $CHANGEFILE;
+
+    #
+    # save its css
+    #
+    open ( my $CSSFILE, ">", $pluginDir.'/'.$pluginName.'/FWSElement-'.$pluginVer.".css" );
+    print $CSSFILE $paramHash{css};
+    close $CSSFILE;
+
+    #
+    # save its js
+    #
+    open ( my $JSFILE, ">", $pluginDir.'/'.$pluginName.'/FWSElement-'.$pluginVer.".js" );
+    print $JSFILE $paramHash{js};
+    close $JSFILE;
+
+    #
+    # Remove JS and CSS Cache
+    #
+    my @fileArray = @{$self->fileArray(directory=>$self->{filePath}."/fws/cache")};
+    for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{fullFile} }
+
+    #
+    # publish the plugin also
+    #
+    if ( $paramHash{publish} ) {
 
         #
-        # clean up trailing spaces so they don't expand
+        # get the domain minus the stuff before //
         #
-        ( my $scriptInit =  $paramHash{scriptInit} )    =~ s/\n*$//sg;
-        ( my $script     =  $paramHash{script} )        =~ s/\n*$//sg;
-
-        #
-        # make the author email so it is less spammy
-        #
-        ( my $authorEmail = $paramHash{authorEmail} ) =~ s/\@/ at /g;
-
-        # this is broken up goofy because the source compressor gets silly on 's inside of "s and use and the POD
-        # as a reserved word.  this was easier than fixing the web code compressor for now
-        my $pluginScript        = "package " . $pluginName . ";\n" .
-                                  'u' . 'se 5.006;' . "\n" . 'u' . 'se strict;' . "\n" .
-                                  "no warnings \"uninitialized\";\n" .
-                                  "BEGIN { push \@FWS::V2::ISA, '" .
-                                  $pluginName .
-                                  "' }\n" .
-                                  "our \$VERSION = '" .
-                                  $paramHash{version} .
-                                  "';\n\n=" . "head2 pluginInit\n\n".
-                                  "The pluginInit will be executed as a result of using \$fws->registerPlugin( \"".$pluginName . "\" );\n\n" .
-                                  "=" . "cut\n\nsub pluginInit {\nmy (\$" .
-                                  "self,\$fws) = \@_;\n" .
-                                  "( my \$"  .
-                                  "distName = __PACKAGE__ ) ".
-                                  " =~ s/.*:://sg;\n" .
-                                  "\$fws->_cssEnable(\"plugins/\".\$" .
-                                  "distName.\"/FWSElement-\".\$VERSION);\n" .
-                                  "\$fws->_jsEnable(\"plugins/\".\$" .
-                                  "distName.\"/FWSElement-\".\$VERSION);\n\n" .
-                                  $scriptInit . "\n\nreturn \$fws;\n}\n\n=" .
-                                  "head1 ELEMENTS AND METHODS\n\n" .
-                                  $script . "\n\n=".
-                                  "head1 AUTHOR\n\n" .
-                                  $paramHash{authorName} .
-                                  ',' . ' ' . 'C<<' . ' ' . '<' . $authorEmail . ' ' . '>' . ' ' . '>>' .
-                                  "\n\n=" .
-                                  "cut\n\n1;";
-
-
-
+        my $cleanDomain = $self->{domain};
+        $cleanDomain =~ s/.*\/\///sg;
 
         #
-        # validate the perl before we save it, but we will need VERSION
+        # do the post
         #
-        my $fws         = $self;
-        my $VERSION     = 0;
-        my $distName    = '';
-
-        ## no critic
-        eval $paramHash{scriptInit};
-        ## use critic
-
-        my $initFailed = 0;
-        if ( $@ ) { return 'INIT: ' . $@ }
-
-        ## no critic
-        eval $paramHash{script};
-        ## use critic
-
-        if ( $@ ) { return 'METHOD: ' . $@ }
+        my $responseRef = $self->HTTPRequest( type =>'post', url=>$self->{'FWSPluginServer'}.'/cgi-bin/go.pl?p=publishPlugin&plugin='.$pluginName.'&auth='.$paramHash{publishPassword} . '&FWSKey='.$self->{'FWSKey'}.'&domain='.$cleanDomain.'&changeLog='.$self->urlEncode($changeLog).'&script='.$self->urlEncode($pluginScript).'&files='.$self->urlEncode($self->packDirectory( directory => $pluginDir . '/' . $pluginName )));
 
         #
-        # Make any directory we might need
+        # post to the log we did something cool and return
         #
-        $self->makeDir($self->{'fileSecurePath'}.'/plugins');
-        $self->makeDir($pluginDir);
-        $self->makeDir($pluginDir.'/'.$pluginName);
+        my $publishStatus = 'Publishing Plugin '.$pluginName.': '.$responseRef->{'content'};
+        $self->FWSLog( $publishStatus );
+        return $publishStatus;
+    }
 
-        #
-        # Save plugin
-        #
-        open( my $FILE, ">", $pluginFile );
-        print $FILE $pluginScript;
-        close $FILE;
-
-        #
-        # get its version
-        #
-        my $pluginVer = $self->getPluginVersion($pluginFile);
-
-
-        #
-        # save its changelog
-        #
-        my $changeLog = $paramHash{changeLog};
-        if ( $paramHash{publish} ) {
-                $changeLog = $pluginVer . " " . $self->formatDate(format => 'yearFirstDate') . "\n\t- " . $paramHash{changeMessage} . "\n" . $changeLog;
-        }
-        open( my $CHANGEFILE, ">", $pluginLog );
-        print $CHANGEFILE $changeLog;
-        close $CHANGEFILE;
-
-        #
-        # save its css
-        #
-        open ( my $CSSFILE, ">", $pluginDir.'/'.$pluginName.'/FWSElement-'.$pluginVer.".css" );
-        print $CSSFILE $paramHash{css};
-        close $CSSFILE;
-
-        #
-        # save its js
-        #
-        open ( my $JSFILE, ">", $pluginDir.'/'.$pluginName.'/FWSElement-'.$pluginVer.".js" );
-        print $JSFILE $paramHash{js};
-        close $JSFILE;
-
-        #
-        # Remove JS and CSS Cache
-        #
-        my @fileArray = @{$self->fileArray(directory=>$self->{'filePath'}."/fws/cache")};
-        for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{'fullFile'} }
-
-        #
-        # publish the plugin also
-        #
-        if ( $paramHash{publish} ) {
-
-                #
-                # get the domain minus the stuff before //
-                #
-                my $cleanDomain = $self->{'domain'};
-                $cleanDomain =~ s/.*\/\///sg;
-
-                #
-                # do the post
-                #
-                my $responseRef = $self->HTTPRequest( type =>'post', url=>$self->{'FWSPluginServer'}.'/cgi-bin/go.pl?p=publishPlugin&plugin='.$pluginName.'&auth='.$paramHash{publishPassword} . '&FWSKey='.$self->{'FWSKey'}.'&domain='.$cleanDomain.'&changeLog='.$self->urlEncode($changeLog).'&script='.$self->urlEncode($pluginScript).'&files='.$self->urlEncode($self->packDirectory( directory => $pluginDir . '/' . $pluginName )));
-
-                #
-                # post to the log we did something cool and return
-                #
-                my $publishStatus = 'Publishing Plugin '.$pluginName.': '.$responseRef->{'content'};
-                $self->FWSLog( $publishStatus );
-                return $publishStatus;
-        }
-
-        return '';
+    return;
 }
 
 =head2 unpackDirectory
 
 The counterpart to packDirectory.   This will put the files under the directory you choose from a file created by packDirectory.
 
-        #
-        # Put the files somewhere
-        #
-        $fws->unpackDirectory( directory => $someDirectory, fileName => '/something' );
+    #
+    # Put the files somewhere
+    #
+    $fws->unpackDirectory( directory => $someDirectory, fileName => '/something' );
 
 =cut
 
 sub unpackDirectory {
-        my ( $self, %paramHash ) = @_;
+    my ( $self, %paramHash ) = @_;
 
-	#
-	# for good mesure, make the directory in case this is super fresh
-	#
-        $self->makeDir( $paramHash{directory} );
+    #
+    # for good mesure, make the directory in case this is super fresh
+    #
+    $self->makeDir( $paramHash{directory} );
 
-	#
-	# PH's for file slurping
-	#
-        my $fileReading;
-        my $fileName;
+    #
+    # PH's for file slurping
+    #
+    my $fileReading;
+    my $fileName;
        
-	#
-	# open file
-	# 
-	open ( my $UNPACKFILE, "<", $paramHash{'fileName'} );
-        while ( <$UNPACKFILE> ) {
-                my $line = $_;
+    #
+    # open file
+    # 
+    open ( my $UNPACKFILE, "<", $paramHash{'fileName'} );
+    while ( <$UNPACKFILE> ) {
+        my $line = $_;
 
-		#
-		# eat the return
-		#
-		chomp $line;
+        #
+        # eat the return
+        #
+        chomp $line;
 
-                if ( $line =~ /^FILE_END\|/ ) {
-                        #
-                        # save the file to that directory
-                        #
-                        $self->saveEncodedBinary( $paramHash{directory} . "/" . $fileName, $fileReading );
-                        
-			#
-                        # reset so when we come around again we will no we are done.
-                        #
-                        $fileName       = '';
-                        $fileReading    = '';
-                }
-
-                #
-                # if we have a file name,  we are currenlty looking for a
-                # file.  eat those lines up and stick them in a diffrent var
-                #
-                elsif ( $fileName ne '' ) { $fileReading .= $line."\n" }
-
-                #
-                # if this is a start of a file, lets get it set up and
-                # define the file name, the next time we go around we
-                # will be looking at the base 64
-                #
-                if ( $line =~ /^FILE\|/ ) {
-                        ( $fileName = $line ) =~ s/.*?\|\/*(.*)\n*/$1/sg;
-                        ( my $directory = $paramHash{directory} . '/' . $fileName ) =~ s/^(.*)\/.*/$1/sg;
-                        $self->makeDir( $directory );
-                }
-
-
+        if ( $line =~ /^FILE_END\|/ ) {
+            #
+            # save the file to that directory
+            #
+            $self->saveEncodedBinary( $paramHash{directory} . "/" . $fileName, $fileReading );
+            
+            #
+            # reset so when we come around again we will no we are done.
+            #
+            $fileName       = '';
+            $fileReading    = '';
         }
-        close $UNPACKFILE;
 
-	return;
+        #
+        # if we have a file name,  we are currenlty looking for a
+        # file.  eat those lines up and stick them in a diffrent var
+        #
+        elsif ( $fileName ne '' ) { $fileReading .= $line."\n" }
+
+        #
+        # if this is a start of a file, lets get it set up and
+        # define the file name, the next time we go around we
+        # will be looking at the base 64
+        #
+        if ( $line =~ /^FILE\|/ ) {
+            ( $fileName = $line ) =~ s/.*?\|\/*(.*)\n*/$1/sg;
+            ( my $directory = $paramHash{directory} . '/' . $fileName ) =~ s/^(.*)\/.*/$1/sg;
+            $self->makeDir( $directory );
+        }
+
+
+    }
+    close $UNPACKFILE;
+
+    return;
 }
 
 
@@ -672,40 +662,37 @@ sub unpackDirectory {
 
 Run generic upload file routine.
 
-	$fws->uploadFile( '/directory', $FILEHANDLE, 'newfilename.ext' );
+    $fws->uploadFile( '/directory', $FILEHANDLE, 'newfilename.ext' );
 
 =cut
 
 sub uploadFile {
-        my ($self,$directory,$fileHandle,$fileName) = @_;
+    my ($self,$directory,$fileHandle,$fileName) = @_;
 
-        $directory 	= $self->safeDir($directory);
-        $fileName 	= $self->safeFile($fileName);
+    $directory    = $self->safeDir($directory);
+    $fileName     = $self->safeFile($fileName);
 
-	warn "DIR:".$directory;
-	warn "FILE:".$fileName;
+    #
+    # make the directory if its not already there
+    #
+    $self->makeDir($directory);
 
-        #
-        # make the directory if its not already there
-        #
-        $self->makeDir($directory);
+    #
+    # get the file from the browser
+    #
+    my $byteReader;
+    my $buffer;
+    my $fileHolder;
+    while ( $byteReader = read( $fileHandle, $buffer, 1024 ) ) { $fileHolder .= $buffer }
 
-        #
-        # get the file from the browser
-        #
-        my $byteReader;
-        my $buffer;
-        my $fileHolder;
-        while ( $byteReader = read( $fileHandle, $buffer, 1024 ) ) { $fileHolder .= $buffer }
+    #
+    # if we meet the restrictions write the file to the filesystem and create thumbnails and icons.
+    #
+    open( my $SFILE, ">", $directory."/".$fileName ) || die "could not open file: ".$directory."/".$fileName;
+    print $SFILE $fileHolder;
+    close $SFILE;
 
-        #
-        # if we meet the restrictions write the file to the filesystem and create thumbnails and icons.
-        #
-        open( my $SFILE, ">", $directory."/".$fileName ) || die "could not open file: ".$directory."/".$fileName;
-        print $SFILE $fileHolder;
-        close $SFILE;
-
-        return $directory."/".$fileName;
+    return $directory."/".$fileName;
 }
 
 
@@ -713,119 +700,118 @@ sub uploadFile {
 
 MIME encode a directory ready for a FWS export.  This will exclude anything that starts with /backup, /cache, /import_ or ends with .log or .pm.someDateNumber.
 
-        #
-        # Get the file
-        #
-        my $packedFileString = $fws->packDirectory( directory => $someDirectory );
+    #
+    # Get the file
+    #
+    my $packedFileString = $fws->packDirectory( directory => $someDirectory );
 
 
 You can also pass the key directoryList, and it will only add directories on this comma delimtied list unless the file begins with FWS.
-        
-	#
-        # Only grab fws and plugins dirs
-        #
-        my $packedFileString = $fws->packDirectory( directory => $someDirectory, directoryList => '/fws,/plugins' );
+    
+    #
+    # Only grab fws and plugins dirs
+    #
+    my $packedFileString = $fws->packDirectory( directory => $someDirectory, directoryList => '/fws,/plugins' );
 
 
 =cut
 
 sub packDirectory {
-        my ( $self, %paramHash ) = @_;
+    my ( $self, %paramHash ) = @_;
 
-	#
-	# set the default base dir for parsing
-	#
-	$paramHash{baseDirectory} ||= $self->{filePath};
-	my $dirPath = $paramHash{baseDirectory};
+    #
+    # set the default base dir for parsing
+    #
+    $paramHash{baseDirectory} ||= $self->{filePath};
+    my $dirPath = $paramHash{baseDirectory};
+    
+    #
+    # this will need some MIME and file find action
+    #
+    use File::Find;
+    use MIME::Base64;
 
-	
-	#
-	# this will need some MIME and file find action
-	#
-	use File::Find;
-        use MIME::Base64;
+    my $FILEFILE;
+    if ( $paramHash{fileName} ne '' ) { open ( $FILEFILE, ">", $paramHash{fileName} ) }
 
-	my $FILEFILE;
-	if ( $paramHash{fileName} ne '' ) { open ( $FILEFILE, ">", $paramHash{fileName} ) }
+    #
+    # PH for the return
+    #
+    my $packFile;
+    
+    finddepth( sub {
+        #
+        # clean up the name so it will always be consistant
+        #
+        my $fullFileName = $File::Find::name;
+        ( my $file = $fullFileName ) =~ s/^$dirPath//sg;
 
-	#
-	# PH for the return
-	#
-	my $packFile;
-        
-	finddepth( sub {
+        #
+        # if we have a list of dirs, lets make sure we are ok to process this one
+        #
+        my $dirOK = 0;
+        if ( $paramHash{directoryList} ne '' ) {
+            map { if ($file =~ /^$_/) { $dirOK = 1 } } split( /,/, $paramHash{directoryList} );
+        }
+
+        #
+        # if we didn't pass a directoryList then we are all good for every file
+        #
+        else { $dirOK = 1 }
+
+        #
+        # move though the files
+        #
+        if (-f $fullFileName && $file !~ /^\/(import_|backup|cache|fws\/cache)/i && $file !~ /(.log|\.pm\.\d+)$/i && ( $dirOK || $file =~ /^FWS/ ) ) {
+
                 #
-                # clean up the name so it will always be consistant
+                # get the file
                 #
-                my $fullFileName = $File::Find::name;
-                ( my $file = $fullFileName ) =~ s/^$dirPath//sg;
+                my $rawFile;
+                open ( my $FILE, "<", $fullFileName ) or die "Can not open file:". $!;
+                binmode $FILE;
+                while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
+                close $FILE;
 
-		#
-		# if we have a list of dirs, lets make sure we are ok to process this one
-		#
-		my $dirOK = 0;
-		if ( $paramHash{directoryList} ne '' ) {
-			map { if ($file =~ /^$_/) { $dirOK = 1 } } split( /,/, $paramHash{directoryList} );
-		}
+                #
+                # print the header - encode it - footer around the file
+                #
+                my $fileLine = "FILE|" . $file . "\n" . encode_base64( $rawFile ) . 'FILE_END|' . $file . "\n";
+                if ( $paramHash{fileName} ne '' ) { print $FILEFILE $fileLine }
+                else { $packFile .= $fileLine }
 
-		#
-		# if we didn't pass a directoryList then we are all good for every file
-		#
-		else { $dirOK = 1 }
-
-		#
-		# move though the files
-		#
-                if (-f $fullFileName && $file !~ /^\/(import_|backup|cache|fws\/cache)/i && $file !~ /(.log|\.pm\.\d+)$/i && ( $dirOK || $file =~ /^FWS/ ) ) {
-
-                                #
-                                # get the file
-                                #
-                                my $rawFile;
-                                open ( my $FILE, "<", $fullFileName ) or die "Can not open file:". $!;
-                                binmode $FILE;
-                                while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
-                                close $FILE;
-
-                                #
-                                # print the header - encode it - footer around the file
-                                #
-				my $fileLine = "FILE|" . $file . "\n" . encode_base64( $rawFile ) . 'FILE_END|' . $file . "\n";
-				if ( $paramHash{'fileName'} ne '' ) { print $FILEFILE $fileLine }
-				else { $packFile .= $fileLine }
-
-                                }
-                }, $paramHash{directory} );
-	
-	if ( $paramHash{'fileName'} ne '' ) { close $FILEFILE }
-	
-	return $packFile;
-	}
+                }
+        }, $paramHash{directory} );
+    
+    if ( $paramHash{fileName} ne '' ) { close $FILEFILE }
+    
+    return $packFile;
+    }
 
 
 =head2 saveEncodedBinary
 
 Decode a base 64 encoded string and save it as its file.
 
-        #
-        # Save the file
-        #
-        $fws->saveEncodedBinary($someFileWeWantToSave,$theBase64EcodedString);
+    #
+    # Save the file
+    #
+    $fws->saveEncodedBinary($someFileWeWantToSave,$theBase64EcodedString);
 
 =cut
 
 sub saveEncodedBinary {
-        my ( $self, $fileName, $rawFile ) = @_;
-        use MIME::Base64;
-        #
-        # take a base64 text string, and save it to filesystem
-        #
-        open ( my $FILE, ">", $fileName );
-        binmode $FILE;
-        $rawFile = decode_base64($rawFile);
-        print $FILE $rawFile;
-        close $FILE;
-	return;
+    my ( $self, $fileName, $rawFile ) = @_;
+    use MIME::Base64;
+    #
+    # take a base64 text string, and save it to filesystem
+    #
+    open ( my $FILE, ">", $fileName );
+    binmode $FILE;
+    $rawFile = decode_base64($rawFile);
+    print $FILE $rawFile;
+    close $FILE;
+    return;
 }
 
 
@@ -833,36 +819,36 @@ sub saveEncodedBinary {
 
 Extract the version from a FWS plugin.  If no version is labeled or exists it will return 0.0000.
 
-	#
-	# The version line in FWS plugins will look like this:
-	#
-	# our $VERSION = '0.0001';
-	#
-        
-	my $version = $fws->getPluginVersion($somePluginFile);
+    #
+    # The version line in FWS plugins will look like this:
+    #
+    # our $VERSION = '0.0001';
+    #
+    
+    my $version = $fws->getPluginVersion($somePluginFile);
 
 =cut
 
 sub getPluginVersion {
-	my ($self,$pluginFile) = @_;
+    my ($self,$pluginFile) = @_;
 
-	#
-	# set the default
-	#
-	my $version = '0.0000';
+    #
+    # set the default
+    #
+    my $version = '0.0000';
 
-	#
-	# open the file and extract it
-	#
-	open ( my $FILE, "<", $self->safeDir($pluginFile) );
-        while (<$FILE>) {
-        	my $line = $_ ;
-	        $line =~ /\$VERSION\s*=\s*'(.*?)'/;
-    		my $verCheck = $1;
-        	if ($verCheck ne '') { $version = $verCheck }
-	}
-	close $FILE;
-	return $version
+    #
+    # open the file and extract it
+    #
+    open ( my $FILE, '<', $self->safeDir($pluginFile) );
+    while (<$FILE>) {
+        my $line = $_ ;
+        $line =~ /\$VERSION\s*=\s*'(.*?)'/;
+        my $verCheck = $1;
+        if ($verCheck ne '') { $version = $verCheck }
+    }
+    close $FILE;
+    return $version
 }
 
 
@@ -871,147 +857,147 @@ sub getPluginVersion {
 
 Make a new directory with built in safety mechanics.   If the directory is not under the filePath or fileSecurePath then nothing will be created.
 
-        $fws->makeDir( $self->{'filePath'}.'/thisNewDir' );
+    $fws->makeDir( $self->{'filePath'}.'/thisNewDir' );
 
 =cut
 
 sub makeDir {
-        my ($self,$directory) = @_;
+    my ($self,$directory) = @_;
+
+    #
+    # to make sure nothing fishiy is going on, you should only be making dirs under this area
+    #
+    my $filePath = $self->{'filePath'};
+    my $fileSecurePath  = $self->{'fileSecurePath'};
+    if ($directory =~ /^$filePath/ || $directory =~ /^$fileSecurePath/ ) {
 
         #
-        # to make sure nothing fishiy is going on, you should only be making dirs under this area
+        # kill double ..'s so noobdy tries to leave our tight environment of security
         #
-        my $filePath = $self->{'filePath'};
-        my $fileSecurePath  = $self->{'fileSecurePath'};
-        if ($directory =~ /^$filePath/ || $directory =~ /^$fileSecurePath/ ) {
+        $directory = $self->safeDir($directory);
 
-                #
-                # kill double ..'s so noobdy tries to leave our tight environment of security
-                #
-                $directory = $self->safeDir($directory);
+        #
+        # eat the leading / if it exists ... and it should (this is for the split
+        #
+        $directory =~ s/^\///sg;
 
-                #
-                # eat the leading / if it exists ... and it should (this is for the split
-                #
-                $directory =~ s/^\///sg;
+        #
+        # create an array we can loop though to rebuild it making them on the fly
+        #
+        my @directories = split(/\//,$directory);
 
-                #
-                # create an array we can loop though to rebuild it making them on the fly
-                #
-                my @directories = split(/\//,$directory);
+        #
+        # delete the $directory because we will rebuild it
+        #
+        $directory = '';
 
-                #
-                # delete the $directory because we will rebuild it
-                #
-                $directory = '';
-
-                #
-                # loop though each one making them if they need to
-                #
-                foreach my $thisDir (@directories) {
-                        #
-                        # make the dir and send a debug message
-                        #
-                        $directory .= '/'.$thisDir;
-                        mkdir($directory ,0755);
-                        $self->debug($directory ,'makeDir');
-                }
+        #
+        # loop though each one making them if they need to
+        #
+        foreach my $thisDir (@directories) {
+            #
+            # make the dir and send a debug message
+            #
+            $directory .= '/'.$thisDir;
+            mkdir($directory ,0755);
+            $self->debug($directory ,'makeDir');
         }
+    }
 
-        else { 
-		$self->FWSLog("MKDIR trying to make directory not in tree: ".$directory);
-		return 0;
-	}
-	return 1;
+    else { 
+        $self->FWSLog('MKDIR trying to make directory not in tree: '.$directory);
+        return 0;
+    }
+    return 1;
 }
 
 =head2 runInit
 
 Run init scripts for a site.  This can only be used after setSiteValues() or setSiteFiendly() is called.
 
-        $fws->runInit();
+    $fws->runInit();
 
 =cut
 
 sub runInit {
-        my ($self) = @_;
-	return $self->runScript('init');
-}	
+    my ($self) = @_;
+    return $self->runScript('init');
+}    
 
 =head2 runScript
 
 Run a FWS element script.  This should not be used outside of the FWS core.  There is no recursion or security checking and should not be used inside of elements to perfent possible recursion.   Only use this if you are absolutly sure of the script content and its safety.
 
-        %valueHash = $fws->runScript('scriptName',%valueHash);
+    %valueHash = $fws->runScript('scriptName',%valueHash);
 
 =cut
 
 sub runScript {
-        my ($self,$guid,%valueHash) = @_;
+    my ($self,$guid,%valueHash) = @_;
 
-	#
-	# because of the nature of the element caching it is possible for one to be ran twice,  to make sure lets create a testing hash
-	#
-	my %scriptRan;
-						
+    #
+    # because of the nature of the element caching it is possible for one to be ran twice,  to make sure lets create a testing hash
+    #
+    my %scriptRan;
+                        
 
-	#
-	# if this is blank, lets just not do it
-	#
-	if ($guid ne '') {
-		#
-	        # copy the self object to fws
-	        #
-	        my $fws = $self;
-
-		#
-		# get the short hand hash to see whats up
-		#	
-		my %fullElementHash = $self->_fullElementHash();
-	        
-		for my $fullGUID ( sort { $fullElementHash{$a}{'alphaOrd'} <=> $fullElementHash{$b}{'alphaOrd'} } keys %fullElementHash) {
-
-                        #
-                        # lets see if we have a match
-                        #
-                        my $liveGUID;
-                        if ($fullGUID eq $guid) { $liveGUID = $fullElementHash{$fullGUID}{guid} }
-                        if ($fullElementHash{$fullGUID}{type} eq $guid) { $liveGUID = $fullElementHash{$fullGUID}{guid} }
-
-
-                        #
-                        # we snagged one!  lets do it!
-                        #
-                        if ($liveGUID ne "" && $scriptRan{$liveGUID} ne '1') {
-				#
-				# se the flag so we don't do this one twice
-				#
-				$scriptRan{$liveGUID} = '1';
-			
-                                my %elementHash = $fws->elementHash(guid=>$liveGUID);
-
-				if ($elementHash{'scriptDevel'} ne '') {
-					## no critic
-					eval $elementHash{'scriptDevel'};
-					## use critic
-			                my $errorCode = $@;
-			                if ($errorCode) { $self->FWSLog($guid,$errorCode) }
-				}
-
-			
-			}
-		}	
-	
-		#
-		# now put it back
-		#
-		$self = $fws;
-		
-	}
+    #
+    # if this is blank, lets just not do it
+    #
+    if ($guid ne '') {
         #
-        # return the valueHash back in case the script altered it
+        # copy the self object to fws
         #
-        return %valueHash;
+        my $fws = $self;
+
+        #
+        # get the short hand hash to see whats up
+        #    
+        my %fullElementHash = $self->_fullElementHash();
+        
+        for my $fullGUID ( sort { $fullElementHash{$a}{'alphaOrd'} <=> $fullElementHash{$b}{'alphaOrd'} } keys %fullElementHash) {
+
+            #
+            # lets see if we have a match
+            #
+            my $liveGUID;
+            if ($fullGUID eq $guid) { $liveGUID = $fullElementHash{$fullGUID}{guid} }
+            if ($fullElementHash{$fullGUID}{type} eq $guid) { $liveGUID = $fullElementHash{$fullGUID}{guid} }
+
+
+            #
+            # we snagged one!  lets do it!
+            #
+            if ($liveGUID ne '' && $scriptRan{$liveGUID} ne '1') {
+                #
+                # se the flag so we don't do this one twice
+                #
+                $scriptRan{$liveGUID} = '1';
+            
+                my %elementHash = $fws->elementHash(guid=>$liveGUID);
+
+                if ($elementHash{'scriptDevel'} ne '') {
+                    ## no critic
+                    eval $elementHash{'scriptDevel'};
+                    ## use critic
+                    my $errorCode = $@;
+                    if ($errorCode) { $self->FWSLog($guid,$errorCode) }
+                }
+
+            
+            }
+        }    
+    
+        #
+        # now put it back
+        #
+        $self = $fws;
+        
+    }
+    #
+    # return the valueHash back in case the script altered it
+    #
+    return %valueHash;
 }
 
 
@@ -1019,149 +1005,149 @@ sub runScript {
 
 Save an image with a unique width or height.  The file will be converted to extensions graphic type of the fileName passed.   Source, fileName and either width or height is required.   
 
-	#
-	# convert this png, to a jpg that is 110x110
-	#
-        $fws->saveImage(	sourceFile=>'/somefile.png',
-				fileName=>'/theNewFile.jpg',
-				width=>'110',
-				height=>'110');
+    #
+    # convert this png, to a jpg that is 110x110
+    #
+    $fws->saveImage(    sourceFile=>'/somefile.png',
+                fileName=>'/theNewFile.jpg',
+                width=>'110',
+                height=>'110');
 
-	#
-	# convert this png, to a jpg that is 110x110 but chop off the bottom of the height if it resizes to larget then 110 instead of shrinking or stretching
-	#
-        $fws->saveImage(	sourceFile=>'/somefile.png',
-				fileName=>'/theNewFile.jpg',
-				width=>'110',
-				cropHeight=>'110');
+    #
+    # convert this png, to a jpg that is 110x110 but chop off the bottom of the height if it resizes to larget then 110 instead of shrinking or stretching
+    #
+    $fws->saveImage(    sourceFile=>'/somefile.png',
+                fileName=>'/theNewFile.jpg',
+                width=>'110',
+                cropHeight=>'110');
 
 =cut
 
 sub saveImage {
-        my ($self,%paramHash) = @_;
+    my ($self,%paramHash) = @_;
+
+    #
+    # use GD in trueColor mode
+    #
+    use GD();
+    GD::Image->trueColor(1);
+
+    #
+    # create new image
+    #
+    my $image;
+    if (! ($image =  GD::Image->new($paramHash{'sourceFile'}) ) )  {
+        $self->FWSLog('Image cannot be opened by GD for resizing, it might be currupt: '.$paramHash{'sourceFile'});
+        return 0;
+    }
+
+    #
+    # if we truely have an image lets continue if not, lets pretend this didn't even happen
+    #
+    else {
 
         #
-        # use GD in trueColor mode
+        # get current widht/height for mat to resize
         #
-        use GD();
-        GD::Image->trueColor(1);
-
-        #
-        # create new image
-        #
-	my $image;
-	if (! ($image =  GD::Image->new($paramHash{'sourceFile'}) ) )  {
-		$self->FWSLog('Image cannot be opened by GD for resizing, it might be currupt: '.$paramHash{'sourceFile'});
-		return 0;
-	}
+        my ($width,$height) = $image->getBounds();
 
         #
-        # if we truely have an image lets continue if not, lets pretend this didn't even happen
+        # if you are binding a width and a height, then do some magic to truncate extra sizing
         #
-	else {
-
-                #
-                # get current widht/height for mat to resize
-                #
-                my ($width,$height) = $image->getBounds();
-
-		#
-		# if you are binding a width and a height, then do some magic to truncate extra sizing
-		#
-		if ( $paramHash{'height'} ne '' && $paramHash{'width'} ne '' ) {
-			if (($width / $paramHash{width}) > ($height / $paramHash{height})) {
-				$paramHash{cropWidth} 	= $paramHash{width};
-				$paramHash{'width'} 	= '';
-			}
-			else {
-				$paramHash{cropHeight} 	= $paramHash{height};
-				$paramHash{'height'} 	= '';
-			}
-		}
-
-                #
-                # do math to get new width/height
-                #
-                if (!$paramHash{'height'}) { 	$paramHash{'height'} 	= int( $paramHash{'width'} / $width * $height ) }
-                if (!$paramHash{'width'}) { 	$paramHash{'width'} 	= int( $paramHash{'height'} / $height * $width ) }
-
-                #
-                # make sure size is at least 1
-                #
-                if ($paramHash{'width'} < 1) { 	$paramHash{'width'} = 1 }
-                if ($paramHash{'height'} < 1) { $paramHash{'height'} = 1 }
-
-                #
-                # Resize image and save to a file using proper mime type
-                #
-		my $sizedImage = GD::Image->new($paramHash{width},$paramHash{height}); 
-                $sizedImage->copyResampled($image,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$width,$height);
-		
-		#
-		# trim it up or this is pointless if the perpsective is already correct, but what the hay!
-		#
-		if ($paramHash{cropWidth} eq '') { 	$paramHash{cropWidth} 	= $paramHash{'width'} } 
-		if ($paramHash{cropHeight} eq '') { 	$paramHash{cropHeight} 	= $paramHash{'height'} }
-		my $newImage = GD::Image->new($paramHash{cropWidth},$paramHash{cropHeight}); 
-	        $newImage->copyResized($sizedImage,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$paramHash{'width'},$paramHash{'height'});
-		
-		#
-		# safe the the physical file
-                # save as what ever extnesion was passed for the name
-		#
-               	open ( my $IMG, ">", $paramHash{'fileName'} ) or die "Error:". $!;
-               	binmode $IMG;
-                if ($paramHash{'fileName'} =~ /\.(jpg|jpeg|jpe)$/i) {   print $IMG $newImage->jpeg() }
-                if ($paramHash{'fileName'} =~ /\.png$/i) {              print $IMG $newImage->png() }
-                if ($paramHash{'fileName'} =~ /\.gif$/i) {              print $IMG $newImage->gif() }
-                close $IMG;
+        if ( $paramHash{'height'} ne '' && $paramHash{'width'} ne '' ) {
+            if (($width / $paramHash{width}) > ($height / $paramHash{height})) {
+                $paramHash{cropWidth}   = $paramHash{width};
+                $paramHash{'width'}     = '';
+            }
+            else {
+                $paramHash{cropHeight}  = $paramHash{height};
+                $paramHash{'height'}    = '';
+            }
         }
-	return 1;
+
+        #
+        # do math to get new width/height
+        #
+        if (!$paramHash{'height'}) {    $paramHash{'height'}     = int( $paramHash{'width'} / $width * $height ) }
+        if (!$paramHash{'width'}) {     $paramHash{'width'}     = int( $paramHash{'height'} / $height * $width ) }
+
+        #
+        # make sure size is at least 1
+        #
+        if ($paramHash{'width'} < 1) {  $paramHash{'width'} = 1 }
+        if ($paramHash{'height'} < 1) { $paramHash{'height'} = 1 }
+
+        #
+        # Resize image and save to a file using proper mime type
+        #
+        my $sizedImage = GD::Image->new($paramHash{width},$paramHash{height}); 
+        $sizedImage->copyResampled($image,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$width,$height);
+        
+        #
+        # trim it up or this is pointless if the perpsective is already correct, but what the hay!
+        #
+        if ($paramHash{cropWidth} eq '') {     $paramHash{cropWidth}     = $paramHash{'width'} } 
+        if ($paramHash{cropHeight} eq '') {    $paramHash{cropHeight}     = $paramHash{'height'} }
+        my $newImage = GD::Image->new($paramHash{cropWidth},$paramHash{cropHeight}); 
+        $newImage->copyResized($sizedImage,0,0,0,0,$paramHash{'width'},$paramHash{'height'},$paramHash{'width'},$paramHash{'height'});
+        
+        #
+        # safe the the physical file
+        # save as what ever extnesion was passed for the name
+        #
+        open ( my $IMG, '>', $paramHash{'fileName'} ) or die 'Error:'. $!;
+        binmode $IMG;
+        if ($paramHash{'fileName'} =~ /\.(jpg|jpeg|jpe)$/i) {   print $IMG $newImage->jpeg() }
+        if ($paramHash{'fileName'} =~ /\.png$/i) {              print $IMG $newImage->png() }
+        if ($paramHash{'fileName'} =~ /\.gif$/i) {              print $IMG $newImage->gif() }
+        close $IMG;
+    }
+    return 1;
 }
 
 =head2 FWSDecrypt
 
 Decrypt data if a site has the proper configuration
 
-        my $decryptedData = $fws->FWSDecrypt('alsdkjfalkj230948lkjxldkfj');
+    my $decryptedData = $fws->FWSDecrypt('alsdkjfalkj230948lkjxldkfj');
 
 =cut
 
 sub FWSDecrypt {
-        my ($self,$encData)= @_;
+    my ($self,$encData)= @_;
 
-        if ($self->{'encryptionType'} =~ /blowfish/i) {
-                require Crypt::Blowfish;
-                Crypt::Blowfish->import();
-                my $cipher1 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},0,56));
-                my $cipher2 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},57,56));
-                my $cipher3 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},111,56));
-                my $data = pack("H*",$encData);
-                my $dec = '';
-                while (length($data) > 0)  {
-                        my $len = length($data);
-                        $dec .= $cipher3->decrypt(substr($data,0,8));
-                        if ($len > 8) {$data = substr($data,8)} else {$data = ""}
-                }
-                $data = $dec;
-                $dec = '';
-                while (length($data) > 0)  {
-                        my $len = length($data);
-                        $dec .= $cipher2->decrypt(reverse(substr($data,0,8)));
-                        if ($len > 8) {$data = substr($data,8)} else {$data = ""}
-                }
-                $data = $dec;
-                $dec = '';
-                my $size = substr($data,0,8);
-                $data = substr($data,8);
-                while (length($data) > 0)  {
-                        my $len = length($data);
-                        $dec .= $cipher1->decrypt(substr($data,0,8));
-                        if ($len > 8) {$data = substr($data,8)} else {$data = ""}
-                }
-                $encData = substr($dec, 0, $size);
+    if ($self->{'encryptionType'} =~ /blowfish/i) {
+        require Crypt::Blowfish;
+        Crypt::Blowfish->import();
+        my $cipher1 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},0,56));
+        my $cipher2 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},57,56));
+        my $cipher3 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},111,56));
+        my $data = pack("H*",$encData);
+        my $dec = '';
+        while (length($data) > 0)  {
+            my $len = length($data);
+            $dec .= $cipher3->decrypt(substr($data,0,8));
+            if ($len > 8) {$data = substr($data,8)} else {$data = ''}
         }
-        return $encData;
+        $data = $dec;
+        $dec = '';
+        while (length($data) > 0)  {
+            my $len = length($data);
+            $dec .= $cipher2->decrypt(reverse(substr($data,0,8)));
+            if ($len > 8) {$data = substr($data,8)} else {$data = ''}
+        }
+        $data = $dec;
+        $dec = '';
+        my $size = substr($data,0,8);
+        $data = substr($data,8);
+        while (length($data) > 0)  {
+            my $len = length($data);
+            $dec .= $cipher1->decrypt(substr($data,0,8));
+            if ($len > 8) {$data = substr($data,8)} else {$data = ''}
+        }
+        $encData = substr($dec, 0, $size);
+    }
+    return $encData;
 }
 
 
@@ -1170,46 +1156,46 @@ sub FWSDecrypt {
 
 Encrypt data if a site has the proper configuration
 
-	my $encryptedData = $fws->FWSEncrypt('encrypt this stuff');
+    my $encryptedData = $fws->FWSEncrypt('encrypt this stuff');
 
 =cut
 
 sub FWSEncrypt {
-        my ($self,$data)= @_;
-        my $enc = '';
+    my ($self,$data)= @_;
+    my $enc = '';
 
-        if ($self->{'encryptionType'} =~ /blowfish/i) {
-                require Crypt::Blowfish;
-                Crypt::Blowfish->import();
-                my $cipher1 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},0,56));
-                my $cipher2 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},57,56));
-                my $cipher3 = Crypt::Blowfish->new(substr($self->{'encryptionKey'},111,56));
-                my $fullLength = length($data);
-                while (length($data) > 0)  {
-                        my $len = length($data);
-                        if ($len < 8) { $data .= "\000"x(8-$len) }
-                        $enc .= $cipher1->encrypt(substr($data,0,8));
-                        if ($len > 8) {$data = substr($data,8)} else {$data = ''}
-                }
-                $fullLength = sprintf("%8d", $fullLength);
-                $fullLength=~ tr/ /0/;
-                $data = $fullLength.$enc;
-                $enc = '';
-                while (length($data) > 0)  {
-                        my $len = length($data);
-                        $enc .= $cipher2->encrypt(reverse(substr($data,0,8)));
-                        if ($len > 8) {$data = substr($data,8)} else {$data = ''}
-                }
-                $data = $enc;
-                $enc = '';
-                while (length($data) > 0)  {
-                        my $len = length($data);
-                        $enc .= $cipher3->encrypt(substr($data,0,8));
-                        if ($len > 8) {$data = substr($data,8)} else {$data = ''}
-                }
-                $data = unpack("H*",$enc);
+    if ($self->{encryptionType} =~ /blowfish/i) {
+        require Crypt::Blowfish;
+        Crypt::Blowfish->import();
+        my $cipher1 = Crypt::Blowfish->new(substr($self->{encryptionKey},0,56));
+        my $cipher2 = Crypt::Blowfish->new(substr($self->{encryptionKey},57,56));
+        my $cipher3 = Crypt::Blowfish->new(substr($self->{encryptionKey},111,56));
+        my $fullLength = length($data);
+        while (length($data) > 0)  {
+            my $len = length($data);
+            if ($len < 8) { $data .= "\000"x(8-$len) }
+            $enc .= $cipher1->encrypt(substr($data,0,8));
+            if ($len > 8) {$data = substr($data,8)} else {$data = ''}
         }
-        return $data;
+        $fullLength = sprintf("%8d", $fullLength);
+        $fullLength=~ tr/ /0/;
+        $data = $fullLength.$enc;
+        $enc = '';
+        while (length($data) > 0)  {
+            my $len = length($data);
+            $enc .= $cipher2->encrypt(reverse(substr($data,0,8)));
+            if ($len > 8) {$data = substr($data,8)} else {$data = ''}
+        }
+        $data = $enc;
+        $enc = '';
+        while (length($data) > 0)  {
+            my $len = length($data);
+            $enc .= $cipher3->encrypt(substr($data,0,8));
+            if ($len > 8) {$data = substr($data,8)} else {$data = ''}
+        }
+        $data = unpack("H*",$enc);
+    }
+    return $data;
 }
 
 
@@ -1217,50 +1203,50 @@ sub FWSEncrypt {
 
 Read x number of lines from the end of a file.  If lines are not specified it will default to 10.
 
-        #
-        # Print last 10 lines of the FWS.log file
-        #
-        print $fws->tailFile( lines => 50, fileName => $fws->{'fileSecurePath'} . "/FWS.log" );
+    #
+    # Print last 10 lines of the FWS.log file
+    #
+    print $fws->tailFile( lines => 50, fileName => $fws->{fileSecurePath} . "/FWS.log" );
 
 =cut
 
 sub tailFile {
-        my ( $self, %paramHash ) = @_;
+    my ( $self, %paramHash ) = @_;
 
-	#
-	# set the default ot 10 lines
-	#
-	$paramHash{lines} ||= 10;
+    #
+    # set the default ot 10 lines
+    #
+    $paramHash{lines} ||= 10;
 
-	#
-	# open the file
-	#
-        open ( my $TAILFILE, "<", $paramHash{'fileName'} );
+    #
+    # open the file
+    #
+    open ( my $TAILFILE, "<", $paramHash{fileName} );
 
 
-	#
-	# set our cursor to to know where we are at
-	#
-	my $lineCursor;
-	my $tailReturn;
-	
-	while ( <$TAILFILE> ) {
+    #
+    # set our cursor to to know where we are at
+    #
+    my $lineCursor;
+    my $tailReturn;
+    
+    while ( <$TAILFILE> ) {
 
-		#
-		# advance the cursor and add the next line to the end
-		#
-		$tailReturn .= $_;
-		$lineCursor++;
+        #
+        # advance the cursor and add the next line to the end
+        #
+        $tailReturn .= $_;
+        $lineCursor++;
 
-		#
-		# eat the first line if we have what we needed
-		#
-		if ( $lineCursor > $paramHash{lines} ) { $tailReturn =~ s/^(.*?)\n// }
-	}	
+        #
+        # eat the first line if we have what we needed
+        #
+        if ( $lineCursor > $paramHash{lines} ) { $tailReturn =~ s/^(.*?)\n// }
+    }    
 
-	close $TAILFILE;
-	
-	return $tailReturn;
+    close $TAILFILE;
+    
+    return $tailReturn;
 }
 
 
@@ -1268,41 +1254,41 @@ sub tailFile {
 
 Append something to the FWS.log file if FWSLogLevel is set to 1 which is default.
 
-        #
-        # Soemthing is happening
-        #
-        $fws->FWSLog("this is happening\nthis is a new log line");
+    #
+    # Soemthing is happening
+    #
+    $fws->FWSLog("this is happening\nthis is a new log line");
 
 If a multi line string is passed it will break it up in to more than one log entries.
 
 =cut
 
 sub FWSLog{
-        my ($self,$module,$errorText) = @_;
-        if ($self->{'FWSLogLevel'} > 0) {
-                open ( my $FILE, ">>", $self->{'fileSecurePath'}."/FWS.log" ) || return 0;
+    my ($self,$module,$errorText) = @_;
+    if ($self->{FWSLogLevel} > 0) {
+        open ( my $FILE, ">>", $self->{fileSecurePath}."/FWS.log" ) || return 0;
 
-                #
-                # if you only pass it one thing, lets set it up so it will display
-                #
-                if (!defined $errorText) {
-                        $errorText = $module;
-                        $module = 'FWS';
-                }
-
-                #
-                # split up the lines so we can pass a whole bunch and have them format each on one line
-                #
-                my @resultLines = split /\n/, $errorText;
-                foreach my $resultLine (@resultLines) {
-                        if ($resultLine ne '') {
-                                print $FILE $ENV{"REMOTE_ADDR"}." - [".$self->formatDate(format=>"apache"). "] ".$module.": ".$resultLine." [".$ENV{"SERVER_NAME"}.$ENV{"REQUEST_URI"}."]\n";
-                        }
-                }
-                close $FILE;
+        #
+        # if you only pass it one thing, lets set it up so it will display
+        #
+        if (!defined $errorText) {
+            $errorText = $module;
+            $module = 'FWS';
         }
 
-	return 1;
+        #
+        # split up the lines so we can pass a whole bunch and have them format each on one line
+        #
+        my @resultLines = split /\n/, $errorText;
+        foreach my $resultLine (@resultLines) {
+            if ($resultLine ne '') {
+                print $FILE $ENV{"REMOTE_ADDR"}." - [".$self->formatDate(format=>"apache"). "] ".$module.": ".$resultLine." [".$ENV{"SERVER_NAME"}.$ENV{"REQUEST_URI"}."]\n";
+            }
+        }
+        close $FILE;
+    }
+
+    return 1;
 }
 
 
@@ -1310,261 +1296,261 @@ sub FWSLog{
 
 Append something to the SQL.log file if SQLLogLevel is set to 1 or 2.   Level 1 will log anything that updates a database record, and level 2 will log everything.  In good practice this should not be used, as all SQL statements are ran via the runSQL method which applies SQLLog.
 
-        #
-        # Soemthing is happening
-        #
-        $fws->SQLLog($theSQLStatement);
+    #
+    # Soemthing is happening
+    #
+    $fws->SQLLog($theSQLStatement);
 
 =cut
 
 
 sub SQLLog{
-        my ($self,$SQL) = @_;
-        if ($self->{'SQLLogLevel'} > 0) {
-                open ( my $FILE, ">>", $self->{'fileSecurePath'}."/SQL.log" ) || return 0;
-                if (($self->{'SQLLogLevel'} eq '1' && ($SQL =~/^insert/i || $SQL=~/^delete/i || $SQL=~/^update/i || $SQL=~/^alter/i)) || $self->{'SQLLogLevel'} eq '2') {
-                        print $FILE $ENV{"REMOTE_ADDR"}." - [".$self->formatDate(format=>"apache"). "] ".$SQL." [".$ENV{"SERVER_NAME"}.$ENV{"REQUEST_URI"}."]\n";
-                }
-                close $FILE;
+    my ($self,$SQL) = @_;
+    if ($self->{SQLLogLevel} > 0) {
+        open ( my $FILE, ">>", $self->{fileSecurePath}."/SQL.log" ) || return 0;
+        if (($self->{SQLLogLevel} eq '1' && ($SQL =~/^insert/i || $SQL=~/^delete/i || $SQL=~/^update/i || $SQL=~/^alter/i)) || $self->{SQLLogLevel} eq '2') {
+            print $FILE $ENV{"REMOTE_ADDR"}." - [".$self->formatDate(format=>"apache"). "] ".$SQL." [".$ENV{"SERVER_NAME"}.$ENV{"REQUEST_URI"}."]\n";
         }
-	return 1;
+        close $FILE;
+    }
+    return 1;
 }
 
 
 sub _saveElementFile {
-        my ($self,$guid,$siteGUID,$table,$ext,$content) = @_;
+    my ($self,$guid,$siteGUID,$table,$ext,$content) = @_;
+    #
+    # for security reasons lets make sure ext is safe
+    #
+    # just a nother note:  saving elements only save to devel\staging
+    #
+    if (($ext eq 'css' || $ext eq 'js') && ($table eq 'element' || $table eq 'templates' || $table eq 'site' || $table eq 'page')) {
+
+
         #
-        # for security reasons lets make sure ext is safe
+        # if siteGUID is blank, lets get the one of the site we are on
         #
-        # just a nother note:  saving elements only save to devel\staging
+        if ($siteGUID eq '') { $siteGUID = $self->{siteGUID} }
+
+
         #
-        if (($ext eq 'css' || $ext eq 'js') && ($table eq 'element' || $table eq 'templates' || $table eq 'site' || $table eq 'page')) {
+        # set the directory and make it if it might not exist
+        #
+        my $directory = $self->{filePath}."/".$siteGUID."/".$guid;
+        $self->makeDir( $directory , "0755" );
+
+        #
+        # set the timestamp so we will add this to the file name for the cachable named ones
+        #
+        my $timeStamp = time();
+
+        #
+        # for security lets get rid of anything dangerous
+        #
+        my $name = $self->safeDir($directory."/FWSElement.".$ext);
+        my $cacheName = $self->safeDir($directory."/FWSElement-".$timeStamp.".".$ext);
 
 
-                #
-                # if siteGUID is blank, lets get the one of the site we are on
-                #
-                if ($siteGUID eq '') { $siteGUID = $self->{'siteGUID'} }
+        #
+        # save the file to the FS
+        #
+        open ( my $FILE, ">", $name ) || die "could not open file: ".$name;
+        print $FILE $content;
+        close $FILE;
 
+        #
+        # update Key field is guid, unless we are talking about the "site" table, then it is "siteGUID"
+        #
+        if ($table eq 'site') { $guid = $siteGUID }
 
-                #
-                # set the directory and make it if it might not exist
-                #
-                my $directory = $self->{'filePath'}."/".$siteGUID."/".$guid;
-                $self->makeDir( $directory , "0755" );
+        #
+        # if it is blank, then we are actually here to delete it
+        #
+        if ($content eq '') {
+            unlink $name;
+            if ($table eq 'page') { $self->saveExtra(table=>'data',siteGUID=>$siteGUID,guid=>$guid,field=>$ext.'Devel',value=>'0') }
+            else { $self->runSQL(SQL=>"update ".$self->safeSQL($table)." set ".$self->safeSQL($ext)."_devel=0 where guid='".$self->safeSQL($guid)."'") }
+        }
+        else {
+            if ($table eq 'page') { $self->saveExtra(table=>'data',siteGUID=>$siteGUID,guid=>$guid,field=>$ext.'Devel',value=>$timeStamp) }
+            else {$self->runSQL(SQL=>"update ".$self->safeSQL($table)." set ".$self->safeSQL($ext)."_devel=".$self->safeSQL($timeStamp)." where guid='".$self->safeSQL($guid)."'") }
 
-                #
-                # set the timestamp so we will add this to the file name for the cachable named ones
-                #
-                my $timeStamp = time();
-
-                #
-                # for security lets get rid of anything dangerous
-                #
-                my $name = $self->safeDir($directory."/FWSElement.".$ext);
-                my $cacheName = $self->safeDir($directory."/FWSElement-".$timeStamp.".".$ext);
-
-
-                #
-                # save the file to the FS
-                #
-                open ( my $FILE, ">", $name ) || die "could not open file: ".$name;
-                print $FILE $content;
-                close $FILE;
-
-                #
-                # update Key field is guid, unless we are talking about the "site" table, then it is "siteGUID"
-                #
-                if ($table eq 'site') { $guid = $siteGUID }
-
-                #
-                # if it is blank, then we are actually here to delete it
-                #
-                if ($content eq '') {
-                        unlink $name;
-                        if ($table eq 'page') { $self->saveExtra(table=>'data',siteGUID=>$siteGUID,guid=>$guid,field=>$ext.'Devel',value=>'0') }
-                        else { $self->runSQL(SQL=>"update ".$self->safeSQL($table)." set ".$self->safeSQL($ext)."_devel=0 where guid='".$self->safeSQL($guid)."'") }
-                }
-                else {
-                        if ($table eq 'page') { $self->saveExtra(table=>'data',siteGUID=>$siteGUID,guid=>$guid,field=>$ext.'Devel',value=>$timeStamp) }
-                        else {$self->runSQL(SQL=>"update ".$self->safeSQL($table)." set ".$self->safeSQL($ext)."_devel=".$self->safeSQL($timeStamp)." where guid='".$self->safeSQL($guid)."'") }
-
-                        #
-                        # save the cacheable one
-                        #
-                        open ( my $FILE, ">", $cacheName ) || die "could not open file: ".$cacheName;
-                        print $FILE $content;
-                        close $FILE;
-        	}
-	}
-	return;
+            #
+            # save the cacheable one
+            #
+            open ( my $FILE, ">", $cacheName ) || die "could not open file: ".$cacheName;
+            print $FILE $content;
+            close $FILE;
+        }
+    }
+    return;
 }
 
 
 sub _versionData {
-        my ($self,$location,$url,$saveVersion) = @_;
-        my @metaData;
+    my ($self,$location,$url,$saveVersion) = @_;
+    my @metaData;
+
+    #
+    # vesrion tags all end it .txt and start with current_
+    #
+    $url = "current_".$url.".txt";
+    if ($location =~ /live/i) {
 
         #
-        # vesrion tags all end it .txt and start with current_
+        # get the major ver
         #
-        $url = "current_".$url.".txt";
-        if ($location =~ /live/i) {
+        my $liveDistServer = $self->{FWSServer}."/fws_".$self->{FWSVersion};
 
-                #
-                # get the major ver
-                #
-                my $liveDistServer = $self->{'FWSServer'}."/fws_".$self->{'FWSVersion'};
+        require LWP::UserAgent;
+        my $browser = LWP::UserAgent->new();
+        my $response = $browser->get( $liveDistServer."/".$url );
+        if (!$response->is_success ) { return "Unavailable" }
+        @metaData = split(/\n/,$response->content);
+    }
+    else {
+        open (my $FILE, "<", $self->fileSecurePath . "/" . $url ) || return "";
+        @metaData = <$FILE>;
+        close ($FILE);
+    }
 
-                require LWP::UserAgent;
-                my $browser = LWP::UserAgent->new();
-                my $response = $browser->get( $liveDistServer."/".$url );
-                if (!$response->is_success ) { return "Unavailable" }
-                @metaData = split(/\n/,$response->content);
-        }
-        else {
-                open (my $FILE, "<", $self->fileSecurePath . "/" . $url ) || return "";
-                @metaData = <$FILE>;
-                close ($FILE);
-        }
+    #
+    # get the major ver of the version name we recived
+    #
+    my $majorVer = shift(@metaData);
+    my $build = shift(@metaData);
+    if ($saveVersion) {
+        open ( my $FILE, '>', $self->{fileSecurePath} . "/" . $url );
+        print $FILE $majorVer."\n" . $build."\n";
+        close $FILE;
+    }
 
-        #
-        # get the major ver of the version name we recived
-        #
-        my $majorVer = shift(@metaData);
-        my $build = shift(@metaData);
-        if ($saveVersion) {
-                open ( my $FILE, '>', $self->{fileSecurePath} . "/" . $url );
-                print $FILE $majorVer."\n" . $build."\n";
-                close $FILE;
-        }
+    my $returnString = $majorVer;
+    if ($build ne '') { $returnString .= ' Build '.$build }
+    $returnString =~ s/\n//sg;
 
-        my $returnString = $majorVer;
-        if ($build ne '') { $returnString .= ' Build '.$build }
-        $returnString =~ s/\n//sg;
+    my @verSplit = split(/\./,$majorVer);
+    $majorVer = $verSplit[0].'.'.$verSplit[1];
 
-        my @verSplit = split(/\./,$majorVer);
-        $majorVer = $verSplit[0].'.'.$verSplit[1];
-
-        return ($returnString,$majorVer,$build);
+    return ($returnString,$majorVer,$build);
 }
 
 sub _installPlugin {
-        my ($self, %paramHash ) = @_;
+    my ($self, %paramHash ) = @_;
 
-	#
-	# pull the files from FWS
-	#
-        my $plugin = $self->safeFile( $paramHash{plugin} );
-        ( my $cleanDomain = $self->{'domain'} ) =~ s/.*\/\///sg;
-        my $responseRef = $self->HTTPRequest( type =>'get', url=> $self->{'FWSPluginServer'} . '/cgi-bin/go.pl?p=publishPlugin&install=1&plugin=' . $plugin . '&FWSKey=' . $self->{'FWSKey'} . '&domain=' . $cleanDomain);
+    #
+    # pull the files from FWS
+    #
+    my $plugin = $self->safeFile( $paramHash{plugin} );
+    ( my $cleanDomain = $self->{domain} ) =~ s/.*\/\///sg;
+    my $responseRef = $self->HTTPRequest( type =>'get', url=> $self->{'FWSPluginServer'} . '/cgi-bin/go.pl?p=publishPlugin&install=1&plugin=' . $plugin . '&FWSKey=' . $self->{FWSKey} . '&domain=' . $cleanDomain);
 
-        my $script;
-        my $change;
-        my $files;
-        my $fileReading;
-        my $fileName;
-        my $scriptPulled = 0;
-        my $changePulled = 0;
+    my $script;
+    my $change;
+    my $files;
+    my $fileReading;
+    my $fileName;
+    my $scriptPulled = 0;
+    my $changePulled = 0;
 
-	#
-	# bring in web accessable files
-	#
-        my $webDir = $self->{'filePath'} . '/plugins/' . $plugin;
-        $self->makeDir($webDir);
-        while ( $responseRef->{'content'} =~ /(.*)\n?/g ){
-                my $line = $1;
-                
-                # if we have started the file, stop working on the scripts
-                if ( $line =~ /^FILE\|/ ) { $changePulled = 1; $scriptPulled = 1 }
+    #
+    # bring in web accessable files
+    #
+    my $webDir = $self->{filePath} . '/plugins/' . $plugin;
+    $self->makeDir($webDir);
+    while ( $responseRef->{content} =~ /(.*)\n?/g ){
+        my $line = $1;
+        
+        # if we have started the file, stop working on the scripts
+        if ( $line =~ /^FILE\|/ ) { $changePulled = 1; $scriptPulled = 1 }
 
-		# still building the changelog
-                if ( $line =~ /^CHANGELOG\|/ ) { $scriptPulled = 1 }
-		elsif ( $scriptPulled && !$changePulled ) { $change .= $line."\n" }
+        # still building the changelog
+        if ( $line =~ /^CHANGELOG\|/ ) { $scriptPulled = 1 }
+        elsif ( $scriptPulled && !$changePulled ) { $change .= $line."\n" }
 
-                # still building the script
-                if ( !$scriptPulled ) { $script .= $line."\n" }
-                
-                # if there is a FILE END we are done, lets process
-                if ( $line =~ /^FILE_END\|/ ) {
-                        #
-                        # save the file to that directory
-                        #
-                        $self->FWSLog( "Plugin File: ".$webDir."/".$fileName );
-                        $self->saveEncodedBinary( $webDir . "/" . $fileName, $fileReading );
+        # still building the script
+        if ( !$scriptPulled ) { $script .= $line."\n" }
+        
+        # if there is a FILE END we are done, lets process
+        if ( $line =~ /^FILE_END\|/ ) {
+            #
+            # save the file to that directory
+            #
+            $self->FWSLog( "Plugin File: ".$webDir."/".$fileName );
+            $self->saveEncodedBinary( $webDir . "/" . $fileName, $fileReading );
 
-                        #
-                        # reset so when we come around again we will no we are done.
-                        #
-                        $fileName 	= '';
-                        $fileReading 	= '';
-                }
-
-                #
-                # if we have a file name,  we are currenlty looking for a
-                # file.  eat those lines up and stick them in a diffrent var
-                #
-                elsif ($fileName ne '') { $fileReading .= $line . "\n" }
-
-                #
-                # if this is a start of a file, lets get it set up and
-                # define the file name, the next time we go around we
-                # will be looking at the base 64
-                #
-                if ( $line =~ /^FILE\|/ ) { ( $fileName = $line ) =~ s/.*\///sg }
+            #
+            # reset so when we come around again we will no we are done.
+            #
+            $fileName     = '';
+            $fileReading  = '';
         }
 
-
-	#
-        # save the script
         #
-        $self->makeDir( $self->{'fileSecurePath'} . '/plugins' );
-        my $fileName = $self->{'fileSecurePath'} . '/plugins/' . $plugin . '.pm';
-        my $changeFileName = $self->{'fileSecurePath'} . '/plugins/' . $plugin . '.log';
+        # if we have a file name,  we are currenlty looking for a
+        # file.  eat those lines up and stick them in a diffrent var
+        #
+        elsif ($fileName ne '') { $fileReading .= $line . "\n" }
 
         #
-        # make backup if its there and write the new one
+        # if this is a start of a file, lets get it set up and
+        # define the file name, the next time we go around we
+        # will be looking at the base 64
         #
-	my $backupNumber =  $self->formatDate( format => 'number');
+        if ( $line =~ /^FILE\|/ ) { ( $fileName = $line ) =~ s/.*\///sg }
+    }
 
-	#
-	# backup the script and save it
-	#  
-        if ( -e $fileName ) { rename( $fileName, $fileName . '.' . $backupNumber ) }
-        open ( my $FILE, ">", $fileName ) || die "could not save plugin: ".$fileName;
-        print $FILE $script;
-        close $FILE;
 
-	#
-	# backup the change log and save it
-	#
-        if ( -e $changeFileName ) { rename( $changeFileName, $changeFileName . '.' . $backupNumber ) }
-        open ( my $FILE, ">", $changeFileName ) || die "could not save plugin: ".$changeFileName;
-        print $FILE $change;
-        close $FILE;
+    #
+    # save the script
+    #
+    $self->makeDir( $self->{fileSecurePath} . '/plugins' );
+    my $fileName = $self->{fileSecurePath} . '/plugins/' . $plugin . '.pm';
+    my $changeFileName = $self->{fileSecurePath} . '/plugins/' . $plugin . '.log';
 
-	my $message = 'Install Plugin ' . $plugin . ' version ' . $self->getPluginVersion( $fileName ) . ' complete';
-        $self->FWSLog( $message );
-	return $message; 
+    #
+    # make backup if its there and write the new one
+    #
+    my $backupNumber =  $self->formatDate( format => 'number');
+
+    #
+    # backup the script and save it
+    #  
+    if ( -e $fileName ) { rename( $fileName, $fileName . '.' . $backupNumber ) }
+    open ( my $FILE, ">", $fileName ) || die "could not save plugin: ".$fileName;
+    print $FILE $script;
+    close $FILE;
+
+    #
+    # backup the change log and save it
+    #
+    if ( -e $changeFileName ) { rename( $changeFileName, $changeFileName . '.' . $backupNumber ) }
+    open ( my $FILE, ">", $changeFileName ) || die "could not save plugin: ".$changeFileName;
+    print $FILE $change;
+    close $FILE;
+
+    my $message = 'Install Plugin ' . $plugin . ' version ' . $self->getPluginVersion( $fileName ) . ' complete';
+    $self->FWSLog( $message );
+    return $message; 
 }
 
 
 sub _getElementEditText {
-        my ($self,$siteGUID,$guid,$ext)= @_;
+    my ($self,$siteGUID,$guid,$ext)= @_;
 
-        #
-        # get a file that is to edited in ACE from the elements. only works on js and css files
-        #
-        my $fileText;
-        if ($ext eq 'js' || $ext eq 'css') {
-                my $file = $self->safeDir($self->{'filePath'}.'/'.$siteGUID.'/'.$guid.'/FWSElement.'.$ext);
-                if (-e $file) {
-                        open ( my $FILE, "<", $file );
-                        while ( <$FILE> ) { $fileText .= $_ }
-                        close $FILE;
-                }
+    #
+    # get a file that is to edited in ACE from the elements. only works on js and css files
+    #
+    my $fileText;
+    if ($ext eq 'js' || $ext eq 'css') {
+        my $file = $self->safeDir($self->{filePath}.'/'.$siteGUID.'/'.$guid.'/FWSElement.'.$ext);
+        if (-e $file) {
+            open ( my $FILE, "<", $file );
+            while ( <$FILE> ) { $fileText .= $_ }
+            close $FILE;
         }
-        return $fileText;
+    }
+    return $fileText;
 }
 
 
