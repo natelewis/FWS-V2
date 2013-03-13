@@ -38,8 +38,8 @@ Add content to the html just above the body tag.
 =cut
 
 sub addToFoot {
-        my ($self,$addToFootVar) = @_;
-        $self->siteValue('pageFoot',$addToFootVar.$self->siteValue('pageFoot'));
+    my ( $self, $addToFootVar ) = @_;
+    $self->siteValue( 'pageFoot', $addToFootVar . $self->siteValue( 'pageFoot' ) );
     return;
 }
 
@@ -51,8 +51,8 @@ Add content to the html head area.
 =cut
 
 sub addToHead {
-        my ($self,$addToHeadVar) = @_;
-        $self->siteValue('pageHead',$addToHeadVar.$self->siteValue('pageHead'));
+    my ( $self, $addToHeadVar ) = @_;
+    $self->siteValue( 'pageHead', $addToHeadVar . $self->siteValue( 'pageHead' ) );
     return;
 }
 
@@ -65,12 +65,11 @@ Return the head html for a fws page rendering.
 
 sub FWSHead {
     my ($self) = @_;
-    my $html = '';
 
     my $pageTitle = $self->siteValue('pageTitle');
 
-    if ($pageTitle eq '' && $self->formValue('p') =~ /^fws_/) {
-        $pageTitle = "FrameWork Sites ".$self->{'FWSVersion'};
+    if ( !$pageTitle && $self->formValue('p') =~ /^fws_/ ) {
+        $pageTitle = 'FrameWork Sites ' . $self->{FWSVersion};
         $self->jqueryEnable('ui-1.8.9');
         $self->jqueryEnable('ui.widget-1.8.9');
         $self->jqueryEnable('ui.mouse-1.8.9');
@@ -81,11 +80,11 @@ sub FWSHead {
         $self->jqueryEnable('ui.position-1.8.9');
     }
 
-    $html .= "<title>".$pageTitle."</title>\n";
-    if ($self->siteValue('pageKeywords') ne '')     { $html .= "<meta name=\"keywords\" content=\"".$self->siteValue('pageKeywords')."\"/>\n" }
-    if ($self->siteValue('pageDescription') ne '')  { $html .= "<meta name=\"description\" content=\"".$self->siteValue('pageDescription')."\"/>\n" }
+    my $html = "<title>" . $pageTitle . "</title>\n";
+    if ( $self->siteValue( 'pageKeywords' ) )     { $html .= "<meta name=\"keywords\" content=\"" . $self->siteValue( 'pageKeywords' ) . "\"/>\n" }
+    if ( $self->siteValue( 'pageDescription' ) )  { $html .= "<meta name=\"description\" content=\"" . $self->siteValue( 'pageDescription' ) . "\"/>\n" }
 
-    return $self->cacheHead() . $self->siteValue("pageHead") . $self->siteValue("templateHead");
+    return $html . $self->cacheHead() . $self->siteValue( 'pageHead' ) . $self->siteValue( 'templateHead' );
 }
 
 
@@ -106,7 +105,7 @@ sub displayContent {
     if ($self->formValue('returnStatusNote') ne '') {
         print "Content-Type: text/html; charset=UTF-8\n\n";
         print $self->formValue('statusNote');
-        }
+    }
 
     #
     # if returnAndDoNothing is specified as a formValue get the hell out of here and .... do nothing!
@@ -369,11 +368,11 @@ sub _FWSContent {
             #
             if ($pageId !~ /^fws_/) {
                 #
-                # ONLY if these things aren't set by elements,  then set them by the page defaults... if not pass them buy and accept what it already is
+                # ONLY if these things aren't set by elements,  then set them by the page defaults... if not pass them by and accept what it already is
                 #
-                if($self->siteValue('pageTitle') eq '')         { $self->siteValue('pageTitle',$self->{'siteName'}.' - '.$pageHash{'title'}) }
-                if($self->siteValue('pageKeywords') eq '')      { $self->siteValue('pageKeywords',$pageHash{'pageKeywords'}) }
-                if($self->siteValue('pageDescription') eq '')   { $self->siteValue('pageDescription',$pageHash{'pageDescription'}) }
+                if ( !$self->siteValue('pageTitle') )         { $self->siteValue( 'pageTitle'         ,$self->{'siteName'}.' - '.$pageHash{'title'}) }
+                if ( !$self->siteValue('pageKeywords') )      { $self->siteValue( 'pageKeywords'      ,$pageHash{'pageKeywords'}) }
+                if ( !$self->siteValue('pageDescription') )   { $self->siteValue( 'pageDescription'   ,$pageHash{'pageDescription'}) }
             }
 
             #
@@ -428,8 +427,8 @@ sub _FWSContent {
             #
             # if the pageTitle ends with ' - ' then eat it
             #
-            ( my $cleanTitle = $self->siteValue('pageTitle') ) =~ s/(\s-|\s\|\s)$//g;
-            $self->siteValue('pageTitle',$cleanTitle);
+            ( my $cleanTitle = $self->siteValue( 'pageTitle' ) ) =~ s/(\s-|\s\||\s)$//g;
+            $self->siteValue( 'pageTitle', $cleanTitle );
 
             my @elements = $self->openRS("select distinct d1.extra_value,d1.site_guid,x2.layout,d1.active,x1.ord+(d1.default_element*100000) as real_ord,x1.layout, d1.disable_edit_mode, d1.groups_guid, d1.guid, d1.element_type,d1.name,d1.title,d1.show_resubscribe,d1.show_login,d1.show_mobile,d1.lang,d1.friendly_url,d1.page_friendly_url,d1.default_element,d1.disable_title,d1.nav_name  from data d1 LEFT JOIN guid_xref x1 ON (d1.guid = x1.child) left join guid_xref x2 on (x2.child = x1.parent) left join data d2 on (x2.child=d2.guid) where (d1.site_guid = '".$self->safeSQL($self->{'siteGUID'})."' or d1.site_guid = '".$self->safeSQL($self->fwsGUID())."') and d1.element_type <> 'data' and d1.element_type <> 'url' and d1.element_type <> 'page' and (x1.parent='' or d1.guid='".$pageId."' or (d2.element_type='page')) and (((x1.parent='".$pageId."') or d1.default_element <> '0') or d1.guid='".$pageId."') order by x1.layout, real_ord", 1);
 
