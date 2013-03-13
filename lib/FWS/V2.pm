@@ -294,6 +294,69 @@ The current user id for the site user logged in.  Extra warning: This should nev
 
 =back
 
+=head1 WEB BASED RENDERING
+
+=head2 Overview
+
+To use the web based rendering you can use this module, or the current web optimized version that is available from http://www.frameworksites.com.  When using this module as opposed to the web based version you still need to run the FWS core upgrade to receive the admin modules to your local installation.   Any time running an FWS core upgrade you of course not have your core updated, only the admin elements and supporting JavaScript and files..
+
+=head2 Simple Web Rendering Sequence
+
+    #
+    # Load FWS
+    #
+    use FWS::V2;
+    $fws = new ( 
+        #....  FWS Settings ...
+    );
+    
+    #
+    # Get the form values
+    #
+    $fws->getFormValues();
+    
+    #
+    # Connect to the DB
+    #
+    $fws->connectDBH();
+    
+    #
+    # Page descisions and friendly url conversions
+    #
+    $fws->setSiteFriendly();
+    
+    #
+    # Run any init scripts if needed
+    #
+    $fws->runInit();
+    
+    #
+    # Set session and or get session vars
+    #
+    $fws->setSession();
+    
+    #
+    # Set site values based on any information we have collected, created or changed
+    #
+    $fws->setSiteValues();
+    
+    #
+    # Do login procedures
+    #
+    $fws->processLogin();
+    
+    #
+    # Run Internal Admin Actions
+    #
+    $fws->runAdminAction();
+    
+    #
+    # Display the content we just created
+    #
+    $fws->displayContent();
+   
+For a more robust version of this sequence use the go.pl file creation for manual installation located on http://www.frameworksites.com
+    
 =cut
 
 #########################################################################
@@ -811,68 +874,9 @@ sub registerPlugin {
     #
     # mark the plugin as active
     #
-    $self->{plugins}->{$plugin} = 1;
-    return 1;
+    return $self->{plugins}->{$plugin} = 1;
 }
 
-
-=head1 WEB BASED RENDERING SEQUENCE
-
-With the full web optimized version of FWS, the following sequence can be executed in this order to render web based content after new() is called:
-
-    #
-    # Get the form values from the environment
-    #
-    $fws->getFormValues();
-    
-    #
-    # 404 page descisions
-    #
-    $fws->setSiteFriendly();
-    
-    #
-    # run any site specific init scripts
-    #
-    $fws->runInit();
-    
-    #
-    # get or set the session ID and restore retained information
-    #
-    $fws->setSession();
-    
-    #
-    # set site values based on what we know now
-    #
-    $fws->setSiteValues();
-
-    #
-    # Do login procedures and set permissions
-    #
-    $fws->processLogin();
-    
-    #
-    # Download files procedures if we are here to send a file
-    #
-    $fws->processDownloads();
-    
-    #
-    # Run site actions that don't require security to use
-    #
-    $fws->runSiteActions();
-    
-    #
-    # Run admin actions that require security to access
-    #
-    $fws->runAdminAction();
-    
-    #
-    # Display the content we just created to the browser
-    #
-    $fws->displayContent();
-
-NOTE: This version of the module is not capable of doing web based rendering.   For the web based version of this module visit www.frameworksites.com
-
-=cut
 
 =head1 AUTHOR
 
