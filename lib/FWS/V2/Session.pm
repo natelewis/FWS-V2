@@ -91,20 +91,20 @@ Gather the passed form values, and from it set the language formValue and the se
 sub setFormValues {
     my ($self) =  @_;
     use CGI qw(:cgi);
-    my $cgi = CGI->new;
+    my $cgi = CGI->new();
     $CGI::POST_MAX=-1;
-    foreach my $paramIn ($cgi->param) { $self->{form}{$paramIn} = $cgi->param($paramIn) }
+    foreach my $paramIn ( $cgi->param ) { $self->{form}{$paramIn} = $cgi->param( $paramIn ) }
 
     #
     # grab the one from the cookie if we have it
     #
     my $cookieSession = $cgi->cookie( $self->{'sessionCookieName'} );
-    if ($cookieSession ne '' && $self->{form}{session} eq '') { $self->{form}{session} = $cookieSession }
+    if ( $cookieSession && !$self->{form}{session} ) { $self->{form}{session} = $cookieSession }
 
     #
     # if fws_lang is not set, lets set it
     #
-    if ($self->{form}{fws_lang} ne '') { $self->language(uc($self->{form}{fws_lang})) }
+    if ( $self->{form}{fws_lang} ) { $self->language( uc( $self->{form}{fws_lang} ) ) }
 
     return;
 
