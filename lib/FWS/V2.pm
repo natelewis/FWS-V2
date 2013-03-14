@@ -197,7 +197,7 @@ The server used to download the FWS Core updates.  Defaults to http://www.framew
 
 =item * SQLLogLevel
 
-Set how verbose logging is for SQL statements ran.  Logging will be appended: $fws->{'fileSecurePath'}.'/SQL.log'
+Set how verbose logging is for SQL statements ran.  Logging will be appended: $fws->{fileSecurePath}.'/SQL.log'
 0 - off (default), 1 - updates/deletes/inserts only, 2 - everything (This file will grow fast if set to 2)
 
 =back
@@ -222,7 +222,7 @@ An array of form values passed.
 
 =over 4
 
-=item * {'siteId'}
+=item * {siteId}
 
 The site id of the site currently being rendered.  Version 1 of FWS refered to this as the SID.  This will be set via setSiteValues('yourSiteId') if setSiteFriendly is not being used.
 
@@ -236,11 +236,11 @@ The current page friendly or if not available the page guid.
 
 =over 4
 
-=item * {'affiliateId'}
+=item * {affiliateId}
 
-Is set by passing a value to 'a' as a form value. Can be accessed via $fws->{'affiliateId'}
+Is set by passing a value to 'a' as a form value. Can be accessed via $fws->{affiliateId}
 
-=item * {'affiliateExp'}
+=item * {affiliateExp}
 
 The time in epoch that the affiliate code will expire for the current session.
 
@@ -254,27 +254,27 @@ The current session ID.
 
 =over 4
 
-=item * {'email'}
+=item * {email}
 
 The default email address for the site being rendered.  This is set via 'Site Settings' in the administration.
 
-=item * {'fileFWSPath'}
+=item * {fileFWSPath}
 
 The file location of FWS packaged distribution files.  This is normaly not used except internally as the files in this directory could change with an upgrade.
 
-=item * {'homeGUID'}
+=item * {homeGUID}
 
 The guid of the home page.  The formValue 'p' will be set to this if no 'p' value is passed.
 
-=item * {'siteGUID'}
+=item * {siteGUID}
 
 The guid of the site currently being rendered.
 
-=item * {'siteName'}
+=item * {siteName}
 
 The site name of the site currently being rendered.
 
-=item * {'queryHead'}
+=item * {queryHead}
 
 The query head used for links that will maintain session and have a unique random cache key.  Example return: ?fws_noCache=asdqwe&session=abc....123&s=site&  It is important not to use this in a web rendering that will become static though caching.   If the session= is cached on a static page it will cause a user who clicks the cached link to be logged out.  queryHead is only to ment to be used in situations when you are passing from one domain to another and wish to maintain the same session ID.
 
@@ -476,7 +476,7 @@ sub new {
     $self->{adminURL}                     ||= 'admin';
 
     # set the secure domain to a non https because it probably does not have a cert if it was not set
-    $self->{secureDomain}                 ||= 'http://'.$ENV{"SERVER_NAME"};
+    $self->{secureDomain}                 ||= 'http://'.$ENV{SERVER_NAME};
 
     # Change the theme of the ace IDE for developer mode
     $self->{aceTheme}                     ||= 'idle_fingers';
@@ -497,7 +497,7 @@ sub new {
     $self->{DBPort}                       ||= '3306';
 
     # set the domains to the environment version if it was not set
-    $self->{domain}                       ||= 'http://'.$ENV{"SERVER_NAME"};
+    $self->{domain}                       ||= 'http://' . $ENV{SERVER_NAME};
 
     # if the admin ID is blank, set it to admin so users can access it via /admin
     $self->{FWSPluginServer}              ||= 'https://www.frameworksites.com';
@@ -834,8 +834,8 @@ Additionally if you want to check if a plugin is active inside of element or scr
     #
     # check to see if ECommerce is loaded and active
     #
-    if ($fws->{plugins}->{'ECommerce'} eq '1') {     print "ECommerce is installed!\n" }
-    else {                                           print "No ECommerce for you!\n" }
+    if ($fws->{plugins}->{ECommerce} eq '1') {     print "ECommerce is installed!\n" }
+    else {                                         print "No ECommerce for you!\n" }
 
 
 =cut
@@ -844,7 +844,7 @@ sub registerPlugin {
     my ($self, $plugin) = @_;
 
     ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
-    eval 'use lib "'.$self->{fileSecurePath}.'/plugins";';
+    eval 'use lib "' . $self->{fileSecurePath} . '/plugins";';
     ## use critic
 
     #
@@ -860,14 +860,14 @@ sub registerPlugin {
     eval 'use ' . $plugin . q{;};
     ## use critic
 
-    if( $@ ){ $self->FWSLog($plugin." could not be loaded\n".$@) }
+    if( $@ ){ $self->FWSLog( $plugin . " could not be loaded\n" . $@ ) }
 
     ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
-    eval $plugin.'->pluginInit($self);';
+    eval $plugin . '->pluginInit($self);';
     ## use critic
 
-    if($@){
-        $self->FWSLog($plugin." pluginInit failed\n".$@);
+    if( $@ ){
+        $self->FWSLog( $plugin . " pluginInit failed\n" . $@ );
         return 0;
     }
 
