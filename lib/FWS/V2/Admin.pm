@@ -1450,30 +1450,43 @@ Return a edit box for the passed element hash;
 sub editBox {    
     my ($self,%editHash) = @_;
 
-    my $editHTML     = "";
-    my $ajaxID     = "#editModeAJAX_".$self->formValue('FWS_elementId');
+    my $editHTML;
+    my $ajaxID = '#editModeAJAX_' . $self->formValue( 'FWS_elementId' );
+
+    #
+    # default always show to off if its not passed
+    #
+    $editHash{alwaysShow} ||= 0;
+
+    #
+    # default color
+    #
+    $editHash{editBoxColor} ||= '#008000;';
+
+    #
+    # Define things to blank that might not be passed that we will
+    # use
+    #
+    $editHash{siteGUID} ||= '';
+    $editHash{name} ||= '';
+    $editHash{type} ||= '';
 
     #
     # if we are in edit mode, make buttons and container
     # 
-    if (($self->formValue("editMode") eq "1" || $editHash{'alwaysShow'} eq '1')) {
+    if ( ( $self->formValue('editMode') eq '1' || $editHash{alwaysShow} ) ) {
 
-
-         if ($self->{'siteGUID'} eq $editHash{'siteGUID'} || $editHash{'siteGUID'} eq '' ||  $editHash{'alwaysShow'} eq '1') { 
-            #
-            # Set some default colors based on activity or not being set
-            # 
-            if ($editHash{"editBoxColor"} eq "") { $editHash{"editBoxColor"} = "#008000;" }
+         if ($self->{siteGUID} eq $editHash{siteGUID} || !$editHash{siteGUID} ||  $editHash{alwaysShow} ) { 
     
             #
             # Edit Bar Open Div Container
             #
-            if ($editHash{"editBoxJustButtons"} ne '1') {
-                my $bgColor     = $self->_getHighlightColor( $editHash{"editBoxColor"} );
-                my $divStyle     = "color:".$editHash{"editBoxColor"}.";background-color:".$bgColor.";border:dotted 1px ".$editHash{"editBoxColor"}.";border-bottom:dotted 1px ".$editHash{"editBoxColor"}.";text-align:right;";
+            if ( !$editHash{editBoxJustButtons} ) {
+                my $bgColor     = $self->_getHighlightColor( $editHash{editBoxColor} );
+                my $divStyle    = "color:".$editHash{"editBoxColor"}.";background-color:".$bgColor.";border:dotted 1px ".$editHash{editBoxColor}.";border-bottom:dotted 1px ".$editHash{editBoxColor}.";text-align:right;";
     
                 $editHTML .=  "<div style=\"".$divStyle."\" class=\"FWSEditBoxControls\">";
-                $editHTML .=  $editHash{"name"}." ";
+                $editHTML .=  $editHash{name}." ";
             }
             #
             # check to see if this could have children
@@ -1481,43 +1494,42 @@ sub editBox {
             my $showOrderButton = 0;
             my %elementHash = $self->_fullElementHash(typeAlso=>1);
             for my $type ( keys %elementHash ) {
-                if ( defined $elementHash{$type}{"parent"} ) {
-                    if ( defined $editHash{"type"} ) {
-                         if ($elementHash{$type}{"parent"} eq $editHash{"type"} ) {  $showOrderButton = 1 }
+                if ( defined $elementHash{$type}{parent} ) {
+                    if ( defined $editHash{type} ) {
+                         if ($elementHash{$type}{parent} eq $editHash{type} ) {  $showOrderButton = 1 }
                     }
-                    if ( defined $elementHash{$editHash{"type"}}{"guid"} ) {
-                        if ( $elementHash{$type}{"parent"} eq $elementHash{$editHash{"type"}}{"guid"} ) { $showOrderButton = 1 }
+                    if ( defined $elementHash{$editHash{type}}{guid} ) {
+                        if ( $elementHash{$type}{parent} eq $elementHash{$editHash{type}}{guid} ) { $showOrderButton = 1 }
                     }
                 } 
             }
     
-            my $layoutFlag     = '';
-            my $pageFlag    = '';
+            my $layoutFlag;
+            my $pageFlag;
     
             #
             # if this is a column header edit box it will not have a type, which means we have to pass layout
             #
-            if ($editHash{'type'} eq '') { $layoutFlag = "&layout=".$editHash{"layout"} }
+            if ( !$editHash{type} ) { $layoutFlag = "&layout=" . $editHash{layout} }
         
-            if ($editHash{'pageOnly'} eq '1') { 
-                $showOrderButton = 1; 
-                $pageFlag = '&pageOnly=1';
-                $layoutFlag = '&layout='.$editHash{"layout"};
+            if ( $editHash{pageOnly} ) { 
+                $showOrderButton    = 1; 
+                $pageFlag           = '&pageOnly=1';
+                $layoutFlag         = '&layout=' . $editHash{layout};
             }
     
-            if (($showOrderButton || $editHash{"orderTool"}) && $editHash{"disableOrderTool"} ne "1") {
-                $editHTML .= $self->FWSIcon(    icon    =>"add_reorder_16.png",
-                                onClick    =>$self->dialogWindow(queryString=>"p=fws_dataOrdering&guid=".$editHash{"guid"}.$pageFlag.$layoutFlag),
-                                alt    =>"Add And Ordering",
-                                width    =>"16");
-             }
-    
-        
+            if ( ( $showOrderButton || $editHash{orderTool} ) && !$editHash{disableOrderTool} ) {
+                $editHTML .= $self->FWSIcon(    
+                                icon        => "add_reorder_16.png",
+                                onClick     => $self->dialogWindow(queryString=>"p=fws_dataOrdering&guid=".$editHash{"guid"}.$pageFlag.$layoutFlag),
+                                alt         => "Add And Ordering",
+                                width       => "16");
+            }
         
             #
             # Check to see if we should put the delete trash can icon
             #
-            if (($editHash{"deleteTool"} || ($self->{'siteGUID'} eq $editHash{"guid_xref_site_guid"}) || $editHash{"forceDelete"} eq "1") && $editHash{"disableDeleteTool"} ne "1") {
+            if ( ( $editHash{deleteTool} || ($self->{siteGUID} eq $editHash{guid_xref_site_guid} ) || $editHash{forceDelete} ) && !$editHash{disableDeleteTool} ) {
         
         
                 #
@@ -1536,13 +1548,12 @@ sub editBox {
                 else { $baseClear = "" }
         
                 $editHTML .= $self->FWSIcon(icon=>"delete_16.png",
-                            onClick=>"\$('".$ajaxID."').FWSDeleteElement({pageGUID: '".$self->formValue("FWS_elementId")."',parentGUID: '".$editHash{"parent"}."', guid: '".$editHash{"guid"}."'});", 
+                            onClick=>"\$('".$ajaxID."').FWSDeleteElement({pageGUID: '".$self->formValue("FWS_elementId")."',parentGUID: '".$editHash{parent}."', guid: '".$editHash{guid}."'});", 
                             alt=>"Delete",
                             width=>"16",
                             id=>"delete_".$editHash{"guid"});
             }
     
-        
             #
             # add and order Tool Button
             #
@@ -1558,22 +1569,21 @@ sub editBox {
             # ON/OFF cotnrol
             #
             if ($editHash{'disableActiveTool'} ne '1' && $editHash{'guid'} ne $self->homeGUID()) { $editHTML .= $self->onOffLight($editHash{'active'},$editHash{'guid'}) }
-    
         
             #
             # close the edit bar container
             #    
-            if ($editHash{"editBoxJustButtons"} ne '1') { $editHTML .= "</div>" }
+            if ( !$editHash{"editBoxJustButtons"} ) { $editHTML .= '</div>' }
     
-            $editHTML .= $editHash{"editBoxContent"};   
-            $editHTML .= $editHash{"editBox"};
+            $editHTML .= $editHash{editBoxContent};   
+            $editHTML .= $editHash{editBox};
         }
     }
 
     #
     # edit mode is not on, just show the content and call this good
     #
-    else { $editHTML .= $editHash{"editBoxContent"} . $editHash{"editBox"} }
+    else { $editHTML .= $editHash{editBoxContent} . $editHash{editBox} }
     return $editHTML;
 }    
     
