@@ -725,7 +725,7 @@ sub _FWSContent {
                                         #
                                         # make sure debug is turned off, because that would look silly in fws devel mode
                                         #
-                                        return $self->editBox(%valueHash).$html
+                                        return $self->editBox(%valueHash) . $html
                                     }
                                     else {
                                         #
@@ -837,7 +837,7 @@ sub _FWSContent {
                         $pageHash{disableOrderTool}     = 1;
                     }
 
-                    $pageHash{"editBoxColor"} = "#000000";
+                    $pageHash{editBoxColor} = "#000000";
                     $FWSMenu .= $self->editBox(%pageHash);
                 }
                 #else {
@@ -862,8 +862,6 @@ sub _FWSContent {
                 #
                 $pageHTML =~ s/#FWSAdminLoggedIn#//g;
                 $pageHTML =~ s/#FWSAdminLoggedInEnd#//g;
-
-                my $editBoxColor = '#2b6fb6';
 
                 #
                 # but all non-main info in the page
@@ -1033,18 +1031,18 @@ sub _replaceContentColumn {
     $editHash{addSubElementTool}  = 0;
     $editHash{disableEditTool}    = 1;
     $editHash{disableActiveTool}  = 1;
-    $editHash{rderTool}           = 1;
+    $editHash{orderTool}           = 1;
     $editHash{name}               = '| ' . $editHash{layout} . ' |';
     my $changeFrom                = '#' . $editHash{contentType} . '-' . $editHash{layout} . '#';
     my $changeTo                  = '<div id="' . $editHash{layout} . '">';
 
     if ( $editHash{siteGUID} ne $self->fwsGUID() || $self->{showFWSInSiteList} ) {
-        if ($self->formValue('editMode') eq '1' && $editHash{contentType} ne 'FWSShowNoHeader' && $editHash{pageType} eq 'page' && $self->{'hideEditModeHeaders'} ne '1') {
-            $changeTo .= $self->editBox(%editHash);
+        if ( $self->formValue('editMode') eq '1' && $editHash{contentType} ne 'FWSShowNoHeader' && $editHash{pageType} eq 'page' && !$self->{hideEditModeHeaders} ) {
+            $changeTo .= $self->editBox( %editHash );
         }
     }
 
-    $changeTo           .= $editHash{content} . '</div>';
+    $changeTo          .= $editHash{content} . '</div>';
     $editHash{html}    =~ s/$changeFrom/$changeTo/msg;
 
     return( $editHash{html} );
