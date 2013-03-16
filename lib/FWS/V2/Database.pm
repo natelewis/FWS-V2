@@ -462,8 +462,7 @@ sub changeUserEmail {
     #
     # check to make sure the emails we are chaning it to are valid
     #
-    my $isEmailValid = $self->isValidEmail( $emailTo );
-    if ( !$isEmailvalid ) {
+    if ( !$self->isValidEmail( $emailTo ) ) {
         return 'The email you are chaning to is invalid';
     }
 
@@ -627,7 +626,7 @@ sub dataArray {
                         || $incTags =~/,$checkTag$/
                         || $incTags =~/,$checkTag,$/
                         )
-                        && $incTags ne '' && $checkTag ne '') {
+                        && $incTags && $checkTag ) {
                     $tagGUIDs .= ',\'' . $elementType . '\'';
                     }
                 }
@@ -641,14 +640,14 @@ sub dataArray {
     #
     # add the keywordScore field response
     #
-    my $keywordScoreSQL = '1';
-    my $dataCacheSQL = '1';
-    my $dataCacheJoin = '';
+    my $keywordScoreSQL     = '1';
+    my $dataCacheSQL        = '1';
+    my $dataCacheJoin       = '';
 
     #
     # if any keywords are added,  and create an array of ID's and join them into comma delmited use
     #
-    if ( $paramHash{keywords} ne '' ) {
+    if ( $paramHash{keywords} ) {
 
         #
         # build the field list we will search against
@@ -1066,7 +1065,7 @@ sub elementArray {
                 # add extra ,'s where any spaces are,  that will fill in gaps for the like
                 #
                 $checkTag =~ s/ //sg;
-                if ( $checkTag ne '' && $self->{elementHash}{$guid}{tags} =~ /^$checkTag$/ ) { $addElement = 1 }
+                if ( $checkTag && $self->{elementHash}{$guid}{tags} =~ /^$checkTag$/ ) { $addElement = 1 }
             }
 
         if ( $addElement ) { push ( @elementArrayReturn,{%{$self->{elementHash}{$guid}}} ) }
@@ -1257,7 +1256,7 @@ sub fwsGUID {
     #
     # if is not set, set it and create the site id
     #
-    if ( $self->siteValue('fwsGUID') eq '' ) {
+    if ( !$self->siteValue('fwsGUID') ) {
 
         #
         # get the sid for the fws site
@@ -1267,7 +1266,7 @@ sub fwsGUID {
         #
         # if its blank make a new one
         #
-        if ( $fwsGUID eq '' ) {
+        if ( !$fwsGUID ) {
             $fwsGUID = $self->createGUID( 'f' );
             my ( $adminGUID ) = $self->getSiteGUID( 'admin' );
             $self->runSQL(SQL=>"insert into site set sid='fws',guid='" . $fwsGUID . "',site_guid='" . $self->safeSQL( $adminGUID ) . "'");
@@ -2715,7 +2714,7 @@ sub updateDataCache {
     # make any fields that "might" be needed
     #
     foreach my $key ( keys %dataHash ) {
-        if ( $dataCacheFields{$key} || $key eq 'site_guid' || $key eq 'guid' || $key eq 'name' || $key eq 'title' || $key eq 'pageIdOfElement' || $key eq 'pageDescription' ) {
+        if ( $dataCacheFields{$key} || $key =~ /^site_guid|guid|name|title|pageIdOfElement|pageDescription$/ ) {
 
             #
             # if the type is blank, then this is new
@@ -2842,12 +2841,12 @@ sub userHash {
         #
         # if guid isn't defined, then set it to the email address, or the only thing passed
         #
-        elsif ( $paramHash{email} eq '') { $lookupGUID = each %paramHash } else { $lookupGUID = $paramHash{email} }
+        elsif ( !$paramHash{email} ) { $lookupGUID = each %paramHash } else { $lookupGUID = $paramHash{email} }
 
         #
         # if its still blank after that, then we are talking about looking up the guy who is logged in currently
         #
-        if ( $lookupGUID eq '' ) { $lookupSQL = "email like '" . $self->safeSQL( $self->{userLoginId} ) . "'" }
+        if ( !$lookupGUID ) { $lookupSQL = "email like '" . $self->safeSQL( $self->{userLoginId} ) . "'" }
 
         #
         # if the lookupGUID has an @ in it, then look up the guid - least efficient but old stuff still looks for stuff this way
@@ -2914,7 +2913,7 @@ sub userHash {
             # if not logged or we are not looking for a particular guid that is disposable
             # set the id to 0 and active to 0 and destroy what we have
             #
-            if ( !$self->isUserLoggedIn() && $lookupGUID eq '' ) {
+            if ( !$self->isUserLoggedIn() && !$lookupGUID ) {
                 for ( keys %{$self->{profileHash}} ) { delete $self->{profileHash}->{$_} }
                 $userHash{guid}    = '';
                 $userHash{active}  = '0';
