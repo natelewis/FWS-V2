@@ -21,13 +21,13 @@ our $VERSION = '0.001';
 =head1 SYNOPSIS
 
     use FWS::V2;
-    
+
     my $fws = FWS::V2->new();
 
 
 =head1 DESCRIPTION
 
-FWS version 2 core web display methods 
+FWS version 2 core web display methods
 
 =head1 METHODS
 
@@ -64,20 +64,20 @@ Return the head html for a fws page rendering.
 =cut
 
 sub FWSHead {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
-    my $pageTitle = $self->siteValue('pageTitle');
+    my $pageTitle = $self->siteValue( 'pageTitle' );
 
-    if ( !$pageTitle && $self->formValue('p') =~ /^fws_/ ) {
+    if ( !$pageTitle && $self->formValue( 'p' ) =~ /^fws_/ ) {
         $pageTitle = 'FrameWork Sites ' . $self->{FWSVersion};
-        $self->jqueryEnable('ui-1.8.9');
-        $self->jqueryEnable('ui.widget-1.8.9');
-        $self->jqueryEnable('ui.mouse-1.8.9');
-        $self->jqueryEnable('ui.dialog-1.8.9');
-        $self->jqueryEnable('ui.datepicker-1.8.9');
-        $self->jqueryEnable('ui.slider-1.8.9');
-        $self->jqueryEnable('timepickr-0.9.6');
-        $self->jqueryEnable('ui.position-1.8.9');
+        $self->jqueryEnable( 'ui-1.8.9' );
+        $self->jqueryEnable( 'ui.widget-1.8.9' );
+        $self->jqueryEnable( 'ui.mouse-1.8.9' );
+        $self->jqueryEnable( 'ui.dialog-1.8.9' );
+        $self->jqueryEnable( 'ui.datepicker-1.8.9' );
+        $self->jqueryEnable( 'ui.slider-1.8.9' );
+        $self->jqueryEnable( 'timepickr-0.9.6' );
+        $self->jqueryEnable( 'ui.position-1.8.9' );
     }
 
     my $html = "<title>" . $pageTitle . "</title>\n";
@@ -95,27 +95,28 @@ Return the full web rendering for a FWS Page.   This includes the Content-Type H
 =cut
 
 sub displayContent {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
-    $self->runScript('preContent');
+    $self->runScript( 'preContent' );
 
     #
     # return just statusNote formfield created by the actions.  Useful mostly in ajax calls
     #
-    if ($self->formValue('returnStatusNote') ne '') {
+    if ( $self->formValue( 'returnStatusNote' ) ne '' ) {
         print "Content-Type: text/html; charset=UTF-8\n\n";
-        print $self->formValue('statusNote');
+        print $self->formValue( 'statusNote' );
     }
 
     #
     # if returnAndDoNothing is specified as a formValue get the hell out of here and .... do nothing!
+    # TODO Think returnAndDoNothing isn't needed anymore
     #
-    elsif ($self->formValue('returnAndDoNothing') ne '1') {
+    elsif ( $self->formValue( 'returnAndDoNothing' ) ne '1' ) {
 
         #
         # all is good and lets just make sure this flag wasn't set by a element and print the page
         #
-        if ($self->formValue('returnAndDoNothing') ne '1') {  $self->printPage(content=>$self->_FWSContent()) }
+        if ( $self->formValue( 'returnAndDoNothing' ) ne '1') {  $self->printPage(content=>$self->_FWSContent() ) }
     }
     return;
 }
@@ -129,7 +130,7 @@ Return the processed FWS Page,  this can be used for any content type and is not
 
 sub printPage {
     my ( $self, %paramHash ) = @_;
-    
+
     #
     # default stop processing to off
     #
@@ -141,27 +142,28 @@ sub printPage {
         #
         # set default content dispoistion
         #
-        $paramHash{'contentDisposition'}    ||= 'attachment';
+        $paramHash{contentDisposition}    ||= 'attachment';
 
         #
         # set the content type if we didn't get it in
         #
-        $paramHash{'contentType'}           ||= "text/html; charset=UTF-8";
+        $paramHash{contentType}           ||= "text/html; charset=UTF-8";
 
         #
+        # TODO don't think returnAdnDoNothing is needed anymore
         # bust out of here if there is nothing to do
         #
-        if ( $self->formValue('returnAndDoNothing') ) { return }
+        if ( $self->formValue( 'returnAndDoNothing' ) ) { return }
 
         #
         # do reverse friendly logic to turn friendly URLs to non friendlies
         #
-        if ( $self->siteValue('noFriendlies') && $self->formValue("p") !~ /^fws_/ ) {
-            my @friendlyArray = $self->openRS("SELECT friendly_url FROM data WHERE site_guid='".$self->{'siteGUID'}."'  and (element_type='page')",1);
+        if ( $self->siteValue( 'noFriendlies' ) && $self->formValue( "p" ) !~ /^fws_/ ) {
+            my @friendlyArray = @{$self->runSQL( SQL => "SELECT friendly_url FROM data WHERE site_guid='" . $self->{siteGUID} . "'  and (element_type='page')" )};
             while (@friendlyArray) {
                 my $FURL = shift(@friendlyArray);
-                my $nonFURL = $self->{'scriptName'}.$self->{'queryHead'}."p=".$FURL;
-                $paramHash{'content'} =~ s/"\/$FURL"/"$nonFURL"/g;
+                my $nonFURL = $self->{scriptName} . $self->{queryHead} . "p=" . $FURL;
+                $paramHash{content} =~ s/"\/$FURL"/"$nonFURL"/g;
             }
         }
 
@@ -170,26 +172,25 @@ sub printPage {
         #
         my $sessionScript = '';
         my %saveWithSessionHash = $self->_saveWithSessionHash();
-        #for my $sessionKey ( keys %{$self->{'_saveWithSessionHash'}} ) {
         for my $sessionKey ( keys %saveWithSessionHash ) {
-            my $keyValue = $self->formValue($sessionKey);
-            $sessionScript .= $sessionKey."|".$self->urlEncode($keyValue)."|";
+            my $keyValue = $self->formValue( $sessionKey );
+            $sessionScript .= $sessionKey . "|" . $self->urlEncode( $keyValue ) . "|";
         }
 
         #
         # set the editMode in range if it is blank
         #
-        if ( $self->formValue('editMode') eq '' ) { $self->formValue('editMode',0) }
+        if ( !$self->formValue( 'editMode' ) ) { $self->formValue( 'editMode', 0 ) }
 
         #
         # Set the cookie and update the session.. and other groovy header rutines
         # only if it is diffrent lets update it
         #
-        if ( $self->formValue("FWS_SESSION") ne $self->{'userLoginId'}."|".$self->language()."|".$self->{'adminLoginId'}."|".$ENV{"REMOTE_ADDR"}."|".$self->formValue('editMode')."|".$self->{'affiliateId'}."|".$self->{'affiliateExp'}."|".$self->{'adminSafeMode'}."|".$sessionScript ) {
+        if ( $self->formValue("FWS_SESSION") ne $self->{userLoginId} . "|" . $self->language() . "|" . $self->{adminLoginId} . "|" . $ENV{REMOTE_ADDR} . "|" . $self->formValue( 'editMode' ) . "|" . $self->{affiliateId} . "|" . $self->{affiliateExp} . "|" . $self->{adminSafeMode} . "|" . $sessionScript ) {
             #
             # run the SQL to update the session
             #
-            $self->runSQL( SQL => "update fws_sessions set fws_lang='".$self->safeSQL($self->language())."',b='".$self->safeSQL($self->{'userLoginId'})."',s='".$self->safeSQL($self->{'adminSafeMode'})."',bs='".$self->safeSQL($self->{'adminLoginId'})."',ip='".$self->safeSQL($ENV{"REMOTE_ADDR"})."',e='".$self->safeSQL($self->formValue('editMode'))."',a='".$self->safeSQL($self->{'affiliateId'})."',a_exp='".$self->safeSQL($self->{'affiliateExp'})."',extra='".$self->safeSQL($sessionScript)."' where id='".$self->safeSQL($self->formValue("session"))."'" );
+            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "',b='" . $self->safeSQL( $self->{userLoginId} ) . "',s='" . $self->safeSQL( $self->{adminSafeMode} ) . "',bs='" . $self->safeSQL( $self->{adminLoginId} ) . "',ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "',e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "',a='" . $self->safeSQL( $self->{affiliateId} ) . "',a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "',extra='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( "session" ) ) . "'" );
         }
 
         #
@@ -200,17 +201,17 @@ sub printPage {
         my $cookieDomain;
         my $cookie;
         if ( $self->cookieDomainName() ){
-            $cookieDomain = 'domain=' . $self->cookieDomainName().';';
+            $cookieDomain = 'domain=' . $self->cookieDomainName() . ';';
         }
 
-        $cookie .= "Set-Cookie: " . $self->{'sessionCookieName'}."=".$self->formValue('session').";"." ".$cookieDomain." Path=/;"." Expires=".$self->formatDate(format=>'cookie',monthMod=>1)."\n";
-        $cookie .= "Set-Cookie: fbsr_" . $self->siteValue("facebookAppId")."=deleted;"." Path=/;"." Expires=Thu, 01-Jan-1970 00:00:01 GMT\n";
+        $cookie .= "Set-Cookie: " . $self->{sessionCookieName} . "=" . $self->formValue( 'session' ) . ";" . " " . $cookieDomain . " Path=/;" . " Expires=" . $self->formatDate( format => 'cookie', monthMod => 1 ) . "\n";
+        $cookie .= "Set-Cookie: fbsr_" . $self->siteValue( "facebookAppId" ) . "=deleted;" . " Path=/;" . " Expires=Thu, 01-Jan-1970 00:00:01 GMT\n";
 
         #
         # simple page rendering
         #
-        if ( $paramHash{'head'} ) {
-            $paramHash{'content'} = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n<head>\n".$paramHash{'head'}."</head>\n<body>\n".$paramHash{'content'}."\n</body>\n</html>";
+        if ( $paramHash{head} ) {
+            $paramHash{content} = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n<head>\n" . $paramHash{head} . "</head>\n<body>\n" . $paramHash{content} . "\n</body>\n</html>";
         }
 
         #
@@ -221,26 +222,27 @@ sub printPage {
         #
         # if the contentType doesn't have HTML in it, lets not pass the cookies
         #
-        if ( $paramHash{'contentType'} =~ /html/i )  { $theHeader .= $cookie }
-                                                       $theHeader .= "Accept-Ranges: bytes\n";
-        if ($paramHash{'contentLength'} ne '')       { $theHeader .= "Content-Length: ".$paramHash{'contentLength'}."\n" }
-        if ($paramHash{'fileName'} ne '')            { $theHeader .= "Content-disposition: " . $paramHash{'contentDisposition'} . ";"." filename=\"".$paramHash{'fileName'}."\"\n" }
-                                                       $theHeader .= "Content-Type: ".$paramHash{'contentType'}."\n\n";
+        if ( $paramHash{contentType} =~ /html/i )  { $theHeader .= $cookie }
+                                                     $theHeader .= "Accept-Ranges: bytes\n";
+        if ( $paramHash{contentLength} )           { $theHeader .= "Content-Length: " . $paramHash{contentLength} . "\n" }
+        if ( $paramHash{fileName} )                { $theHeader .= "Content-disposition: " . $paramHash{contentDisposition} . ";" . " filename=\"" . $paramHash{fileName} . "\"\n" }
+                                                     $theHeader .= "Content-Type: " . $paramHash{contentType} . "\n\n";
 
         #
         # in case this was sent via a eval from an eplement, lets set the formvalue
         #
-        $self->formValue('FWS_showElementOnly',1);
+        $self->formValue( 'FWS_showElementOnly', 1 );
 
-        if ($self->formValue('redirect')) {
+        if ( $self->formValue( 'redirect' ) ) {
             print "Status: 301 Moved Permanantly\n";
-            print "Location: " . $self->urlDecode( $self->formValue('redirect') ) . "\n\n";
-            $self->processQueue();
+            print "Location: " . $self->urlDecode( $self->formValue( 'redirect' ) ) . "\n\n";
         }
-        else {
-            print $theHeader .$paramHash{'content'};
-            $self->processQueue();
-        }
+        else { print $theHeader  . $paramHash{content} }
+
+        #
+        # process our queue for every page we render
+        # 
+        $self->processQueue();
 
         #
         # shut off processing so we never do this more than once
@@ -252,13 +254,13 @@ sub printPage {
 
 
 sub _FWSContent {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
 
     my $pageHTML;
 
     if ( !$self->{stopProcessing} ) {
-        my $pageId = $self->safeSQL( $self->formValue('p') );
+        my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
 
         #
         # this flag will suppress any access wrapping around the element
@@ -268,7 +270,7 @@ sub _FWSContent {
         #
         # if this is an admin url move to a adminLogin
         #
-        if ( $pageId eq $self->{'adminURL'} ) { $self->displayAdminLogin() }
+        if ( $pageId eq $self->{adminURL} ) { $self->displayAdminLogin() }
 
         #
         # if this is an ispadmin contorl process the page differntly
@@ -287,14 +289,14 @@ sub _FWSContent {
 
 
 
-        if ($pageId eq "robots.txt") {
-            if($self->siteValue('robots.txt') eq '') {
-                $self->siteValue('robots.txt', "User-agent: *\nDisallow: ".$self->{'scriptName'}."\nAllow: /\n");
+        if ( $pageId eq "robots.txt" ) {
+            if( !$self->siteValue( 'robots.txt' ) ) {
+                $self->siteValue( 'robots.txt', "User-agent: *\nDisallow: " . $self->{scriptName} . "\nAllow: /\n" );
             }
-            my $robotsContent = $self->siteValue('robots.txt');
+            my $robotsContent = $self->siteValue( 'robots.txt' );
             print "Status: 200 OK\n";
             print "Accept-Ranges: bytes\n";
-            print "Content-Length: ".length($robotsContent)."\n";
+            print "Content-Length: " . length( $robotsContent ) . "\n";
             print "Content-Type:text/plain\n\n";
             print $robotsContent;
             $self->{stopProcessing} = 1;
@@ -303,36 +305,36 @@ sub _FWSContent {
         if ( !$self->{stopProcessing} ) {
 
             my $addToUnion;
-            for my $table ( keys %{$self->{'dataSchema'}} ) {
-                if ($table ne 'data' && $self->{'dataSchema'}{$table}{'friendly_url'}{'type'} ne '') {
-                    $addToUnion .= "union SELECT 1,'','',".$self->safeSQL($table).".friendly_url,'".$self->safeSQL($self->{'siteGUID'})."',data.guid,".$self->safeSQL($table).".page_friendly_url,'' from ".$self->safeSQL($table)." left join data on data.friendly_url=".$self->safeSQL($table).".page_friendly_url where ".$self->safeSQL($table).".friendly_url='".$pageId."' ";
+            for my $table ( keys %{$self->{dataSchema}} ) {
+                if ( $table ne 'data' && $self->{dataSchema}{$table}{friendly_url}{type} ) {
+                    $addToUnion .= "union SELECT 1,'',''," . $self->safeSQL( $table ) . ".friendly_url,'" . $self->safeSQL( $self->{siteGUID} ) . "',data.guid," . $self->safeSQL( $table ) . ".page_friendly_url,'' from " . $self->safeSQL( $table ) . " left join data on data.friendly_url=" . $self->safeSQL( $table ) . ".page_friendly_url where " . $self->safeSQL( $table ) . ".friendly_url='" . $pageId . "' ";
                 }
             }
 
             #
             # set page defaults if we have them
             #
-            my @pageArray = $self->openRS(  "select 0,extra_value,title,friendly_url,site_guid,guid,element_type,name from data where (friendly_url like '".$pageId."' or guid = '".$pageId."') and (site_guid='".$self->safeSQL($self->{'siteGUID'})."') union select 0,extra_value,title,friendly_url,site_guid,guid,element_type,name from data where (friendly_url like '".$pageId."' or guid = '".$pageId."') and (site_guid='".$self->safeSQL($self->fwsGUID())."')".$addToUnion);
+            my @pageArray = @{$self->runSQL( SQL => "select 0,extra_value,title,friendly_url,site_guid,guid,element_type,name from data where (friendly_url like '" . $self->safeSQL( $pageId ) . "' or guid = '" . $self->safeSQL( $pageId ) . "') and (site_guid='" . $self->safeSQL( $self->{siteGUID} ) . "') union select 0,extra_value,title,friendly_url,site_guid,guid,element_type,name from data where (friendly_url like '" . $self->safeSQL( $pageId ) . "' or guid = '" . $self->safeSQL ( $pageId ) . "') and (site_guid='" . $self->safeSQL( $self->fwsGUID() ) . "')" . $addToUnion )};
 
             #
             # shave off the first one in case there is two
             #
             my %pageHash;
-            my $dynamicFriendly             = shift(@pageArray);
-            my $pageExtraValue              = shift(@pageArray);
-            $pageHash{'title'}              = shift(@pageArray);
-            $pageHash{'friendlyURL'}        = shift(@pageArray);
-            $pageHash{'siteGUID'}           = shift(@pageArray);
-            $pageHash{'guid'}               = shift(@pageArray);
-            $pageHash{'type'}               = shift(@pageArray);
-            $pageHash{'name'}               = shift(@pageArray);
-            %pageHash = $self->addExtraHash($pageExtraValue,%pageHash);
+            my $dynamicFriendly           = shift( @pageArray );
+            my $pageExtraValue            = shift( @pageArray );
+            $pageHash{title}              = shift( @pageArray );
+            $pageHash{friendlyURL}        = shift( @pageArray );
+            $pageHash{siteGUID}           = shift( @pageArray );
+            $pageHash{guid}               = shift( @pageArray );
+            $pageHash{type}               = shift( @pageArray );
+            $pageHash{name}               = shift( @pageArray );
+            %pageHash = $self->addExtraHash( $pageExtraValue, %pageHash );
 
             #
             # if this is blank, that means we are talking about a homepage that does not exist yet
             #
-            if ($pageHash{'guid'} eq '') {
-                if ($self->siteValue('homeGUID') eq $pageId) {
+            if ( !$pageHash{guid} ) {
+                if ( $self->siteValue( 'homeGUID' ) eq $pageId ) {
                     %pageHash = $self->saveData(
                             guid    => $pageId,
                             active  => '1',
@@ -340,89 +342,88 @@ sub _FWSContent {
                             type    => 'page',
                             parent  => ''
                             );
-                    }
+                }
                 else {
                     #
                     # the page we are looking for does not exist.  Lets get back and show some home page!
                     #
-                    %pageHash = $self->dataHash(guid=>$self->siteValue('homeGUID'));
-                    $pageId = $self->siteValue('homeGUID');
-                    $self->formValue('p',$pageId);
+                    %pageHash   = $self->dataHash( guid => $self->siteValue( 'homeGUID' ) );
+                    $pageId     = $self->siteValue( 'homeGUID' );
+                    $self->formValue( 'p', $pageId );
                 }
             }
 
             #
             # if we DO have a guid, then lets set pageId to what the guid is in case we came in from a p=friendlyurl
             #
-            else { $pageId = $pageHash{'guid'} }
+            else { $pageId = $pageHash{guid} }
 
             #
             # set the intial page type to be used to determin if we should be putting columns
             #
             my $pageHead;
             my $somethingIsOnThePage = 0;
-            my %templateHash         = $self->templateHash(pageGIUD=>$pageId);
+            my %templateHash         = $self->templateHash( pageGIUD => $pageId );
 
             #
             # lets not change this stuff around if we are on an aadmin page of some sort
             #
-            if ($pageId !~ /^fws_/) {
+            if ( $pageId !~ /^fws_/ ) {
                 #
                 # ONLY if these things aren't set by elements,  then set them by the page defaults... if not pass them by and accept what it already is
                 #
-                if ( !$self->siteValue('pageTitle') )         { $self->siteValue( 'pageTitle'         ,$self->{'siteName'}.' - '.$pageHash{'title'}) }
-                if ( !$self->siteValue('pageKeywords') )      { $self->siteValue( 'pageKeywords'      ,$pageHash{'pageKeywords'}) }
-                if ( !$self->siteValue('pageDescription') )   { $self->siteValue( 'pageDescription'   ,$pageHash{'pageDescription'}) }
+                if ( !$self->siteValue( 'pageTitle' ) )         { $self->siteValue( 'pageTitle'         , $self->{siteName} . ' - ' . $pageHash{title} ) }
+                if ( !$self->siteValue( 'pageKeywords' ) )      { $self->siteValue( 'pageKeywords'      , $pageHash{pageKeywords} ) }
+                if ( !$self->siteValue( 'pageDescription' ) )   { $self->siteValue( 'pageDescription'   , $pageHash{pageDescription} ) }
             }
 
             #
             # set the dir\filename it will be the same for all these files,
             #
-            my $fileDir = $self->{"fileWebPath"}."/".$self->{'siteGUID'}."/";
-
+            my $fileDir = $self->{fileWebPath} . "/" . $self->{siteGUID} . "/";
 
             #
             # Template level CSS
             #
-            if ($templateHash{'css'} > 0) {
-                $self->_cssEnable($self->{'siteGUID'}."/".$templateHash{'guid'}."/FWSElement-".$templateHash{'css'} );
+            if ( $templateHash{css} > 0 ) {
+                $self->_cssEnable( $self->{siteGUID} . "/" . $templateHash{guid} . "/FWSElement-" . $templateHash{css} );
                 $somethingIsOnThePage = 1;
             }
-            if ($templateHash{'js'} > 0) {
-                $self->_jsEnable($self->{'siteGUID'}."/".$templateHash{'guid'}."/FWSElement-".$templateHash{'js'} );
+            if ( $templateHash{js} > 0 ) {
+                $self->_jsEnable( $self->{siteGUID} . "/" . $templateHash{guid} . "/FWSElement-" . $templateHash{js} );
                 $somethingIsOnThePage = 1;
             }
 
             #
             # site level css and js
             #
-            $pageHead .= $self->siteValue('siteHead');
-            if ($self->siteValue('cssDevel') > 0) {
-                $self->_cssEnable($self->{'siteGUID'}."/assets/FWSElement-".$self->siteValue('cssDevel'));
+            $pageHead .= $self->siteValue( 'siteHead' );
+            if ( $self->siteValue( 'cssDevel' ) > 0 ) {
+                $self->_cssEnable( $self->{siteGUID} . "/assets/FWSElement-" . $self->siteValue( 'cssDevel' ) );
                 $somethingIsOnThePage = 1;
             }
-            if ($self->siteValue('jsDevel') > 0) {
-                $self->_jsEnable($self->{'siteGUID'}."/assets/FWSElement-".$self->siteValue('jsDevel'));
+            if ( $self->siteValue( 'jsDevel' ) > 0 ) {
+                $self->_jsEnable( $self->{siteGUID} . "/assets/FWSElement-" . $self->siteValue( 'jsDevel' ) );
                 $somethingIsOnThePage = 1;
             }
 
             #
             # Page level CSS
             #
-            $pageHead .= $pageHash{'pageHead'};
-            if ($pageHash{'cssDevel'} > 0) {
-                $self->_cssEnable($self->{'siteGUID'}."/".$pageId."/FWSElement-".$pageHash{'cssDevel'});
+            $pageHead .= $pageHash{pageHead};
+            if ( $pageHash{cssDevel} > 0 ) {
+                $self->_cssEnable( $self->{siteGUID} . "/" . $pageId . "/FWSElement-" . $pageHash{cssDevel} );
                 $somethingIsOnThePage = 1;
             }
-            if ($pageHash{'jsDevel'} > 0) {
-                $self->_jsEnable($self->{'siteGUID'}."/".$pageId."/FWSElement-".$pageHash{'jsDevel'});
+            if ( $pageHash{jsDevel} > 0 ) {
+                $self->_jsEnable( $self->{siteGUID} . "/" . $pageId . "/FWSElement-" . $pageHash{jsDevel} );
                 $somethingIsOnThePage = 1;
             }
 
             #
             # set page head
             #
-            $self->siteValue('pageHead', $pageHead );
+            $self->siteValue( 'pageHead', $pageHead );
 
             #
             # if the pageTitle ends with ' - ' then eat it
@@ -430,17 +431,17 @@ sub _FWSContent {
             ( my $cleanTitle = $self->siteValue( 'pageTitle' ) ) =~ s/(\s-|\s\||\s)$//g;
             $self->siteValue( 'pageTitle', $cleanTitle );
 
-            my @elements = $self->openRS("select distinct d1.extra_value,d1.site_guid,x2.layout,d1.active,x1.ord+(d1.default_element*100000) as real_ord,x1.layout, d1.disable_edit_mode, d1.groups_guid, d1.guid, d1.element_type,d1.name,d1.title,d1.show_resubscribe,d1.show_login,d1.show_mobile,d1.lang,d1.friendly_url,d1.page_friendly_url,d1.default_element,d1.disable_title,d1.nav_name  from data d1 LEFT JOIN guid_xref x1 ON (d1.guid = x1.child) left join guid_xref x2 on (x2.child = x1.parent) left join data d2 on (x2.child=d2.guid) where (d1.site_guid = '".$self->safeSQL($self->{'siteGUID'})."' or d1.site_guid = '".$self->safeSQL($self->fwsGUID())."') and d1.element_type <> 'data' and d1.element_type <> 'url' and d1.element_type <> 'page' and (x1.parent='' or d1.guid='".$pageId."' or (d2.element_type='page')) and (((x1.parent='".$pageId."') or d1.default_element <> '0') or d1.guid='".$pageId."') order by x1.layout, real_ord", 1);
+            my @elements = $self->openRS("select distinct d1.extra_value,d1.site_guid,x2.layout,d1.active,x1.ord+(d1.default_element*100000) as real_ord,x1.layout, d1.disable_edit_mode, d1.groups_guid, d1.guid, d1.element_type,d1.name,d1.title,d1.show_resubscribe,d1.show_login,d1.show_mobile,d1.lang,d1.friendly_url,d1.page_friendly_url,d1.default_element,d1.disable_title,d1.nav_name  from data d1 LEFT JOIN guid_xref x1 ON (d1.guid = x1.child) left join guid_xref x2 on (x2.child = x1.parent) left join data d2 on (x2.child=d2.guid) where (d1.site_guid = '" . $self->safeSQL( $self->{siteGUID} ) . "' or d1.site_guid = '" . $self->safeSQL( $self->fwsGUID() ) . "') and d1.element_type <> 'data' and d1.element_type <> 'url' and d1.element_type <> 'page' and (x1.parent='' or d1.guid='" . $self->safeSQL( $pageId ) . "' or (d2.element_type='page')) and (((x1.parent='" . $self->safeSQL( $pageId ) . "') or d1.default_element <> '0') or d1.guid='" . $self->safeSQL( $pageId ) . "') order by x1.layout, real_ord", 1);
 
             #
             # set the pageTitle Hash into a fws var
             #
-            $self->formValue('fws_pageTitle'                ,$pageHash{'pageTitle'});
-            $self->formValue('fws_pageNavigationName'       ,$pageHash{'name'});
-            $self->formValue('fws_pageReferenceId'          ,$pageHash{'name'});
-            $self->formValue('fws_pageId'                   ,$pageHash{'guid'});
-            $self->formValue('fws_secureDomain'             ,$self->secureDomain());
-            $self->formValue('fws_domain'                   ,$self->domain());
+            $self->formValue( 'fws_pageTitle'                , $pageHash{pageTitle} );
+            $self->formValue( 'fws_pageNavigationName'       , $pageHash{name} );
+            $self->formValue( 'fws_pageReferenceId'          , $pageHash{name} );
+            $self->formValue( 'fws_pageId'                   , $pageHash{guid} );
+            $self->formValue( 'fws_secureDomain'             , $self->{secureDomain} );
+            $self->formValue( 'fws_domain'                   , $self->{domain} );
 
             #
             # Mech to figure out what number layout in the list we are so we can set class based on location ancestory
@@ -467,354 +468,347 @@ sub _FWSContent {
             my %JSHash;
             my %CSSHash;
 
-            while (@elements) {
+            while ( @elements ) {
                 #
                 # start with ext hash, and then overwrite if there is conflicts
                 #
-                my $extraValue                = shift(@elements);
-                my %valueHash                 = $self->addExtraHash($extraValue);
+                my $extraValue                = shift( @elements );
+                my %valueHash                 = $self->addExtraHash( $extraValue );
 
-                $valueHash{siteGUID}          = shift(@elements);
-                my $elementTemplateId         = shift(@elements);
-                $valueHash{active}            = shift(@elements);
-                $valueHash{ord}               = shift(@elements);
-                $valueHash{layout}            = shift(@elements);
-                $valueHash{disableEditMode}   = shift(@elements);
-                $valueHash{'userGroup'}       = shift(@elements);
-                $valueHash{'guid'}            = shift(@elements);
-
-                $valueHash{type}              = shift(@elements);
-                $valueHash{name}              = shift(@elements);
-                $valueHash{title}             = shift(@elements);
-                $valueHash{showResubscribe}   = shift(@elements);
-                $valueHash{showLogin}         = shift(@elements);
-                $valueHash{showMobile}        = shift(@elements);
-                $valueHash{lang}              = shift(@elements);
-                $valueHash{friendlyURL}       = shift(@elements);
-                $valueHash{pageFriendlyURL}   = shift(@elements);
-                $valueHash{defaultElement}    = shift(@elements);
-                $valueHash{disableTitle}      = shift(@elements);
-                $valueHash{navigationName}    = shift(@elements);
-
-
+                $valueHash{siteGUID}          = shift( @elements );
+                my $elementTemplateId         = shift( @elements );
+                $valueHash{active}            = shift( @elements );
+                $valueHash{ord}               = shift( @elements );
+                $valueHash{layout}            = shift( @elements );
+                $valueHash{disableEditMode}   = shift( @elements );
+                $valueHash{userGroup}         = shift( @elements );
+                $valueHash{guid}              = shift( @elements );
+                $valueHash{type}              = shift( @elements );
+                $valueHash{name}              = shift( @elements );
+                $valueHash{title}             = shift( @elements );
+                $valueHash{showResubscribe}   = shift( @elements );
+                $valueHash{showLogin}         = shift( @elements );
+                $valueHash{showMobile}        = shift( @elements );
+                $valueHash{lang}              = shift( @elements );
+                $valueHash{friendlyURL}       = shift( @elements );
+                $valueHash{pageFriendlyURL}   = shift( @elements );
+                $valueHash{defaultElement}    = shift( @elements );
+                $valueHash{disableTitle}      = shift( @elements );
+                $valueHash{navigationName}    = shift( @elements );
+ 
                 #
                 # make sure userGroup is numeric
                 #
-                if ( $valueHash{'userGroup'} eq '' ) { $valueHash{'userGroup'} = 0 }
+                $valueHash{userGroup} ||= 0;
+
+                #
+                # if title is blank, lets use name
+                #
+                $valueHash{title} ||= $valueHash{name};
+
+                #
+                # a couple of presets we will need
+                #
+                $valueHash{editBoxColor}    = "#FF0000";
+
+                #
+                # This should be legacy at some point and replaced with pageGUID... we will address later
+                #
+                $valueHash{parent}          = $pageId;
+
+                #
+                # by defult lets give a delete button to everything
+                #
+                $valueHash{deleteTool}      = 1;
+
+                #
+                # figure out the layout area and tweek for normilization
+                #
+                my $layoutCount             = $layoutCountHash{$valueHash{layout}};
+                $layoutCountHash{$valueHash{layout}}++;
+                if ( $elementTemplateId eq '') {     $elementTemplateId = $templateHash{homeGUID} }
+                if ( $elementTemplateId eq '0') {    $elementTemplateId = $templateHash{defaultGUID} }
+
+                #
+                # make sure we are talking about the element on a compatable page... or we are cool if the element is the dirived element because it was
+                # accessed via p=theElementId or p=theFriendlyUrl or /theElementsFriendlyURL
+                #    
+                # And Check to see if we already spit out this element to the page
+                #
+                if ( ( $elementTemplateId eq $templateHash{guid} || $valueHash{guid} eq $pageId ) && !$elementUsed{$valueHash{guid}} ) {
 
                     #
-                    # if title is blank, lets use name
+                    # set the flag so we don't use it more than once
                     #
-                    if ($valueHash{'title'} eq '') { $valueHash{'title'} =  $valueHash{'name'} }
+                    $elementUsed{$valueHash{guid}} = 1;
 
                     #
-                    # a couple of presets we will need
+                    # is active or not
                     #
-                    $valueHash{editBoxColor}    = "#FF0000";
+                    if (( $valueHash{active} || ( $self->formValue( 'editMode' ) ) ) ) {
 
-                    #
-                    # This should be legacy at some point and replaced with pageGUID... we will address later
-                    #
-                    $valueHash{parent}          = $pageId;
-
-                    #
-                    # by defult lets give a delete button to everything
-                    #
-                    $valueHash{deleteTool}      = 1;
-
-                    #
-                    # figure out the layout area and tweek for normilization
-                    #
-                    my $layoutCount             = $layoutCountHash{$valueHash{"layout"}};
-                    $layoutCountHash{$valueHash{"layout"}} ++;
-                    if ($elementTemplateId eq '') {     $elementTemplateId = $templateHash{'homeGUID'} }
-                    if ($elementTemplateId eq '0') {    $elementTemplateId = $templateHash{'defaultGUID'} }
-
-                    #
-                    # make sure we are talking about the element on a compatable page... or we are cool if the element is the dirived element because it was
-                    # accessed via p=theElementId or p=theFriendlyUrl or /theElementsFriendlyURL
-                    #
-                    if ($elementTemplateId eq $templateHash{'guid'} || $valueHash{'guid'} eq $pageId) {
+                        $valueHash{layout} ||= 1;
 
                         #
-                        # Check to see if we already spit out this element to the page
+                        # LOGIN GROUP KEY
                         #
-                        if (!$elementUsed{$valueHash{'guid'}}) {
+                        # 0     No login required
+                        # 1     Show if logged in as a site user
+                        # -101  Show if logged in as a admin user
+                        # -103  Show if logged in as a subscriber
+                        # -1    Do not show if logged in as a site user
+                        # -102  Do not show if logged in as a admin user
+                        # -104  Do not show if logged in as a subscriber';
+
+                        #
+                        # if userGroup ne 0 then we need to be logged in or supress
+                        #
+                        if ( $valueHash{userGroup} ne '0' ) {
+                            my %userHash  = $self->userHash();
 
                             #
-                            # set the flag so we don't use it more than once
+                            # if If group ID is "-1" then all I need to be is just logged in
+                            # Special login code group flag checker
                             #
-                            $elementUsed{$valueHash{'guid'}} = 1;
+                            %userHash = $self->runScript( 'login', %userHash,
+                                                               'userGroup'             => $valueHash{userGroup},
+                                                               'type'                  => $valueHash{type},
+                                                               'showLogin'             => $valueHash{showLogin},
+                                                               'showResubscribe'       => $valueHash{showResubscribe},
+
+                                                                # LEGACY NAMES
+                                                               'elementType'           => $valueHash{type},
+                                                               'show_login'            => $valueHash{showLogin},
+                                                               'show_resubscribe'      => $valueHash{showResubscribe},
+                                                                );
 
                             #
-                            # is active or not
+                            # se the login mod stuff back in case it changed form the script
                             #
-                            if (($valueHash{'active'} || ($self->formValue('editMode') eq '1')) ) {
+                            $valueHash{type}      = $userHash{elementType};
 
-                                if ($valueHash{"layout"} eq '') { $valueHash{"layout"}='1' }
+                            #
+                            # you must be admin logged in to see it.
+                            #
+                            if ( $userHash{userGroup} eq '-101' && !$self->isAdminLoggedIn() ) {    $valueHash{type} = '' }
+
+                            #
+                            # you must be admin logged in to see it.
+                            #
+                            if ( $userHash{userGroup} eq '-102' && $self->isAdminLoggedIn() ) {     $valueHash{type} = '' }
+
+                            #
+                            # you can't be logged in to see it. supress the element
+                            #
+                            if ( $userHash{userGroup} eq '-1' && $userHash{active} ) {     $valueHash{type} = '' }
+
+                            #
+                            # if this is set to 0 then negate the login because it must have been set that way
+                            # from the loginMod
+                            #
+                            if ( $userHash{userGroup} > 0 ) {
 
                                 #
-                                # LOGIN GROUP KEY
+                                # If group ID is "1" then all I need to be is just logged in
                                 #
-                                # 0     No login required
-                                # 1     Show if logged in as a site user
-                                # -101  Show if logged in as a admin user
-                                # -103  Show if logged in as a subscriber
-                                # -1    Do not show if logged in as a site user
-                                # -102  Do not show if logged in as a admin user
-                                # -104  Do not show if logged in as a subscriber';
-
-                                #
-                                # if userGroup ne 0 then we need to be logged in or supress
-                                #
-                                if ($valueHash{'userGroup'} ne '0') {
-                                    my %userHash  = $self->userHash();
-
-                                    #
-                                    # if If group ID is "-1" then all I need to be is just logged in
-                                    # Special login code group flag checker
-                                    #
-                                    %userHash = $self->runScript('login',%userHash,
-                                                                       'userGroup'             => $valueHash{'userGroup'},
-                                                                       'type'                  => $valueHash{type},
-                                                                       'showLogin'             => $valueHash{"showLogin"},
-                                                                       'showResubscribe'       => $valueHash{"showResubscribe"},
-
-                                                                        # LEGACY NAMES
-                                                                       'elementType'           => $valueHash{type},
-                                                                       'show_login'            => $valueHash{"showLogin"},
-                                                                       'show_resubscribe'      => $valueHash{"showResubscribe"},
-                                                                        );
-
-                                    #
-                                    # se the login mod stuff back in case it changed form the script
-                                    #
-                                    $valueHash{type}      = $userHash{'elementType'};
-
-                                    #
-                                    # you must be admin logged in to see it.
-                                    #
-                                    if ($userHash{'userGroup'} eq '-101' && !$self->isAdminLoggedIn()) {    $valueHash{type} = '' }
-
-                                    #
-                                    # you must be admin logged in to see it.
-                                    #
-                                    if ($userHash{'userGroup'} eq '-102' && $self->isAdminLoggedIn()) {     $valueHash{type} = '' }
-
-                                    #
-                                    # you can't be logged in to see it. supress the element
-                                    #
-                                    if ($userHash{'userGroup'} eq '-1' && $userHash{'active'} eq '1') {     $valueHash{type} = '' }
-
-                                    #
-                                    # if this is set to 0 then negate the login because it must have been set that way
-                                    # from the loginMod
-                                    #
-                                    if ($userHash{'userGroup'} > 0) {
-
-                                        #
-                                        # If group ID is "1" then all I need to be is just logged in
-                                        #
-                                        if ($userHash{'userGroup'} eq '1' && $userHash{'active'} eq '1') {
-                                            #DON't panic.  we good to go! we won't switch anyting
-                                        }
-
-                                        #
-                                        # If we have a spacific group, figure it out and do it
-                                        #
-                                        elsif ( $userHash{'userGroup'} > 1 && ($userHash{'group'}{$userHash{'userGroup'}} eq '1') &&  $userHash{'active'} eq '1') {
-                                            #Nice! we are gtg, don't do anything
-                                        }
-                                        #
-                                        # Set elementType  your not set to see, set login or blank the element
-                                        #
-                                        else {
-                                            if ($userHash{'show_login'}) { $valueHash{type}='FWSLogin' }
-                                            else { $valueHash{type} = '' }
-                                        }
-                                    }
+                                if ( $userHash{userGroup} eq '1' && $userHash{active} ) {
+                                    #DON't panic.  we good to go! we won't switch anyting
                                 }
 
                                 #
-                                # If your a mobile device, and your mobile is set to (2) show desktop only then eat the type
+                                # If we have a spacific group, figure it out and do it
                                 #
-                                if ($ENV{'HTTP_USER_AGENT'} =~ /mobile/i && $valueHash{"showMobile"} eq '2') { $valueHash{type}='' }
-
-                                    #
-                                    # If your NOT a mobile device, and your mobile is set to (1) show mobile only then eat the type
-                                    #
-                                    if ($ENV{'HTTP_USER_AGENT'} !~ /mobile/i && $valueHash{"showMobile"} eq '1') { $valueHash{type}='' }
-
-                                    #
-                                    # set defaults and get the editBox going
-                                    #
-                                    my $html;
-
-                                    #
-                                    # set elementId in a formValue so the FWS can use it when working with adminField function
-                                    #
-                                    $self->formValue('FWS_elementId',$valueHash{'guid'});
-                                    $self->formValue('FWS_pageId',$pageId);
-
-                                    #
-                                    # Get the element
-                                    #
-                                    my %elementHash = $self->elementHash(guid=>$valueHash{type});
-
-                                    #
-                                    # add css or js if its needed
-                                    #
-                                    if ($JSHash{$valueHash{type}} ne '1' && $elementHash{'jsDevel'} ne '') {
-                                        $JSHash{$valueHash{type}} = 1;
-                                        $self->_jsEnable($elementHash{'siteGUID'}."/".$valueHash{type}."/FWSElement-".$elementHash{'jsDevel'},-1000 );
-                                    }
-                                    if ($CSSHash{$valueHash{type}} ne '1' && $elementHash{'cssDevel'} ne '') {
-                                        $CSSHash{$valueHash{type}} = 1;
-                                        $self->_cssEnable($elementHash{'siteGUID'}."/".$valueHash{type}."/FWSElement-".$elementHash{'cssDevel'},-1000 );
-                                    }
-
-
-                                    #
-                                    # convert the code to the fws friendly version
-                                    #
-                                    $elementHash{scriptDevel} =~ s/self-/fws-/g;
-
-                                    #
-                                    # copy the GNF object to fws
-                                    #
-                                    my $fws = $self;
-
-                                    #
-                                    # set the valueHash for value conduit style programming
-                                    #
-                                    #my %valueHash;
-                                    $valueHash{'pageId'}            = $pageId;
-                                    $valueHash{'elementId'}         = $valueHash{'guid'};
-                                    $valueHash{'elementWebPath'}    = $self->{"fileWebPath"}."/".$elementHash{'siteGUID'}."/".$valueHash{type};
-
-                                    #
-                                    # set this so its available in the elementStart via the FWS_elementClassPrefix, and valueHash
-                                    #
-                                    $self->formValue('FWS_elementClassPrefix',$elementHash{'classPrefix'});
-                                    $valueHash{'classPrefix'} = $elementHash{'classPrefix'};
-
-                                    #
-                                    #
-                                    # run the script and inject it into the html for the node
-                                    #
-                                    my $htmlHold = $html;
-                                    $html = '';
-                                    ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
-                                    eval $elementHash{'scriptDevel'};
-                                    ## use critic
-                                    my $errorCode = $@;
-                                    if ($errorCode) {
-                                            $valueHash{'html'} .= "<div style=\"border:solid 1px;font-weight:bold;\">FrameWork Element Error:</div><div style=\"font-style:italic;\">".$errorCode."</div>";
-                                    }
-
-                                    #
-                                    # now put it back
-                                    #
-                                    $self = $fws;
-                                    $html = $valueHash{'html'};
-
-                                    #
-                                    # if we are updating a element from editModeUpdate - then just do that only
-                                    #
-                                    if ($self->formValue('FWS_editModeUpdate') eq '1' && $pageId eq $valueHash{'guid'}) {
-                                        #
-                                        # make sure debug is turned off, because that would look silly in fws devel mode
-                                        #
-                                        return $self->editBox(%valueHash) . $html
-                                    }
-                                    else {
-                                        #
-                                        # if this is a showElementOnly then ditch the current page up to this point
-                                        # and also ditch out of the element loop
-                                        #
-                                        if ($showElementOnly || $self->formValue('FWS_showElementOnly') eq '1') { return $html }
-                                        else { $html = $htmlHold . $html }
-                                    }
-
-                                    #
-                                    # start the top of the element if its new
-                                    #
-                                    if ($columnContent{$valueHash{"layout"}} eq '') { $columnCount{$valueHash{"layout"}} = 0 }
-
-                                    #
-                                    # increment the column count
-                                    #
-                                    $columnCount{$valueHash{"layout"}}++;
-
-                                    #
-                                    # create the edit control if we are supposed to
-                                    #
-                                    my $editBox;
-
-                                    $columnContent{$valueHash{"layout"}} .= "<div".$editBox." class=\"".$valueHash{"layout"}."_element element_".$valueHash{'guid'}."\" id=\"".$valueHash{"layout"}."_element_".$columnCount{$valueHash{"layout"}}."\">";
-
-                                    if (($self->{'adminLoginId'} ne '' && $valueHash{'siteGUID'} eq $self->{'siteGUID'} && $self->formValue('FWS_showElementOnly') ne '1' && $showElementOnly ne "1" && $valueHash{'disableEditMode'} ne "1" && $self->formValue("editMode") eq "1"))  {
-                                        $columnContent{$valueHash{"layout"}} .= "<div id=\"editModeAJAX_".$valueHash{'guid'}."\" style=\"border: solid 1px #FF0000;border-top: 0;\">";
-                                        $columnContent{$valueHash{"layout"}} .= $self->editBox(%valueHash);
-                                        $columnContent{$valueHash{"layout"}} .= $html;
-                                        $columnContent{$valueHash{"layout"}} .= "</div>";
-                                    }
-                                    else {
-                                        $columnContent{$valueHash{"layout"}} .= $html;
-                                    }
-
-                                    $elementTotal++;
-                                    $columnContent{$valueHash{"layout"}} .= "</div>";
+                                elsif ( $userHash{userGroup} > 1 && ( $userHash{group}{$userHash{userGroup}} ) &&  $userHash{active} ) {
+                                    #Nice! we are gtg, don't do anything
+                                }
+                                #
+                                # Set elementType  your not set to see, set login or blank the element
+                                #
+                                else {
+                                    if ( $userHash{show_login} ) { $valueHash{type} = 'FWSLogin' }
+                                    else { $valueHash{type} = '' }
                                 }
                             }
                         }
+
+                        #
+                        # If your a mobile device, and your mobile is set to (2) show desktop only then eat the type
+                        #
+                        if ( $ENV{HTTP_USER_AGENT} =~ /mobile/i && $valueHash{showMobile} eq '2' ) { $valueHash{type} = '' }
+
+                        #
+                        # If your NOT a mobile device, and your mobile is set to (1) show mobile only then eat the type
+                        #
+                        if ( $ENV{HTTP_USER_AGENT} !~ /mobile/i && $valueHash{showMobile} eq '1' ) { $valueHash{type} = '' }
+
+                        #
+                        # set defaults and get the editBox going
+                        #
+                        my $html;
+
+                        #
+                        # set elementId in a formValue so the FWS can use it when working with adminField function
+                        #
+                        $self->formValue( 'FWS_elementId', $valueHash{guid} );
+                        $self->formValue( 'FWS_pageId', $pageId );
+
+                        #
+                        # Get the element
+                        #
+                        my %elementHash = $self->elementHash( guid => $valueHash{type} );
+
+                        #
+                        # add css or js if its needed
+                        #
+                        if ( !$JSHash{$valueHash{type}} && $elementHash{jsDevel} ) {
+                            $JSHash{$valueHash{type}} = 1;
+                            $self->_jsEnable( $elementHash{siteGUID} . "/" . $valueHash{type} . "/FWSElement-" . $elementHash{jsDevel},-1000 );
+                        }
+                        if ( !$CSSHash{$valueHash{type}} && $elementHash{cssDevel} ) {
+                            $CSSHash{$valueHash{type}} = 1;
+                            $self->_cssEnable( $elementHash{siteGUID} . "/" . $valueHash{type} . "/FWSElement-" . $elementHash{cssDevel},-1000 );
+                        }
+
+
+                        #
+                        # convert the code to the fws friendly version
+                        #
+                        $elementHash{scriptDevel} =~ s/self-/fws-/g;
+
+                        #
+                        # copy the GNF object to fws
+                        #
+                        my $fws = $self;
+
+                        #
+                        # set the valueHash for value conduit style programming
+                        #
+                        #my %valueHash;
+                        $valueHash{pageId}            = $pageId;
+                        $valueHash{elementId}         = $valueHash{guid};
+                        $valueHash{elementWebPath}    = $self->{fileWebPath} . "/" . $elementHash{siteGUID} . "/" . $valueHash{type};
+
+                        #
+                        # set this so its available in the elementStart via the FWS_elementClassPrefix, and valueHash
+                        #
+                        $self->formValue( 'FWS_elementClassPrefix', $elementHash{classPrefix} );
+                        $valueHash{classPrefix} = $elementHash{classPrefix};
+
+                        #
+                        #
+                        # run the script and inject it into the html for the node
+                        #
+                        my $htmlHold = $html;
+                        $html = '';
+                        ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
+                        eval $elementHash{scriptDevel};
+                        ## use critic
+                        my $errorCode = $@;
+                        if ( $errorCode ) {
+                                $valueHash{html} .= "<div style=\"border:solid 1px;font-weight:bold;\">FrameWork Element Error:</div><div style=\"font-style:italic;\">" . $errorCode . "</div>";
+                        }
+
+                        #
+                        # now put it back
+                        #
+                        $self = $fws;
+                        $html = $valueHash{html};
+
+                        #
+                        # if we are updating a element from editModeUpdate - then just do that only
+                        #
+                        if ( $self->formValue( 'FWS_editModeUpdate' ) && $pageId eq $valueHash{guid} ) {
+                            #
+                            # make sure debug is turned off, because that would look silly in fws devel mode
+                            #
+                            return $self->editBox(%valueHash) . $html
+                        }
+                        else {
+                            #
+                            # if this is a showElementOnly then ditch the current page up to this point
+                            # and also ditch out of the element loop
+                            #
+                            if ( $showElementOnly || $self->formValue( 'FWS_showElementOnly') ) { return $html }
+                            else { $html = $htmlHold . $html }
+                        }
+
+                        #
+                        # start the top of the element if its new
+                        #
+                        if ( !$columnContent{$valueHash{layout}} ) { $columnCount{$valueHash{layout}} = 0 }
+
+                        #
+                        # increment the column count
+                        #
+                        $columnCount{$valueHash{layout}}++;
+
+                        #
+                        # create the edit control if we are supposed to
+                        #
+                        my $editBox;
+
+                        $columnContent{$valueHash{layout}} .= "<div" . $editBox . " class=\"" . $valueHash{layout} . "_element element_" . $valueHash{guid} . "\" id=\"" . $valueHash{layout} . "_element_" . $columnCount{$valueHash{layout}} . "\">";
+
+                        if ( ( $self->{adminLoginId} && $valueHash{siteGUID} eq $self->{siteGUID} && !$self->formValue( 'FWS_showElementOnly' ) && !$showElementOnly && !$valueHash{disableEditMode} && $self->formValue( 'editMode' ) ) )  {
+                            $columnContent{$valueHash{layout}} .= "<div id=\"editModeAJAX_" . $valueHash{guid} . "\" style=\"border: solid 1px #FF0000;border-top: 0;\">";
+                            $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash );
+                            $columnContent{$valueHash{layout}} .= $html;
+                            $columnContent{$valueHash{layout}} .= "</div>";
+                        }
+                        else {
+                            $columnContent{$valueHash{layout}} .= $html;
+                        }
+
+                        $elementTotal++;
+                        $columnContent{$valueHash{layout}} .= "</div>";
                     }
-
-                #
-                # check if this is the home page, with no stuff on it,  if so we need to do it up
-                #
-
-                if (($elementTotal < 1 && $pageId eq $self->homeGUID()) && !$somethingIsOnThePage &&  $self->{'adminLoginId'} eq '') {
-                $self->displayAdminLogin();
+                }
             }
 
-            if (!$showElementOnly) {
-
-                $pageHTML = $templateHash{'template'};
-
+            #
+            # check if this is the home page, with no stuff on it,  if so we need to do it up
+            #
+    
+            if ( ( $elementTotal < 1 && $pageId eq $self->homeGUID() ) && !$somethingIsOnThePage && !$self->{adminLoginId} ) {
+                $self->displayAdminLogin();
+            }
+    
+            if ( !$showElementOnly ) {
+    
+                $pageHTML = $templateHash{template};
+    
                 #
                 # Put in the edit mode box if we are in edit mod and loged in as the correct user for this site
                 #
-
-                if ($self->{'adminLoginId'} ne '') {
+    
+                if ( $self->{adminLoginId} ) {
                     #
                     # set all the things we could need
                     #
-                    $self->{'tinyMCEEnable'} = 1;
-                    $self->jqueryEnable('ui-1.8.9');
-                    $self->jqueryEnable('ui.widget-1.8.9');
-                    $self->jqueryEnable('ui.mouse-1.8.9');
-                    $self->jqueryEnable('ui.datepicker-1.8.9');
-                    $self->jqueryEnable('ui.slider-1.8.9');
-                    $self->jqueryEnable('timepickr-0.9.6');
-                    $self->jqueryEnable('ui.tabs-1.8.9');
-                    $self->jqueryEnable('simplemodal-1.4.1');
-                    $self->jqueryEnable('fileupload-ui-4.4.1');
-                    $self->jqueryEnable('fileupload-4.5.1');
-                    $self->jqueryEnable('fileupload-uix-4.6');
-                    $self->jqueryEnable('ui.fws-1.8.9');
-
-                    if ($pageId eq $self->homeGUID()) { $pageHash{disableDeleteTool} = 1 }
+                    $self->{tinyMCEEnable} = 1;
+                    $self->jqueryEnable( 'ui-1.8.9' );
+                    $self->jqueryEnable( 'ui.widget-1.8.9' );
+                    $self->jqueryEnable( 'ui.mouse-1.8.9' );
+                    $self->jqueryEnable( 'ui.datepicker-1.8.9' );
+                    $self->jqueryEnable( 'ui.slider-1.8.9' );
+                    $self->jqueryEnable( 'timepickr-0.9.6' );
+                    $self->jqueryEnable( 'ui.tabs-1.8.9' );
+                    $self->jqueryEnable( 'simplemodal-1.4.1' );
+                    $self->jqueryEnable( 'fileupload-ui-4.4.1' );
+                    $self->jqueryEnable( 'fileupload-4.5.1' );
+                    $self->jqueryEnable( 'fileupload-uix-4.6' );
+                    $self->jqueryEnable( 'ui.fws-1.8.9' );
+    
+                    if ( $pageId eq $self->homeGUID() ) { $pageHash{disableDeleteTool} = 1 }
                     $pageHash{layout}             = 'FWSPageMenu';
                     $pageHash{guid}               = $pageId;
                     $pageHash{FWSMenuTool}        = 1;
                     $pageHash{pageOnly}           = 1;
                     $pageHash{alwaysShow}         = 1;
-                    #$pageHash{addElementTool}    = 1;
                     $pageHash{disableActiveTool}  = 1;
                     $pageHash{disableOrderTool}   = 1;
-                    if ($pageHash{'siteGUID'} eq $self->{'siteGUID'}) {
-                        $pageHash{name} = $self->FWSMenu(pageId=>$pageId).$pageHash{"name"};
+                    if ( $pageHash{siteGUID} eq $self->{siteGUID} ) {
+                        $pageHash{name} = $self->FWSMenu( pageId => $pageId ) . $pageHash{name};
                         }
                     else {
                         $pageHash{addElementTool}     = 0;
@@ -822,82 +816,83 @@ sub _FWSContent {
                         $pageHash{disableEditTool}    = 1;
                         $pageHash{disableActiveTool}  = 1;
                         $pageHash{disableOrderTool}   = 1;
-                        $pageHash{name} = "Default FWS Page - To override this page create a new page with the friendly url of [ ".$pageHash{'friendlyURL'}." ]";
+                        $pageHash{name} = "Default FWS Page - To override this page create a new page with the friendly url of [ " . $pageHash{friendlyURL} . " ]";
                     }
-
-
+    
+    
                     #
                     # if we are not able to see the buttons lets kill them
                     #
-                    if ((!$self->userValue("showDesign") && !$self->userValue("showContent") && !$self->userValue("developer")) || ($pageHash{'siteGUID'} ne $self->{'siteGUID'})) {
+                    if ( ( !$self->userValue( "showDesign" ) && !$self->userValue( "showContent" ) && !$self->userValue( "developer" ) ) || ( $pageHash{siteGUID} ne $self->{siteGUID} ) ) {
                         $pageHash{addElementTool}       = 0;
                         $pageHash{disableDeleteTool}    = 1;
                         $pageHash{disableEditTool}      = 1;
                         $pageHash{disableActiveTool}    = 1;
                         $pageHash{disableOrderTool}     = 1;
                     }
-
+    
                     $pageHash{editBoxColor} = "#000000";
-                    $FWSMenu .= $self->editBox(%pageHash);
+                    $FWSMenu .= $self->editBox( %pageHash );
                 }
+                # TODO This is here just in case,  at some point we will can
+                # ditch this if there is no comlaints
                 #else {
                 #    my $changeFrom      = ";FWSAdminLoggedIn#";
                 #    my $changeFromEnd   = "#FWSAdminLoggedInEnd#";
                 #    $pageHTML =~ s/$changeFrom(.*?)$changeFromEnd//g;
                 #}
-
+    
                 #
                 # add the head where it goes
                 #
                 my $FWSHead = $self->FWSHead();
                 $pageHTML   =~ s/#FWSHead#/$FWSHead/g;
-
+    
                 #
                 # add the menu
                 #
                 $pageHTML =~ s/#FWSMenu#/$FWSMenu/g;
-
+    
                 #
                 # Clean up the adminLoggedIn stuff
                 #
                 $pageHTML =~ s/#FWSAdminLoggedIn#//g;
                 $pageHTML =~ s/#FWSAdminLoggedInEnd#//g;
-
+    
                 #
                 # but all non-main info in the page
                 #
-                while ($templateHash{'template'} =~ /#FWSShow-(.*?)#/g) {
-                my $layout = $1;
-                if ($layout ne 'main') {
-
-                    #
-                    # add it to the page
-                    #
-                    $pageHTML = $self->_replaceContentColumn( 
-                        layout          => $layout, 
-                        html            => $pageHTML,
-                        content         => $columnContent{$layout},
-                        guid            => $pageId,
-                        contentType     => 'FWSShow',
-                        pageType        => $pageHash{type},
-                        siteGUID        => $pageHash{siteGUID},
-                    );
-
-                    #
-                    # delete it so we don't add it to main in the next section
-                    #
-                    delete $columnContent{$layout};
-
+                while ( $templateHash{template} =~ /#FWSShow-(.*?)#/g ) {
+                    my $layout = $1;
+                    if ( $layout ne 'main' ) {
+        
+                        #
+                        # add it to the page
+                        #
+                        $pageHTML = $self->_replaceContentColumn(
+                            layout          => $layout,
+                            html            => $pageHTML,
+                            content         => $columnContent{$layout},
+                            guid            => $pageId,
+                            contentType     => 'FWSShow',
+                            pageType        => $pageHash{type},
+                            siteGUID        => $pageHash{siteGUID},
+                        );
+        
+                        #
+                        # delete it so we don't add it to main in the next section
+                        #
+                        delete $columnContent{$layout};
                     }
                 }
-
+    
                 #
                 # but all non-main info in the page
                 #
-                while ($templateHash{'template'} =~ /#FWSShowNoHeader-(.*?)#/g) {
+                while ( $templateHash{template} =~ /#FWSShowNoHeader-(.*?)#/g ) {
                     my $layout = $1;
-                    if ($layout ne 'main') {
-
+                    if ( $layout ne 'main' ) {
+    
                         #
                         # add it to the page
                         #
@@ -910,27 +905,27 @@ sub _FWSContent {
                             pageType        => $pageHash{type},
                             siteGUID        => $pageHash{siteGUID},
                         );
-
+    
                         #
                         # delete it so we don't add it to main in the next section
                         #
                         delete $columnContent{$layout};
                     }
                 }
-
+    
                 #
                 # add the rest to main
                 #
                 for my $columnKey ( keys %columnContent ) {
-                    if ($columnContent{$columnKey} ne '' && $columnKey ne 'main') {
-                        $columnContent{'main'} .= $columnContent{$columnKey};
+                    if ( $columnContent{$columnKey} ne '' && $columnKey ne 'main' ) {
+                        $columnContent{main} .= $columnContent{$columnKey};
                     }
                 }
-
+    
                 #
                 # add main to the page
                 #
-                while ($templateHash{'template'} =~ /#FWSShow-main#/g) {
+                while ( $templateHash{template} =~ /#FWSShow-main#/g ) {
                     $pageHTML = $self->_replaceContentColumn(
                             layout          => 'main',
                             html            => $pageHTML,
@@ -941,76 +936,75 @@ sub _FWSContent {
                             siteGUID        => $pageHash{siteGUID},
                     );
                 }
-
+    
                 #
                 # add tinyMCE if needed fixes a FF bug if we lazy load it.
                 #
                 my $pageJava = '';
-                if ($self->siteValue('urchinId') && $self->formValue('editMode') ne '1') {
+                if ( $self->siteValue( 'urchinId' ) && !$self->formValue( 'editMode' ) ) {
                     $pageJava .= "<script type=\"text/javascript\">\n";
                     $pageJava .= "var gaJsHost = ((\"https:\" == document.location.protocol) ? \"https://ssl.\" : \"http://www.\");\n";
                     $pageJava .= "document.write(unescape(\"%3Cscript src='\" + gaJsHost + \"google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E\"));\n";
                     $pageJava .= "</script>\n";
                     $pageJava .= "<script type=\"text/javascript\">\n";
-                    $pageJava .= "var pageTracker = _gat._getTracker(\"".$self->siteValue('urchinId')."\");\n";
+                    $pageJava .= "var pageTracker = _gat._getTracker(\"" . $self->siteValue( 'urchinId' ) . "\");\n";
                     $pageJava .= "pageTracker._initData();\n";
                     $pageJava .= "pageTracker._trackPageview();\n";
                     $pageJava .= "</script>\n";
                 }
-
-
+    
                 my $FWSLink = "<a href=\"http://www.frameworksites.com/poweredByFrameWorkSites\"><img style=\"border: 0 none;\" src=\"https://www.frameworksites.com/poweredByFrameWorkSites.jpg\" alt=\"This site was built using FrameWork Sites!\"/></a>";
-
+    
                 #
                 # at some point landingId should be settable in site settings
                 #
-                if ($self->siteValue('facebookAppId') ne '') {
-
-                    my $landingId = $self->safeQuery( $self->formValue('p') );
-                    if ($self->formValue('id') ne '') { $landingId .= '&id=' . $self->safeQuery($self->formValue('id')) }
-
+                if ( $self->siteValue( 'facebookAppId' ) ) {
+    
+                    my $landingId = $self->safeQuery( $self->formValue( 'p' ) );
+                    if ( $self->formValue( 'id' ) ) { $landingId .= '&id=' . $self->safeQuery( $self->formValue( 'id' ) ) }
+    
                     $pageJava .= '<div id="fb-root"></div><script>';
-
+    
                     #
                     # tell FB we are french if we are
                     #
                     my $FBLang = 'en_US';
-                    if ($self->language() =~ /fr/i) { $FBLang = 'fr_CA' }
-
+                    if ( $self->language() =~ /fr/i ) { $FBLang = 'fr_CA' }
+    
                     #
                     # leave this split up goofy for now.  The code compressor freaks out a bit on
                     # on this when it is formated better, so it is this way on pupose.  I need to update
                     # the compressor first before we can pretty this up
                     #
-                    $pageJava .= "window.fbAsyncInit = function () {".
-                        "FB.init({".
-                        "appId: '".$self->siteValue('facebookAppId')."', oauth: true, cookie: true, status: true, xfbml: true".
-                        "}); ".
-                        "FB.getLoginStatus(function (response) {".
-                        "if (response.session) {\$('#loginFBLoginBox').hide(); } ".
-                        "else {\$('#loginFBLoginBox').show(); ".
-                        "} ".
-                        "}); ".
-                        "FB.Event.subscribe('auth.login', function () {".
-                        "window.location = '".$self->{'scriptName'}."?s=".$self->{'siteId'}."&p=".$landingId."'; ".
-                        "}); ".
-                        "}; ".
-                        "(function () {".
-                        "var e = document.createElement('script'); e.async = true; ".
-                        "e.src = document.location.protocol + ".
-                        "'//connect.facebook.net/".$FBLang."/all.js'; ".
-                        "document.getElementById('fb-root').appendChild(e); ".
-                        " }());".
+                    $pageJava .= "window.fbAsyncInit = function () {" .
+                        "FB.init({" .
+                        "appId: '" . $self->siteValue( 'facebookAppId' ) . "', oauth: true, cookie: true, status: true, xfbml: true" .
+                        "}); " .
+                        "FB.getLoginStatus(function (response) {" .
+                        "if (response.session) {\$('#loginFBLoginBox').hide(); } " .
+                        "else {\$('#loginFBLoginBox').show(); " .
+                        "} " .
+                        "}); " .
+                        "FB.Event.subscribe('auth.login', function () {" .
+                        "window.location = '" . $self->{scriptName} . "?s=".$self->{siteId}."&p=" . $landingId . "'; " .
+                        "}); " .
+                        "}; " .
+                        "(function () {" .
+                        "var e = document.createElement('script'); e.async = true; " .
+                        "e.src = document.location.protocol + " .
+                        "'//connect.facebook.net/".$FBLang."/all.js'; " .
+                        "document.getElementById('fb-root').appendChild(e); " .
+                        " }());" .
                         "</script>";
                 }
-                $pageJava .= $self->siteValue('pageFoot');
-
+                $pageJava .= $self->siteValue( 'pageFoot' );
+    
                 $pageHTML =~ s/#FWSJavaLoad#/$pageJava/g;
                 $pageHTML =~ s/#FWSLink#/$FWSLink/g;
-                while ($pageHTML =~ /#FWSField-(.*?)#/g) {
+                while ( $pageHTML =~ /#FWSField-(.*?)#/g ) {
                     my $formField = $1;
-                    my $changeFrom = "#FWSField-".$formField."#";
-                    my $changeTo = $self->removeHTML($self->formValue($formField));
+                    my $changeFrom = "#FWSField-" . $formField . "#";
+                    my $changeTo = $self->removeHTML( $self->formValue( $formField ) );
                     $pageHTML =~ s/$changeFrom/$changeTo/g;
                 }
             }
@@ -1022,7 +1016,7 @@ sub _FWSContent {
 
 
 sub _replaceContentColumn {
-    my ($self, %editHash ) = @_;
+    my ( $self, %editHash ) = @_;
 
     $editHash{id}                 = $editHash{guid};
     $editHash{type}               = '';
@@ -1037,7 +1031,7 @@ sub _replaceContentColumn {
     my $changeTo                  = '<div id="' . $editHash{layout} . '">';
 
     if ( $editHash{siteGUID} ne $self->fwsGUID() || $self->{showFWSInSiteList} ) {
-        if ( $self->formValue('editMode') eq '1' && $editHash{contentType} ne 'FWSShowNoHeader' && $editHash{pageType} eq 'page' && !$self->{hideEditModeHeaders} ) {
+        if ( $self->formValue( 'editMode' ) && $editHash{contentType} ne 'FWSShowNoHeader' && $editHash{pageType} eq 'page' && !$self->{hideEditModeHeaders} ) {
             $changeTo .= $self->editBox( %editHash );
         }
     }
