@@ -30,7 +30,7 @@ our $VERSION = '0.0001';
 	    #
 	    # do something...
 	    #
-	    return $fws->saveCache( key=>'someData', expire=>1, value=>$value );
+	    return $fws->saveCache( key => 'someData', expire => 1, value => $value );
 	} };
 
 	print $cacheData;
@@ -59,23 +59,23 @@ Save data to cache passing they key, value and expire (in minutes).  The return 
 =cut
 
 sub saveCache {
-    my ($self, %paramHash) = @_;
+    my ( $self, %paramHash ) = @_;
 
 	#
 	# set default expire if not passed
 	#
-	$paramHash{'expire'} ||= 60;
+	$paramHash{expire} ||= 60;
 
     #
     # make the dir for the cache
     #
-	my $cacheDir = $self->{'fileSecurePath'}."/cache/".$self->safeFile( $paramHash{key} ) ;
+	my $cacheDir = $self->{fileSecurePath} . "/cache/" . $self->safeFile( $paramHash{key} ) ;
     $self->makeDir( $cacheDir );
 
 	#
 	# set cache file based on expire date
 	#
-	my $newFile = $cacheDir.'/'.( time() + ( $paramHash{expire} * 60 ) );
+	my $newFile = $cacheDir . '/' . ( time() + ( $paramHash{expire} * 60 ) );
 	
 	#
 	# set the file name as the exp epoch with its content
@@ -95,7 +95,7 @@ sub saveCache {
 	#
 	# return what we were givin
 	#
-	return $paramHash{'value'};
+	return $paramHash{value};
 }
 
 
@@ -113,15 +113,16 @@ Remove a key from cache.   For optmization, this does not look up the key, only 
 sub deleteCache {
     my ( $self, %paramHash ) = @_;
 	
-	my $cacheDir = $self->{'fileSecurePath'}."/cache/".$self->safeFile( $paramHash{key} );
-       
+	my $cacheDir = $self->{fileSecurePath} . "/cache/" . $self->safeFile( $paramHash{key} );
+
 	my @fileArray = @{$self->fileArray( directory=>$cacheDir ) };
-    for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{'fullFile'} }
+    for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{fullFile} }
 
 	rmdir $cacheDir;
 
 	return;
 }
+
 
 =head2 flushCache
 
@@ -135,9 +136,9 @@ If anything is in cache currently, after this call it won't be!
 =cut
 
 sub flushCache {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
-	my $cacheDir = $self->{'fileSecurePath'}."/cache" ;
+	my $cacheDir = $self->{fileSecurePath} . "/cache" ;
 
     #
     # pull the directory into an array
@@ -154,26 +155,27 @@ sub flushCache {
 	return;
 }
 
+
 =head2 cacheValue
 
 Return the cache value.   If the cache value does not exist, it will return blank in same way that formValue, siteValue and userValue.
 
     #
-    # will return the cache value.   This or a blank string if it is not set, or blank 
+    # will return the cache value.   This or a blank string if it is not set, or blank
     #
     print $fws->caheValue( 'someData' );
 
 =cut
 
 sub cacheValue {
-    my ($self, $key) = @_;
+    my ( $self, $key ) = @_;
 
 	#
     # set cache file based on expire date
     # set the value to blank to start
     #
-	my $cacheDir    = $self->{'fileSecurePath'}."/cache/".$self->safeFile( $key );
-    my $newFile     = $cacheDir.'/value';
+	my $cacheDir    = $self->{fileSecurePath} . "/cache/" . $self->safeFile( $key );
+    my $newFile     = $cacheDir . '/value';
 	my $value;
 
 	#
@@ -183,7 +185,7 @@ sub cacheValue {
 
 	#
 	# open the file and get the first line
-	# 
+	#
     open ( my $VFILE, "<", $newFile );
     chomp ( my $timeStamp = <$VFILE> );
 
@@ -207,62 +209,61 @@ Used internally to craete combined head css and js cached files
 =cut
 
 sub cacheHead {
-    my ($self,%paramHash) = @_;
+    my ( $self, %paramHash ) = @_;
 
     use Digest::MD5  qw(md5_hex);
 
     my $cacheHTML;
     my $globalJS;
-    my $cacheFileName = $self->{'siteId'}.'-';
+    my $cacheFileName = $self->{siteId} . '-';
 
     #
     # make it unique depending on flags passed
     #
-    if ($paramHash{'jqueryOnly'} eq '1' ) { $cacheFileName .= 'jqueryOnly-' }
+    if ( $paramHash{jqueryOnly} ) { $cacheFileName .= 'jqueryOnly-' }
 
     #
     # figure out what the js/css name is
     #
-    if ($self->{'tinyMCEEnable'} eq '1' ) { $cacheFileName .= $self->{'tinyMCEPath'}.'-' }
+    if ( $self->{tinyMCEEnable} ) { $cacheFileName .= $self->{tinyMCEPath} . '-' }
 
     #
     # add the jquery
     #
-    my %jqueryHash = %{$self->{'_jqueryHash'}};
-    foreach my $jqueryLibrary (sort {$jqueryHash{$a} <=> $jqueryHash{$b} } keys %jqueryHash) {
-        $self->debug("JQUERY",$jqueryLibrary." - ".$jqueryHash{$jqueryLibrary});
-        $cacheFileName .= $jqueryLibrary.'-';
+    my %jqueryHash = %{$self->{_jqueryHash}};
+    foreach my $jqueryLibrary ( sort {$jqueryHash{$a} <=> $jqueryHash{$b} } keys %jqueryHash ) {
+        $cacheFileName .= $jqueryLibrary . '-';
     }
 
     #
     # load js from elements and pages
     #
-    my %jsHash = %{$self->{'_jsHash'}};
-    foreach my $jsFile (sort {$jsHash{$a} <=> $jsHash{$b} } keys %jsHash) {
+    my %jsHash = %{$self->{_jsHash}};
+    foreach my $jsFile ( sort {$jsHash{$a} <=> $jsHash{$b} } keys %jsHash ) {
         $jsFile =~ s/\//-/sg;
-        $cacheFileName .= $jsFile.'-';
+        $cacheFileName .= $jsFile . '-';
     }
 
     #
     # load js from elements and pages
     #
-    my %cssHash = %{$self->{'_cssHash'}};
-    foreach my $cssFile (sort {$cssHash{$a} <=> $cssHash{$b} } keys %cssHash) {
+    my %cssHash = %{$self->{_cssHash}};
+    foreach my $cssFile ( sort {$cssHash{$a} <=> $cssHash{$b} } keys %cssHash ) {
         $cssFile =~ s/\//-/sg;
-        $cacheFileName .= $cssFile.'-';
+        $cacheFileName .= $cssFile . '-';
     }
 
     #
     # turn it into a unique short file
     #
     my $fileName    = md5_hex( $cacheFileName );
-    my $cacheFile   = $self->{filePath}."/fws/cache/".$fileName;
-    my $cacheWeb    = $self->{fileFWSPath}."/cache/".$fileName;
+    my $cacheFile   = $self->{filePath} . "/fws/cache/" . $fileName;
+    my $cacheWeb    = $self->{fileFWSPath} . "/cache/" . $fileName;
 
 
-    if ($cacheFileName ne '') {
+    if ( $cacheFileName ) {
 
-        if (!-e $cacheFile.".js") {
+        if ( !-e $cacheFile . ".js" ) {
 
             #
             # make the dir if it doesn't exist
@@ -272,34 +273,34 @@ sub cacheHead {
             #
             # open files to print to
             #
-            open ( my $CSS, ">", $cacheFile.".css" ) or die "Can not open file:" . $cacheFile . ".css";
-            open ( my $JS, ">", $cacheFile.".js" ) or die "Can not open file:" . $cacheFile . ".js";
+            open ( my $CSS, ">", $cacheFile . ".css" ) or die "Can not open file:" . $cacheFile . ".css";
+            open ( my $JS, ">", $cacheFile . ".js" ) or die "Can not open file:" . $cacheFile . ".js";
 
-            print $JS "// FWS Generated JS Cache File - ".$self->formatDate(format=>"dateTime")."\n";
-            print $CSS "/* FWS Generated CSS Cache File - ".$self->formatDate(format=>"dateTime")." */\n";
+            print $JS "// FWS Generated JS Cache File - " .     $self->formatDate( format => "dateTime" ) . "\n";
+            print $CSS "/* FWS Generated CSS Cache File - " .   $self->formatDate( format => "dateTime" ) . " */\n";
 
             #
             # if jquery is used or tiny mce we need these
             #
-            if (keys %jqueryHash || $self->{'tinyMCEEnable'} eq '1') {
-                print $JS "var scriptName = \"".$self->{'scriptName'}."\";\n";
-                print $JS "var siteId = \"".$self->{'siteId'}."\";\n";
-                print $JS "var secureDomain = \"".$self->secureDomain()."\";\n";
-                print $JS "var globalFiles = \"".$self->{'fileFWSPath'}."\";\n";
-                print $JS "var domain = \"".$self->domain()."\";\n";
+            if ( keys %jqueryHash || $self->{tinyMCEEnable} ) {
+                print $JS "var scriptName = \"" .   $self->{scriptName}   . "\";\n";
+                print $JS "var siteId = \"" .       $self->{siteId}       . "\";\n";
+                print $JS "var secureDomain = \"" . $self->{secureDomain} . "\";\n";
+                print $JS "var globalFiles = \"" .  $self->{fileFWSPath}  . "\";\n";
+                print $JS "var domain = \"" .       $self->{domain}       . "\";\n";
 
-                my $fwsJS = $self->{'filePath'}."/fws/fws-".$self->{'FWSVersion'}.".min.js";
-                if (-e $fwsJS) {
-                    open ( my $FILE, "<", $fwsJS ) or die "Can not open file:". $fwsJS;
-                    print $JS "\n\n// fws-".$self->{'FWSVersion'}.".min.js\n\n";
+                my $fwsJS = $self->{filePath} . "/fws/fws-" . $self->{FWSVersion} . ".min.js";
+                if ( -e $fwsJS ) {
+                    open ( my $FILE, "<", $fwsJS ) or die "Can not open file:" .  $fwsJS;
+                    print $JS "\n\n// fws-" . $self->{FWSVersion} . ".min.js\n\n";
                     while ( my $line = <$FILE> ) { print $JS $line }
                     close $FILE;
                 }
 
-                my $fwsCSS = $self->{'filePath'}."/fws/fws-".$self->{'FWSVersion'}.".css";
-                if (-e $fwsCSS) {
-                    open ( my $FILE, "<", $fwsCSS ) or die "Can not open file:". $fwsCSS;
-                    print $CSS "\n\n/* fws-".$self->{'FWSVersion'}.".css */\n\n";
+                my $fwsCSS = $self->{filePath} . "/fws/fws-" . $self->{FWSVersion} . ".css";
+                if ( -e $fwsCSS ) {
+                    open ( my $FILE, "<", $fwsCSS ) or die "Can not open file:" .  $fwsCSS;
+                    print $CSS "\n\n/* fws-" . $self->{FWSVersion} . ".css */\n\n";
                     while ( my $line = <$FILE> ) { print $CSS $line }
                     close $FILE;
                 }
@@ -308,13 +309,13 @@ sub cacheHead {
             #
             # add tiny mce.  lets do it first because it seems that if it loads after jquery dialog you might be able to dialog before you can render edit tools
             #
-            if ($self->{'tinyMCEEnable'} eq '1'  && $paramHash{'jqueryOnly'} ne '1' ) {
+            if ( $self->{tinyMCEEnable} && !$paramHash{jqueryOnly} ) {
                 print $JS $self->tinyMCEHead();
 
-                my $tinyMCEInit = $self->{'filePath'}."/fws/".$self->{'tinyMCEPath'}."/tiny_mce_init.js";
-                if (-e $tinyMCEInit) {
-                    open ( my $FILE, "<", $tinyMCEInit ) or die "Can not open file:". $tinyMCEInit;
-                    print $JS "\n\n// /fws/".$self->{'tinyMCEPath'}."/tiny_mce_init.js\n\n";
+                my $tinyMCEInit = $self->{filePath} . "/fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js";
+                if ( -e $tinyMCEInit ) {
+                    open ( my $FILE, "<", $tinyMCEInit ) or die "Can not open file:" .  $tinyMCEInit;
+                    print $JS "\n\n// /fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js\n\n";
                     while ( my $line = <$FILE> ) { print $JS $line }
                     close $FILE;
                 }
@@ -324,18 +325,18 @@ sub cacheHead {
             # all the jquery libraries
             #
             foreach my $jqueryLibrary (sort {$jqueryHash{$a} <=> $jqueryHash{$b} } keys %jqueryHash) {
-                my $fileName = $self->{'filePath'}."/fws/jquery/jquery.".$jqueryLibrary.".min.js";
-                if (-e $fileName) {
-                    open ( my $FILE, "<", $fileName ) or die "Can not open file:". $fileName;
-                    print $JS "\n\n// jquery.".$jqueryLibrary.".min.js\n\n";
+                my $fileName = $self->{filePath} . "/fws/jquery/jquery." . $jqueryLibrary . ".min.js";
+                if ( -e $fileName ) {
+                    open ( my $FILE, "<", $fileName ) or die "Can not open file:" .  $fileName;
+                    print $JS "\n\n// jquery." . $jqueryLibrary . ".min.js\n\n";
                     while ( my $line = <$FILE> ) { print $JS $line }
                     close $FILE;
                 }
 
-                $fileName =  $self->{'filePath'}."/fws/jquery/jquery.".$jqueryLibrary.".css";
-                if (-e $fileName) {
-                    open ( my $FILE, "<", $fileName ) or die "Can not open file:". $fileName;
-                    print $CSS "\n\n/* jquery.".$jqueryLibrary.".css */\n\n";
+                $fileName =  $self->{filePath} . "/fws/jquery/jquery." . $jqueryLibrary . ".css";
+                if ( -e $fileName ) {
+                    open ( my $FILE, "<", $fileName ) or die "Can not open file:" .  $fileName;
+                    print $CSS "\n\n/* jquery." . $jqueryLibrary . ".css */\n\n";
                     while ( my $line = <$FILE> ) { print $CSS $line }
                     close $FILE;
                 }
@@ -344,22 +345,22 @@ sub cacheHead {
             #
             #
             #
-            if ($paramHash{'jqueryOnly'} ne '1') {
+            if ( !$paramHash{jqueryOnly} ) {
                 #
                 # load css from elements and pages
                 #
-                my %cssHash = %{$self->{'_cssHash'}};
-                foreach my $fileName (sort {$cssHash{$a} <=> $cssHash{$b} } keys %cssHash) {
+                my %cssHash = %{$self->{_cssHash}};
+                foreach my $fileName ( sort {$cssHash{$a} <=> $cssHash{$b} } keys %cssHash ) {
                     #
                     # for older versions of FWS this trims the file names so they will be correct when they were not dated
                     #
                     $fileName =~ s/-1$//sg;
 
-                    my $fullFileName = $self->{'filePath'}."/".$fileName.".css";
+                    my $fullFileName = $self->{filePath} . "/" . $fileName . ".css";
 
                     if (-e $fullFileName) {
-                        open ( my $FILE, "<", $fullFileName ) or die "Can not open file:". $fullFileName;
-                        print $CSS "\n\n/* ".$fileName.".css */\n\n";
+                        open ( my $FILE, "<", $fullFileName ) or die "Can not open file:" .  $fullFileName;
+                        print $CSS "\n\n/* " . $fileName . ".css */\n\n";
                         while ( my $line = <$FILE> ) { print $CSS $line }
                         close $FILE;
                     }
@@ -368,17 +369,17 @@ sub cacheHead {
                 #
                 # load js from elements and pages
                 #
-                my %jsHash = %{$self->{'_jsHash'}};
-                foreach my $fileName (sort {$jsHash{$a} <=> $jsHash{$b} } keys %jsHash) {
+                my %jsHash = %{$self->{_jsHash}};
+                foreach my $fileName ( sort {$jsHash{$a} <=> $jsHash{$b} } keys %jsHash ) {
                     #
                     # for older versions of FWS this trims the file names so they will be correct when they were not dated
                     #
                     $fileName =~ s/-1$//sg;
 
-                    my $fullFileName = $self->{'filePath'}."/".$fileName.".js";
+                    my $fullFileName = $self->{filePath} . "/" . $fileName . ".js";
                     if (-e $fullFileName) {
-                        open ( my $FILE, "<", $fullFileName ) or die "Can not open file:". $fullFileName;
-                        print $JS "\n\n// ".$fileName.".js\n\n";
+                        open ( my $FILE, "<", $fullFileName ) or die "Can not open file:" .  $fullFileName;
+                        print $JS "\n\n// " . $fileName . ".js\n\n";
                         while ( my $line = <$FILE> ) { print $JS $line }
                         close $FILE;
                     }
@@ -392,16 +393,16 @@ sub cacheHead {
             close $JS;
         }
 
-        if ($self->{tinyMCEEnable} eq '1' && $paramHash{jqueryOnly} ne '1') {
-            $cacheHTML .= "<script type=\"text/javascript\" src=\"".$self->{'fileFWSPath'}."/".$self->{'tinyMCEPath'}."/tiny_mce.js\"></script>\n";
+        if ( $self->{tinyMCEEnable}  && !$paramHash{jqueryOnly} ) {
+            $cacheHTML .= "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/" . $self->{tinyMCEPath} . "/tiny_mce.js\"></script>\n";
         }
 
-        if (keys %jqueryHash) {
-            $cacheHTML .= "<script type=\"text/javascript\" src=\"".$self->{'fileFWSPath'}."/jquery/jquery-1.7.1.min.js\"></script>\n";
+        if ( keys %jqueryHash ) {
+            $cacheHTML .= "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n";
         }
-        $cacheHTML .= "<script type=\"text/javascript\" src=\"".$cacheWeb.".js\"></script>\n";
+        $cacheHTML .= "<script type=\"text/javascript\" src=\"" . $cacheWeb . ".js\"></script>\n";
 
-        if ($paramHash{noCSS} ne '1') { $cacheHTML .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"".$cacheWeb.".css\"/>\n" }
+        if ( !$paramHash{noCSS} ) { $cacheHTML .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . $cacheWeb . ".css\"/>\n" }
     }
 
     return $cacheHTML;
