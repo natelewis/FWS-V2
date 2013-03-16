@@ -47,10 +47,10 @@ Post HTTP or HTTPS and return the result to a hash reference containing the resu
                                                         # and return cache till it expires
                         ip    =>'1.2.3.4');             # show that I am from this ip
 
-    print $responseRef->{'url'}."\n";                   # what was passed to HTTPRequest
-    print $responseRef->{'success'}."\n";               # will be a 1 or a 0
-    print $responseRef->{'content'}."\n";               # the content returned
-    print $responseRef->{'status'}."\n";                # the status returned
+    print $responseRef->{url} . "\n";                   # what was passed to HTTPRequest
+    print $responseRef->{success} . "\n";               # will be a 1 or a 0
+    print $responseRef->{content} . "\n";               # the content returned
+    print $responseRef->{status}."\n";                # the status returned
 
 =cut
 
@@ -66,8 +66,8 @@ sub HTTPRequest {
     #
     # check if we are cached, and if so lets return if we are still in time
     #
-    if ($paramHash{'expire'} ne '') {
-        $paramHash{content} = $self->cacheValue( 'FWSHTTP_'.$URLHash );
+    if ( $paramHash{expire} ) {
+        $paramHash{content} = $self->cacheValue( 'FWSHTTP_' . $URLHash );
         if ( $paramHash{content} ne '' ) { 
             $paramHash{success} = 1;
             return \%paramHash;
@@ -83,8 +83,8 @@ sub HTTPRequest {
     #
     # set the agent if we need to
     #
-    if ($paramHash{'agent'} ne '')         { $ua->agent($paramHash{'agent'}) }
-    if ($paramHash{'timeout'} ne '')     { $ua->timeout($paramHash{'timeout'}) }
+    if ( $paramHash{agent} )       { $ua->agent( $paramHash{agent} ) }
+    if ( $paramHash{timeout} )     { $ua->timeout( $paramHash{timeout} ) }
 
     #
     # lets get our request obj ready
@@ -94,41 +94,41 @@ sub HTTPRequest {
     #
     # force an IP if needed
     #
-    if ($paramHash{'ip'} ne '')         { $ua->local_address($paramHash{'ip'}) }
+    if ( $paramHash{ip} )         { $ua->local_address( $paramHash{ip} ) }
 
     #
     # this is a post... but we get the stuff just like a get - but do the work
     #
-    if ($paramHash{'type'} =~ /post/i) {
-        my ($postURL,$content) = split(/\?/,$paramHash{'url'});
-        $req = HTTP::Request->new(POST => $postURL);
-        $req->content_type('application/x-www-form-urlencoded');
-        $req->content($content);
+    if ($paramHash{type} =~ /post/i) {
+        my ( $postURL, $content ) = split( /\?/, $paramHash{url} );
+        $req = HTTP::Request->new( POST => $postURL );
+        $req->content_type( 'application/x-www-form-urlencoded' );
+        $req->content( $content );
     }
-    else { $req = HTTP::Request->new(GET => $paramHash{'url'}) }
+    else { $req = HTTP::Request->new( GET => $paramHash{url} ) }
 
     #
     # if auth is set, lets set it!
     #
-    if ($paramHash{'user'} ne '' && $paramHash{'password'} ne '') { $req->authorization_basic($paramHash{'user'}, $paramHash{'password'}) }
+    if ( $paramHash{user} && $paramHash{password} ) { $req->authorization_basic( $paramHash{user}, $paramHash{password} ) }
 
     #
     # do the request and see what happens
     #
-    my $response = $ua->request($req);
-    $paramHash{'content'} = $response->content;
-    if ($response->is_success) { 
-        $paramHash{'success'} = 1 ;
+    my $response = $ua->request( $req );
+    $paramHash{content} = $response->content;
+    if ( $response->is_success ) { 
+        $paramHash{success} = 1 ;
     
         #
         # because we have success lets cache this if we are supposed to
         #
-        if ($paramHash{'expire'} ne '') {
-            $self->saveCache( key => 'FWSHTTP_'.$URLHash, expire => $paramHash{'expire'}, value => $paramHash{'content'} ); 
+        if ( $paramHash{expire} ) {
+            $self->saveCache( key => 'FWSHTTP_' . $URLHash, expire => $paramHash{expire}, value => $paramHash{content} ); 
         }
 
     }
-    else { $paramHash{'success'} = 0 }
+    else { $paramHash{success} = 0 }
 
     #
     # return the reference
@@ -145,10 +145,10 @@ Send an email: Documentation needed.
 =cut
 
 sub send {
-    my ($self,%paramHash) = @_;
+    my ( $self, %paramHash ) = @_;
 
     my @digitalAssets;
-    if ( $paramHash{'digitalAssets'} ) { @digitalAssets = split( /\|/, $paramHash{digitalAssets} ) }
+    if ( $paramHash{digitalAssets} ) { @digitalAssets = split( /\|/, $paramHash{digitalAssets} ) }
 
 
     #
@@ -169,7 +169,7 @@ sub send {
     if ( ( ( $paramHash{scheduledDate} ) || ( $paramHash{type} && $paramHash{type} ne 'sendmail' ) ) && !$paramHash{fromQueue} ) {
         $self->saveQueue(%paramHash);
     }
-    elsif ($paramHash{'draft'} ne '1') {
+    elsif ( !$paramHash{draft} ) {
 
         #
         # Switch anything that could have been URIed and changed to html tags that will need to be put back to regular chars.
@@ -186,22 +186,20 @@ sub send {
         $paramHash{to} =~ s/\n/ /sg;
         $paramHash{to} =~ s/,/ /sg;
 
-
-
         #
         # only use the first one if there is more than one in a list.
         #
-        my @mailFromSplit   = split( ' ', $paramHash{'from'} );
+        my @mailFromSplit   = split( ' ', $paramHash{from} );
         $paramHash{from}    = $mailFromSplit[0];
-        if ($paramHash{fromName} eq '') { $paramHash{fromName} = $paramHash{from} }
+        $paramHash{fromName} ||= $paramHash{from};
 
+        my $evalEmail;
 
-        my $evalEmail = '';
         #
         # Split the emailTo's space delmited and process them one by one.
         #
-        my (@emailAccounts) =  split(/ /,$paramHash{'to'});
-        while (@emailAccounts) {
+        my @emailAccounts =  split( / /,$paramHash{to} );
+        while ( @emailAccounts ) {
 
 
             #
@@ -209,7 +207,7 @@ sub send {
             #
             $self->saveQueueHistory(%paramHash);
 
-            $paramHash{'to'} = shift @emailAccounts;
+            $paramHash{to} = shift @emailAccounts;
 
 
             #
@@ -224,29 +222,29 @@ sub send {
             if ($self->{sendMethod} eq '' || $self->{sendMethod} eq 'sendmail') {
 
 
-                my $boundary = "_-------------".$self->createPassword(composition=>'1234567890',lowLength=>16,highLength=>16);
+                my $boundary = "_-------------" . $self->createPassword(composition=>'1234567890',lowLength=>16,highLength=>16);
 
                 #
                 # Make sure this email is cool. otherwise we might get interneral server errors
                 #
-                if ($paramHash{'to'} =~ /^[^@]+@[^@]+.[a-z]{2,}$/i) {
+                if ( $paramHash{to} =~ /^[^@]+@[^@]+.[a-z]{2,}$/i ) {
 
                     use MIME::Base64;
 
-                    open ( my $SENDMAIL, "|-", $self->{'sendmailBin'}." -t" ) or die "Cannot open ".$self->{'sendmailBin'};
+                    open ( my $SENDMAIL, "|-", $self->{sendmailBin} . " -t" ) or die "Cannot open " . $self->{sendmailBin};
 
-                    print $SENDMAIL "Reply-To: \"".$paramHash{'fromName'}."\" <".$paramHash{'from'}.">\n";
-                    print $SENDMAIL "From: \"".$paramHash{'fromName'}."\" <".$paramHash{'from'}.">\n";
+                    print $SENDMAIL "Reply-To: \"" . $paramHash{fromName} . "\" <" . $paramHash{from} . ">\n";
+                    print $SENDMAIL "From: \"" . $paramHash{fromName} . "\" <" . $paramHash{from} . ">\n";
                     print $SENDMAIL "MIME-Version: 1.0\n";
-                    print $SENDMAIL "To: ".$paramHash{'to'}."\n";
-                    print $SENDMAIL "Subject: ".$paramHash{'subject'}."\n";
+                    print $SENDMAIL "To: " . $paramHash{to} . "\n";
+                    print $SENDMAIL "Subject: " . $paramHash{subject} . "\n";
                     print $SENDMAIL "Content-Type: multipart/mixed;";
-                    print $SENDMAIL "\n\tboundary=\"".$boundary."\"\n";
+                    print $SENDMAIL "\n\tboundary=\"" . $boundary . "\"\n";
                     print $SENDMAIL "\nThis is a multi-part message in MIME format.\n";
-                    print $SENDMAIL "\n--".$boundary."\n";
-                    print $SENDMAIL "Content-Type: ".$paramHash{'mimeType'}."; charset=".$paramHash{'characterSet'}."\n";
-                    print $SENDMAIL "Content-Transfer-Encoding: ".$paramHash{'transferEncoding'}."\n\n";
-                    print $SENDMAIL $paramHash{'body'};
+                    print $SENDMAIL "\n--" . $boundary . "\n";
+                    print $SENDMAIL "Content-Type: " . $paramHash{mimeType} . "; charset=" . $paramHash{characterSet} . "\n";
+                    print $SENDMAIL "Content-Transfer-Encoding: " . $paramHash{transferEncoding} . "\n\n";
+                    print $SENDMAIL $paramHash{body};
 
 
 
@@ -257,16 +255,16 @@ sub send {
                         if ((-e $fileName) && ($fileName ne '')) {
                             my $justFileName = $self->justFileName($fileName);
 
-                            print $SENDMAIL "\n--".$boundary."\n";
+                            print $SENDMAIL "\n--" . $boundary . "\n";
                             print $SENDMAIL "Content-Type: application/octet-stream;\n";
-                            print $SENDMAIL "\tname=\"".$justFileName."\"\n";
+                            print $SENDMAIL "\tname=\"" . $justFileName . "\"\n";
                             print $SENDMAIL "Content-Transfer-Encoding: base64\n";
                             print $SENDMAIL "Content-Disposition: attachment\n";
-                            print $SENDMAIL "\tfilename=\"".$justFileName."\"\n\n";
+                            print $SENDMAIL "\tfilename=\"" . $justFileName . "\"\n\n";
                             print $SENDMAIL $self->getEncodedBinary($fileName);
                         }
                     }
-                    print $SENDMAIL "\n--".$boundary."--\n\n";
+                    print $SENDMAIL "\n--" . $boundary . "--\n\n";
                     close $SENDMAIL;
                 }
             }
