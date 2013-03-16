@@ -223,7 +223,7 @@ Should be set when calling new() and can be accessed via $fws->{fileSecurePath};
 
 sub fileSecurePath {
     my ( $self, $fileSecurePath ) = @_;
-    if ( $fileSecurePathi ) { $self->{fileSecurePath} = $fileSecurePath }
+    if ( $fileSecurePath ) { $self->{fileSecurePath} = $fileSecurePath }
     return $self->{fileSecurePath};
 }
 
