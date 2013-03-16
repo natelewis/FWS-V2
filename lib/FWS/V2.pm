@@ -620,23 +620,6 @@ sub new {
         scheduled_date        => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00 00:00:00',AJAXGroup => 'showQueue'},
     };
 
-    $self->{dataSchema}{history} = {
-        site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              ,noSite => 1},
-        created_date          => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00'        },
-        guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
-        type                  => { type => 'char(1)'  ,key => 'MUL'         ,default => $EMPTY              },
-        name                  => { type => 'char(255)',key => 'FULLTEXT'    ,default => $EMPTY              },
-        url                   => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              },
-        title                 => { type => 'char(255)',key => 'FULLTEXT'    ,default => $EMPTY              },
-        latitude              => { type => 'float'    ,key => 'MUL'         ,default => '0'                 },
-        longitude             => { type => 'float'    ,key => 'MUL'         ,default => '0'                 },
-        hash                  => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
-        description           => { type => 'text'     ,key => 'FULLTEXT'    ,default => $EMPTY              },
-        referrer_guid         => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
-        directory_guid        => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
-        profile_guid          => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
-    };
-
     $self->{dataSchema}{auto} = {
         make                  => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              },
         model                 => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              },
