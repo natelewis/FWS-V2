@@ -55,7 +55,7 @@ Post HTTP or HTTPS and return the result to a hash reference containing the resu
 =cut
 
 sub HTTPRequest {
-    my ($self,%paramHash) = @_;
+    my ( $self, %paramHash ) = @_;
 
     #
     # URL Hash caching if needed
@@ -99,7 +99,7 @@ sub HTTPRequest {
     #
     # this is a post... but we get the stuff just like a get - but do the work
     #
-    if ($paramHash{type} =~ /post/i) {
+    if ( $paramHash{type} =~ /post/i ) {
         my ( $postURL, $content ) = split( /\?/, $paramHash{url} );
         $req = HTTP::Request->new( POST => $postURL );
         $req->content_type( 'application/x-www-form-urlencoded' );
@@ -219,7 +219,7 @@ sub send {
             $paramHash{to} =~ s/\///sg;
 
 
-            if ($self->{sendMethod} eq '' || $self->{sendMethod} eq 'sendmail') {
+            if ( $self->{sendMethod} eq '' || $self->{sendMethod} eq 'sendmail' ) {
 
 
                 my $boundary = "_-------------" . $self->createPassword(composition=>'1234567890',lowLength=>16,highLength=>16);
@@ -252,8 +252,8 @@ sub send {
                     # Add the attachments
                     #
                     for my $fileName (@digitalAssets) {
-                        if ((-e $fileName) && ($fileName ne '')) {
-                            my $justFileName = $self->justFileName($fileName);
+                        if ( ( -e $fileName) && ( $fileName ) ) {
+                            my $justFileName = $self->justFileName( $fileName );
 
                             print $SENDMAIL "\n--" . $boundary . "\n";
                             print $SENDMAIL "Content-Type: application/octet-stream;\n";
@@ -261,7 +261,7 @@ sub send {
                             print $SENDMAIL "Content-Transfer-Encoding: base64\n";
                             print $SENDMAIL "Content-Disposition: attachment\n";
                             print $SENDMAIL "\tfilename=\"" . $justFileName . "\"\n\n";
-                            print $SENDMAIL $self->getEncodedBinary($fileName);
+                            print $SENDMAIL $self->getEncodedBinary( $fileName );
                         }
                     }
                     print $SENDMAIL "\n--" . $boundary . "--\n\n";
