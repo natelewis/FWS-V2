@@ -48,7 +48,7 @@ function FWSCloseMCE() {
     $.fn.FWSDeleteElement = function(options) {
                 if(confirm('Are you sure you want to delete this item and all of its related sub items?(Non-reversable)')) {
                         $('#delete_'+options.guid).attr('src',globalFiles+'/saving.gif');
-                        $('#editModeAJAX_'+options.guid).FWSAjax({queryString:'s='+siteId+'&FWS_editModeUpdate=1&parent='+options.parentGUID+'&p='+options.pageGUID+'&returnStatusNote=1&pageAction=deleteElement&guid='+options.guid,onSuccess: function(returnData){$(this).hide();},showLoading:false});
+                        $('#editModeAJAX_'+options.guid).FWSAjax({queryString:'s='+siteId+'&FWS_editModeUpdate=1&parent='+options.parentGUID+'&p=fws_dataEdit&pageAction=deleteElement&guid='+options.guid,onSuccess: function(returnData){$(this).hide();},showLoading:false});
                 }
         }
 })(jQuery);
