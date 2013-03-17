@@ -2482,9 +2482,9 @@ sub _processAdminAction {
             }
             else {
                 my $image = $response->content;
-                $self->makeDir( $self->{fileSecurePath'} . "/FWS" );
+                $self->makeDir( $self->{fileSecurePath} . "/FWS" );
                 open ( my $FILE, ">", $self->{fileSecurePath} . "/FWS/" . $distFile . ".pm" );
-                print $FILE "package ".$distName.";\n".$image;
+                print $FILE "package " . $distName.";\n" . $image;
                 close $FILE;
                 $self->FWSLog("FWS Core Upgraded");
                 $updated++;
@@ -2492,9 +2492,9 @@ sub _processAdminAction {
                 #
                 # import the new core admin
                 #
-                my $importReturn = $self->_importAdmin('current_core');
-                $self->FWSLog("Core Admin Packages have been upgraded to current");
-                $self->formValue('coreStatusNote','Current FWS Core element and file packages has been updated');
+                my $importReturn = $self->_importAdmin( 'current_core' );
+                $self->FWSLog( "Core Admin Packages have been upgraded to current" );
+                $self->formValue( 'coreStatusNote', 'Current FWS Core element and file packages has been updated' );
             }
         
         
