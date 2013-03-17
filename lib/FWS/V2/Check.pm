@@ -47,11 +47,10 @@ Simple methods that will return boolean results based on the validation of the p
 
 Return a 0 or 1 depending if a admin user is currently logged in.
 
-
-        #
-        # do something if logged in as an admin user
-        #
-        if ( $fws->isAdminLoggedIn() ) { $valueHash{html} .= 'I am logged in as a admin<br/>' }
+    #
+    # do something if logged in as an admin user
+    #
+    if ( $fws->isAdminLoggedIn() ) { $valueHash{html} .= 'I am logged in as a admin<br/>' }
 
 =cut
 
@@ -60,6 +59,7 @@ sub isAdminLoggedIn {
     if ( $self->{adminLoginId} ) { return 1 }
     return 0;
 }
+
 
 =head2 isUserLoggedIn
 
@@ -78,6 +78,7 @@ sub isUserLoggedIn {
     return 0;
 }
 
+
 =head2 isValidEmail
 
 Return a boolean response to validate if an email address is well formed.
@@ -89,6 +90,7 @@ sub isValidEmail {
     if ( $fieldValue !~ /^\w+[\w|\.|-]*\w+@(\w+[\w|\.|-]*\w+\.[a-z]{2,4}|(\d{1,3}\.){3}\d{1,3})$/i ) { return 0 }
     return 1;
 }
+
 
 =head2 isCaptchaValid
 
@@ -123,6 +125,7 @@ sub isStrongPassword {
     if ( $fieldValue !~ /^.*(?=.{6,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*$/) { return 0 }
     return 1;
 }
+
 
 =head2 isElementPresent
 
