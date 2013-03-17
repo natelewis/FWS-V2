@@ -235,7 +235,7 @@ sub createSizedImages {
                     #
                     # create the new image
                     #
-                    $self->saveImage(sourceFile=>$directory.'/'.$fileName,fileName=>$newFile,width=>$schemaHash{$fieldName}{imageWidth});
+                    $self->saveImage( sourceFile => $directory . '/' . $fileName, fileName => $newFile, width => $schemaHash{$fieldName}{imageWidth} );
 
                     #
                     # if its a secure file, we only save it from site guid on...
@@ -999,18 +999,22 @@ Save an image with a unique width or height.  The file will be converted to exte
     #
     # convert this png, to a jpg that is 110x110
     #
-    $fws->saveImage(    sourceFile=>'/somefile.png',
-                fileName=>'/theNewFile.jpg',
-                width=>'110',
-                height=>'110');
+    $fws->saveImage(    
+        sourceFile  => '/somefile.png',
+        fileName    => '/theNewFile.jpg',
+        width       => '110',
+        height      => '110'
+    );
 
     #
     # convert this png, to a jpg that is 110x110 but chop off the bottom of the height if it resizes to larget then 110 instead of shrinking or stretching
     #
-    $fws->saveImage(    sourceFile=>'/somefile.png',
-                fileName=>'/theNewFile.jpg',
-                width=>'110',
-                cropHeight=>'110');
+    $fws->saveImage(    
+        sourceFile  =>'/somefile.png',
+        fileName    =>'/theNewFile.jpg',
+        width       =>'110',
+        cropHeight  =>'110'
+    );
 
 =cut
 
@@ -1059,8 +1063,8 @@ sub saveImage {
         #
         # do math to get new width/height
         #
-        if (!$paramHash{height}) {    $paramHash{height}    = int( $paramHash{width} / $width * $height ) }
-        if (!$paramHash{width}) {     $paramHash{width}     = int( $paramHash{height} / $height * $width ) }
+        $paramHash{height}  ||= int( $paramHash{width} / $width * $height );
+        $paramHash{width}   ||= int( $paramHash{height} / $height * $width );
 
         #
         # make sure size is at least 1
@@ -1077,8 +1081,12 @@ sub saveImage {
         #
         # trim it up or this is pointless if the perpsective is already correct, but what the hay!
         #
-        if ( $paramHash{cropWidth} ) {     $paramHash{cropWidth}     = $paramHash{width} }
-        if ( $paramHash{cropHeight} ) {    $paramHash{cropHeight}    = $paramHash{height} }
+        $paramHash{cropWidth}   ||= $paramHash{width};
+        $paramHash{cropHeight}  ||= $paramHash{height};
+
+        #
+        # do the deed
+        #
         my $newImage = GD::Image->new( $paramHash{cropWidth}, $paramHash{cropHeight} );
         $newImage->copyResized( $sizedImage, 0, 0, 0, 0, $paramHash{width}, $paramHash{height}, $paramHash{width}, $paramHash{height} );
 
