@@ -1404,7 +1404,7 @@ sub newDBCheck {
     my ( $self ) = @_;
     my ( $isADMIN ) = @{$self->runSQL( SQL => "select 1 from site where sid='admin'" )};
 
-    if ( $isADMIN ) {
+    if ( !$isADMIN ) {
         my $fwsGUID     = $self->createGUID( 'f' );
         my $adminGUID   = $self->createGUID( 's' );
         my $siteGUID    = $self->createGUID( 's' );
