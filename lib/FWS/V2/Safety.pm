@@ -92,7 +92,7 @@ Make sure a number is a valid number and strip anything that would make it not. 
     #
     # will return -34663.43
     #
-    print $fws->safeNumber("- $34,663.43");
+    print $fws->safeNumber( '- $34,663.43' );
 
 =cut
 
@@ -132,7 +132,7 @@ Remove anything from a query string that could advocate a cross site scripting a
     #
     # Do something that could be used for evil
     #
-    my $querySting = 'id=<script>alert('bo!')</script>url&this=that';
+    my $querySting = 'id=<script>alert( 'bo!' )</script>url&this=that';
     $valueHash{html} .= '<a href="http://www.frameworksites.com/cgi-bin/go.pl?' . $fws->safeQuery( $queryString ) . '">Click Me</a>';
 
 =cut
@@ -194,6 +194,7 @@ sub safeJSON {
     return $incomingText;
 }
 
+ 
 =head2 safeXML
 
 Replace any thing harmful to an XML node that could cause it to fail validation.   & and < will be converted to &amp; and &lt;
@@ -202,7 +203,7 @@ Replace any thing harmful to an XML node that could cause it to fail validation.
     # make a node safe
     #
     my $sillyNode = '55 is < 66 & 77';
-    my $safeSillyNode = $fws->safeXML($sillyNode);
+    my $safeSillyNode = $fws->safeXML( $sillyNode );
     print '<silly>' . $safeSillyNode . '</silly>';
     
     #
