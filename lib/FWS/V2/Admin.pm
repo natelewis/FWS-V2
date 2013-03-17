@@ -62,7 +62,7 @@ Return a standard HTML admin header for admin elements that open in new pages.
     #
     # Header for an admin page that opens in a new window
     #
-    $valueHash{'html'} .= $fws->adminPageHeader(    
+    $valueHash{html} .= $fws->adminPageHeader(    
                             name            =>'Page Name in the upper right',
                             rightContent    =>'This will show up on the right,' .
                                                 'usually its a saving widget',
@@ -78,9 +78,9 @@ sub adminPageHeader {
     my ( $self, %paramHash ) = @_;
     my $bgIcon;
     my $headerHTML = "<div class=\"FWSAdminPageHeader\">";
-    $headerHTML .= "<div class=\"FWSAdminPageHeaderPageTitle\">" . $paramHash{'name'} . "</div>";
-    $headerHTML .= "<div class=\"FWSAdminPageHeaderTitle\">" . $paramHash{'title'} . "</div>";
-    $headerHTML .= "<div class=\"FWSAdminPageHeaderContent\">" . $paramHash{'rightContent'} . "</div>";
+    $headerHTML .= "<div class=\"FWSAdminPageHeaderPageTitle\">" . $paramHash{name} . "</div>";
+    $headerHTML .= "<div class=\"FWSAdminPageHeaderTitle\">" . $paramHash{title} . "</div>";
+    $headerHTML .= "<div class=\"FWSAdminPageHeaderContent\">" . $paramHash{rightContent} . "</div>";
     $headerHTML .= "</div>";
 
     return $headerHTML;
@@ -98,7 +98,7 @@ sub displayAdminLogin {
     my $pageId = $self->formValue('p');
 
     my $loginForm = "<div class=\"FWSAdminLoginContainer\"><div id=\"FWSAdminLogin\">";
-    $loginForm .= "<form method=\"post\" enctype=\"multipart/form-data\" action=\"" . $self->{'scriptName'} . "\">";
+    $loginForm .= "<form method=\"post\" enctype=\"multipart/form-data\" action=\"" . $self->{scriptName} . "\">";
 
     $loginForm .= "<h2>FWS Administrator Login</h2>";
 
@@ -1063,7 +1063,7 @@ sub adminField {
         my $saveIcon = $self->{fileFWSPath} . "/save.gif";
         if ( $paramHash{saveIcon} ) { $saveIcon = $self->{fileFWSPath} . '/icons/' . $paramHash{saveIcon} }
 
-        $fieldHTML .= " onkeydown=\"document.getElementById('" . $paramHash{'uniqueId'} . "_img').src='" . $saveIcon . "';";
+        $fieldHTML .= " onkeydown=\"document.getElementById('" . $paramHash{uniqueId} . "_img').src='" . $saveIcon . "';";
 
         if ( $paramHash{updateType} && $paramHash{fieldType} eq 'textArea' )  {
             $fieldHTML .= "\$('#" . $paramHash{uniqueId} . "_status').css('visibility', 'visible');";
@@ -1087,7 +1087,7 @@ sub adminField {
     #
     # dropDown
     #
-    if ($paramHash{fieldType} =~ /^(dropDown|date|color|dateTime)$/)  {
+    if ( $paramHash{fieldType} =~ /^(dropDown|date|color|dateTime)$/ )  {
         $fieldHTML .= " onchange=\"" . $paramHash{onChange} . $AJAXSave . "\"";
     }
 
@@ -1150,7 +1150,7 @@ sub adminField {
     #
     # html
     #
-    if ($paramHash{fieldType} eq "html") {
+    if ( $paramHash{fieldType} eq "html" ) {
         $self->{tinyMCEEnable} = 1; 
     }
 
@@ -1911,12 +1911,12 @@ sub GNFTree {
     # create the depth lines,  if there is a line map use this way if there is a depth use the other
     #
     my $lineHTML;
-    if ($paramHash{lineMap} ne '') { $lineHTML = $self->_createLineMap( %paramHash ) }
+    if ( $paramHash{lineMap} ne '' ) { $lineHTML = $self->_createLineMap( %paramHash ) }
 
     #
     # create the depth lines,  if there is a line map use this way if there is a depth use the other
     #
-    if ($paramHash{depth} > 0) { 
+    if ( $paramHash{depth} > 0 ) { 
 
         # Add the lines for how deep it is
         #
@@ -1924,8 +1924,8 @@ sub GNFTree {
             $lineHTML .= "<img class=\"FWSTreeEventRowImage\" alt=\"\" src=\"" . $self->{fileFWSPath} . "/line.gif\"/>";
         }
 
-        if ($paramHash{"expandQuery"}) { 
-            if ($paramHash{"lastInList"}) {
+        if ( $paramHash{expandQuery} ) { 
+            if ( $paramHash{lastInList} ) {
                 $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/plus.gif\" id=\"tree".$paramHash{"id"}."\"/>";
             }
             else {
@@ -1934,7 +1934,7 @@ sub GNFTree {
         }
         else {
             $lineHTML .= "<a href=\"#\" name=\"parentAnchor".$paramHash{"categoryId"}."\"></a>";
-            if ($paramHash{"lastInList"}) {
+            if ( $paramHash{lastInList} ) {
                 $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/join.gif\" id=\"tree".$paramHash{"id"}."\"/>";
             }
             else {
@@ -1956,7 +1956,7 @@ sub GNFTree {
     # add the + - thing
     #
     $treeHTML .= "<span class=\"FWSTreeLeft\"";
-    if ($paramHash{"expandQuery"}) { 
+    if ( $paramHash{expandQuery} ) { 
         $treeHTML .= " style=\"cursor:pointer;\" ";
         $treeHTML .= "onclick=\"GNFTreeUpdate('" . $paramHash{id} . "','" . $self->{scriptName} . "','" . $self->{queryHead} . $paramHash{expandQuery} . "',0,0," . ( $paramHash{lastInList} + 0 ) . "," . $paramHash{noModal} . ");return false;\"";
     }
@@ -1984,11 +1984,11 @@ sub GNFTree {
     #
     # if this is an add line do a add td sequence, and close table
     #
-    if ($paramHash{"addField1"} ne "" || $paramHash{"addCustom1"} ne "") {
+    if ( $paramHash{addField1} || $paramHash{addCustom1} ) {
         #
         # if there is a hidden field toss it in
         #
-        if ($paramHash{"addHiddenField1"} ne "") {
+        if ( $paramHash{addHiddenField1} ) {
             $treeHTML .= "<input value=\"" . $paramHash{"addHiddenFieldValue1"} . "\" type=\"hidden\" id=\"add_" . $paramHash{"addHiddenField1"}  . "_" . $paramHash{parentId} . "\" name=\"add_" . $paramHash{"addHiddenField1"} . "_" . $paramHash{parentId} . "\"/>";
         }
 
@@ -1996,8 +1996,8 @@ sub GNFTree {
         #
         #
         
-        for (my $i = 1; $i < 10; $i++) {
-            if ($paramHash{"addField" . $i} ne "" || $paramHash{"addCustom" . $i} ne "") {
+        for ( my $i = 1; $i < 10; $i++ ) {
+            if ( $paramHash{"addField" . $i} || $paramHash{"addCustom" . $i} ) {
                 $treeHTML .= "<div class=\"FWSTreeAddField\">" . $paramHash{"addLabel" . $i}  . "<br/>";
 
                 #
@@ -2007,7 +2007,7 @@ sub GNFTree {
 
                 if ( defined $paramHash{"addCustom" . $i} ) { $treeHTML .= $paramHash{"addCustom" . $i} }
                 else {
-                    $treeHTML .= "<input value=\"" . $self->formValue($paramHash{"addField" . $i}) . "\" type=\"" . $paramHash{"addType" . $i} . "\" style=\"" . $paramHash{"addFieldStyle" . $i} . "\" id=\"add_" . $paramHash{"addField" . $i}  . "_" . $paramHash{parentId} . "\" name=\"" . $paramHash{"addField" . $i}  . "_".$paramHash{parentId} . "\"/>";
+                    $treeHTML .= "<input value=\"" . $self->formValue( $paramHash{"addField" . $i} ) . "\" type=\"" . $paramHash{"addType" . $i} . "\" style=\"" . $paramHash{"addFieldStyle" . $i} . "\" id=\"add_" . $paramHash{"addField" . $i}  . "_" . $paramHash{parentId} . "\" name=\"" . $paramHash{"addField" . $i}  . "_".$paramHash{parentId} . "\"/>";
                 }
                 $treeHTML .= "</div>";
             }
@@ -2018,22 +2018,22 @@ sub GNFTree {
         # set the addPageAction field
         #
         my $addPageField = 'pageAction';
-        if ( $paramHash{addPageField} ) { $addPageField = $paramHash{'addPageField'} }
+        if ( $paramHash{addPageField} ) { $addPageField = $paramHash{addPageField} }
 
         #
         # add the "go" button
         #
         $treeHTML .= "<div class=\"FWSTreeAddField\"><br/>";
         my $onClickGo;
-        if ($paramHash{"addHiddenField1"} ne "") {
-            $onClickGo .= "&" . $paramHash{"addHiddenField1"} . "='+escape(document.getElementById('add_" . $paramHash{addHiddenField1} . '_' . $paramHash{parentId} . "').value)+'";
+        if ( $paramHash{addHiddenField1} ) {
+            $onClickGo .= "&" . $paramHash{addHiddenField1} . "='+escape(document.getElementById('add_" . $paramHash{addHiddenField1} . '_' . $paramHash{parentId} . "').value)+'";
         }
         for (my $i = 1; $i < 10; $i++) {
-            if ($paramHash{"addField" . $i} ne "") {
+            if ( $paramHash{"addField" . $i} ) {
                 $onClickGo .= "&" . $paramHash{"addField" . $i} . "='+escape(document.getElementById('add_" . $paramHash{'addField' . $i} . '_' . $paramHash{parentId} . "').value)+'";
             }
         }
-        if ($onClickGo ne '') {
+        if ( $onClickGo ) {
             $treeHTML .= " " . $self->FWSIcon( icon    =>"go_16.png",
                              onClick => "this.src='" . $self->loadingImage() . "';\$('#cat" . $paramHash{parentId} . "').FWSAjax({queryString: '" . $self->{queryHead} . "&guid=" . $self->formValue("id") . "&id=" . $self->formValue("id") . "&parentId=" . $paramHash{parentId} . "&p=" . $self->formValue("p") . "&".$addPageField . "=" . $paramHash{"addPageAction"} . "&depth=" . $self->formValue("depth") . $onClickGo . "',showLoading:false});return false;",
                              alt     =>"go",
@@ -2049,7 +2049,7 @@ sub GNFTree {
     # make an easy access to see if it has labels
     #
     my $hasLabel = 0;
-    if ($paramHash{label1} || $paramHash{label2} || $paramHash{label3} || $paramHash{label4} || $paramHash{label5} || $paramHash{label6} || $paramHash{label7} || $paramHash{label8} || $paramHash{label9} || $paramHash{label10} || $paramHash{label11} || $paramHash{label12} || $paramHash{label13} || $paramHash{label14} || $paramHash{label15} || $paramHash{label16} ) { $hasLabel = 1 } 
+    if ( $paramHash{label1} || $paramHash{label2} || $paramHash{label3} || $paramHash{label4} || $paramHash{label5} || $paramHash{label6} || $paramHash{label7} || $paramHash{label8} || $paramHash{label9} || $paramHash{label10} || $paramHash{label11} || $paramHash{label12} || $paramHash{label13} || $paramHash{label14} || $paramHash{label15} || $paramHash{label16} ) { $hasLabel = 1 } 
 
     #
     # this isn't an "add line" finish out the standard tree
@@ -2069,18 +2069,18 @@ sub GNFTree {
         $treeHTML .= "<div class=\"FWSTreeSearch\">";
         if ( $paramHash{actionHTML} ) { $treeHTML .= $paramHash{actionHTML} }
 
-        if ($hasLabel) {
+        if ( $hasLabel ) {
             $treeHTML .= "<select style=\"width:180px;\" onchange=\"";
 
             for (my $i = 1; $i < 17; $i++) {
-                if ($paramHash{'onClick' . $i}) {$treeHTML .= "if (this.value == $i) {document.getElementById('sel_" . $paramHash{id} . "_" . $paramHash{parentId} . "').onclick=function() {" . $paramHash{'onClick' . $i} . "return false;}}" }
+                if ( $paramHash{'onClick' . $i} ) {$treeHTML .= "if (this.value == $i) {document.getElementById('sel_" . $paramHash{id} . "_" . $paramHash{parentId} . "').onclick=function() {" . $paramHash{'onClick' . $i} . "return false;}}" }
              }
             $treeHTML .= "\">";
     
-            for (my $i = 1; $i < 17; $i++) { if ($paramHash{"label" . $i}) {$treeHTML.="<option value=\"" . $i . "\">" . $paramHash{"label" . $i}."</option>"} }
+            for (my $i = 1; $i < 17; $i++) { if ( $paramHash{"label" . $i} ) {$treeHTML.="<option value=\"" . $i . "\">" . $paramHash{"label" . $i}."</option>"} }
             $treeHTML.= "</select>";
         }
-        if ($paramHash{"searchOnClick"}) {
+        if ( $paramHash{searchOnClick} ) {
             $treeHTML .= "<input style=\"width:175px;\" type=\"text\" id=\"" . $paramHash{"searchField"} . "\" name=\"" . $paramHash{"searchField"} . "\"/>";
         }
         $treeHTML .= "</div>";    
@@ -2327,33 +2327,33 @@ sub _processAdminAction {
         }
 
         if ( $action eq "addSite" ) {
-            my $email           = $self->safeSQL($self->formValue('email'));
-            my $new_sid         = $self->safeSQL($self->formValue('new_sid'));
-            my $site_name       = $self->safeSQL($self->formValue('site_name'));
-            my $new_password    = $self->safeSQL($self->formValue('new_password'));
-            my $website_url     = $self->safeSQL($self->formValue('website_url'));
+            my $email           = $self->safeSQL( $self->formValue('email') );
+            my $new_sid         = $self->safeSQL( $self->formValue('new_sid') );
+            my $site_name       = $self->safeSQL( $self->formValue('site_name') );
+            my $new_password    = $self->safeSQL( $self->formValue('new_password') );
+            my $website_url     = $self->safeSQL( $self->formValue('website_url') );
     
-            my $isValidSID = $self->_isValidSID($new_sid);
+            my $isValidSID = $self->_isValidSID( $new_sid );
     
             #
             # You cannot have a user ID with a number or anything else
             #
-            if ($new_sid =~ /[^a-z]/) {         $self->formValue("statusNote","Your site must only contain lower case characters without any spaces or symbols")}
-            elsif ($isValidSID ne '') {         $self->formValue("statusNote",$isValidSID)}
-            elsif (length($site_name) < 1) {    $self->formValue("statusNote","You must provide a site name. ")}
+            if ( $new_sid =~ /[^a-z]/ ) {         $self->formValue( "statusNote", "Your site must only contain lower case characters without any spaces or symbols" ) }
+            elsif ( $isValidSID ) {               $self->formValue( "statusNote", $isValidSID ) }
+            elsif ( length( $site_name ) < 1 ) {  $self->formValue( "statusNote", "You must provide a site name. " ) }
             else {
                 #
                 # create the site level record
                 # 
                 my $newSiteGUID= $self->createGUID('s');
-                $self->runSQL(SQL=>"insert into site (guid,name,site_guid,sid,created_date) values ('".$newSiteGUID."','".$self->safeSQL($site_name)."','".$self->getSiteGUID('admin')."','".$new_sid."','".$self->formatDate(format=>"SQL")."')");
+                $self->runSQL(SQL=>"insert into site (guid,name,site_guid,sid,created_date) values ('".$newSiteGUID."','" . $self->safeSQL( $site_name ) . "','".$self->getSiteGUID('admin')."','".$new_sid."','".$self->formatDate(format=>"SQL")."')");
                    
                 #
                 # create the site records
                 #
-                $self->saveExtra(table=>'site',guid=>$newSiteGUID,field=>'siteName',value=>$site_name);
+                $self->saveExtra( table => 'site', guid => $newSiteGUID, field => 'siteName', value => $site_name );
 
-                $self->homeGUID($newSiteGUID);
+                $self->homeGUID( $newSiteGUID );
 
                 $self->formValue("statusNote","Account '".$new_sid."' was created successfully.");
         
@@ -2376,10 +2376,10 @@ sub _processAdminAction {
     #
     ##############################################################################################
     
-    if ($self->userValue('isAdmin') || $self->userValue('showDesign') && ($action eq "addTemplate" || $action eq "deleteTemplate" || $action eq "makeDefaultTemplate" )) {
-        if ($action eq "deleteTemplate") {
-            $self->runSQL(SQL=>"delete from templates where guid='".$guid."'");
-            $self->runSQL(SQL=>"update guid_xref set layout='0' where child='".$guid."'");
+    if ( $self->userValue('isAdmin') || $self->userValue('showDesign') && ($action eq "addTemplate" || $action eq "deleteTemplate" || $action eq "makeDefaultTemplate" ) ) {
+        if ( $action eq "deleteTemplate" ) {
+            $self->runSQL( SQL => "delete from templates where guid='" . $self->safeSQL( $guid ) . "'");
+            $self->runSQL( SQL => "update guid_xref set layout='0' where child='" . $self->safeSQL( $guid ) . "'");
             }
 
          if ($action eq "addTemplate") {
@@ -2388,10 +2388,10 @@ sub _processAdminAction {
             #        
             # cleanup so when it recycles its blank
             #
-            $self->formValue("template_title","");
+            $self->formValue( "template_title", "" );
             }
         if ($action eq "makeDefaultTemplate") {
-            $self->_makeDefaultTemplate($self->{'siteGUID'},$self->formValue("guid"));
+            $self->_makeDefaultTemplate( $self->{siteGUID}, $self->formValue( "guid" ) );
             $self->flushCache();
             }
         }
@@ -2456,7 +2456,7 @@ sub _processAdminAction {
             my $distFile =  $distName;
             $distFile =~ s/.*:://sg;
         
-            my $newAdminFile = $self->{'fileSecurePath'}."/FWS/".$distFile.".pm";
+            my $newAdminFile = $self->{fileSecurePath} . "/FWS/" . $distFile . ".pm";
         
             #
             # get the stuff ready for the backup copy info
@@ -2474,7 +2474,7 @@ sub _processAdminAction {
             copy($newAdminFile,$newAdminFile.".".$currentTime);
 
             my ($updateString,$majorVer,$minorVer,$build) = $self->_versionData('live','core',"fws_installCore");    
-            my $imageURL = $self->{'FWSServer'}.'/fws_'.$majorVer.'/current_frameworksitescom.pm';
+            my $imageURL = $self->{FWSServer} . '/fws_' . $majorVer . '/current_frameworksitescom.pm';
             my $response = $browser->get( $imageURL );
             if (!$response->is_success ) { 
                 $self->FWSLog("A network error in connecting to the FWS Server: ".$response->status_line);
@@ -2482,8 +2482,8 @@ sub _processAdminAction {
             }
             else {
                 my $image = $response->content;
-                $self->makeDir($self->{'fileSecurePath'}."/FWS");
-                open ( my $FILE, ">", $self->{'fileSecurePath'}."/FWS/".$distFile.".pm" );
+                $self->makeDir( $self->{fileSecurePath'} . "/FWS" );
+                open ( my $FILE, ">", $self->{fileSecurePath} . "/FWS/" . $distFile . ".pm" );
                 print $FILE "package ".$distName.";\n".$image;
                 close $FILE;
                 $self->FWSLog("FWS Core Upgraded");
@@ -2501,18 +2501,18 @@ sub _processAdminAction {
             #
             # delete cache directory
             #
-            my @fileArray = @{$self->fileArray(directory=>$self->{'filePath'}."/fws/cache")};
-            for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{'fullFile'} }
+            my @fileArray = @{$self->fileArray( directory => $self->{filePath} . "/fws/cache" )};
+            for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{fullFile} }
         
-            if ($updated > 1) { 
-                $self->_versionData('live','core',"fws_installCore",1);
+            if ( $updated > 1 ) { 
+                $self->_versionData( 'live', 'core', "fws_installCore", 1 );
             }
         }
 
         #
         # install any plugin if called
         #
-        if ($action eq "installPlugin") { $self->_installPlugin( plugin  => $self->safeFile( $self->formValue( "plugin" ) ) ) }
+        if ( $action eq "installPlugin" ) { $self->_installPlugin( plugin  => $self->safeFile( $self->formValue( "plugin" ) ) ) }
 
         if ( $action eq "updatePlugin" || $action eq "publishPlugin" ) {
 
@@ -2529,7 +2529,7 @@ sub _processAdminAction {
                             publish        => ( $action eq "publishPlugin" ) ? 1 : 0,
                             publishPassword    => $self->formValue("auth"),
             );
-            if ($status ne '') {
+            if ( $status ) {
 
                 #
                 # always return status as statusNote unless we are talking about an update then we format to fit
@@ -2543,15 +2543,15 @@ sub _processAdminAction {
         }
 
 
-        if ($action eq "updateScript") {
+        if ( $action eq "updateScript" ) {
             my %valueHash;
             my $fws = $self;
             ## no critic
             eval $self->formValue("script");
             ## use critic
-            if ($@) { $self->formValue('statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">'.$@.'</textarea><br/>') }
+            if ( $@ ) { $self->formValue( 'statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">'.$@.'</textarea><br/>' ) }
             else {
-                my $script = $self->safeSQL($self->formValue("script"));
+                my $script = $self->safeSQL( $self->formValue( "script" ) );
                 my $schema = $self->safeSQL($self->formValue("schema"));
                 my $checkedOut = $self->safeSQL($self->formValue("checkout"));
                 $self->runSQL(SQL=>"update element set schema_devel='".$schema."', script_devel='".$script."', checkedout='".$checkedOut."' where guid='".$guid."'");
@@ -2566,8 +2566,8 @@ sub _processAdminAction {
             $self->_saveElementFile($guid,$self->formValue('site_guid'),'page','js',$self->formValue("pageJS"));
         }
         if ($action eq "updateDesign") {
-            $self->_saveElementFile('assets',$self->{'siteGUID'},'site','css',$self->formValue("siteCSS"));
-            $self->_saveElementFile('assets',$self->{'siteGUID'},'site','js',$self->formValue("siteJS"));
+            $self->_saveElementFile('assets',$self->{siteGUID},'site','css',$self->formValue("siteCSS"));
+            $self->_saveElementFile('assets',$self->{siteGUID},'site','js',$self->formValue("siteJS"));
         }
 
         if ($action eq "updateTemplate") {
@@ -2601,42 +2601,42 @@ sub _processAdminAction {
             }
         }
         if ($action eq "flushSearchCache") { 
-            my ($dataUnits) = $self->flushSearchCache($self->{'siteGUID'}) ;
+            my ($dataUnits) = $self->flushSearchCache( $self->{siteGUID} ) ;
             $self->formValue("statusNote", "Your search cache was rebuilt using a total of ".$dataUnits." records.");
             }
     
         if ($action eq "addCatDataXRef") {  
             my $idList = $self->safeSQL($self->formValue('idList'). $self->formValue('child'));
             my @idArray = split(',', $idList);
-            my $parent = $self->safeSQL($self->formValue('parent'));
-            my $siteGUID = $self->safeSQL($self->{'siteGUID'});
+            my $parent = $self->safeSQL( $self->formValue('parent') );
+            my $siteGUID = $self->safeSQL( $self->{siteGUID} );
     
             #
             # loop the idArary and add each one
             #
             while (@idArray) {
                 my $child = shift(@idArray);
-                my ($layout,$ord) = $self->openRS("select layout,ord from guid_xref where child='".$child."'");
+                my ( $layout, $ord ) = $self->openRS("select layout,ord from guid_xref where child='".$child."'");
                 my ($alreadyOne) = $self->openRS("select 1 from guid_xref where child='".$child."' and parent='".$parent."' and site_guid='".$siteGUID."'");
                 if (!$alreadyOne) { $self->_saveXRef($child,$layout,$ord,$parent,$siteGUID) } 
             }
         }
 
         if ($action eq "moveCatDataXRef") {  
-            my $child         = $self->safeSQL($self->formValue('child'));
-            my $parent         = $self->safeSQL($self->formValue('parent'));
-            my $parentId         = $self->safeSQL($self->formValue('parentId'));
-            my $siteGUID         = $self->safeSQL($self->{'siteGUID'});
-            my ($layout,$ord)     = $self->openRS("select layout,ord from guid_xref where child='".$child."'");
-            my ($alreadyOne)     = $self->openRS("select 1 from guid_xref where child='".$child."' and parent='".$parent."' and site_guid='".$siteGUID."'");
+            my $child           = $self->safeSQL( $self->formValue( 'child' ) );
+            my $parent          = $self->safeSQL( $self->formValue( 'parent' ) );
+            my $parentId        = $self->safeSQL( $self->formValue( 'parentId' ) );
+            my $siteGUID        = $self->safeSQL( $self->{siteGUID});
+            my ( $layout, $ord )= $self->openRS("select layout,ord from guid_xref where child='".$child."'");
+            my ( $alreadyOne )  = $self->openRS("select 1 from guid_xref where child='".$child."' and parent='".$parent."' and site_guid='".$siteGUID."'");
             if (!$alreadyOne) { $self->_saveXRef($child,$layout,$ord,$parent,$siteGUID) } 
             $self->_deleteXRef($child,$parentId,$siteGUID); 
         }
 
         if ($action eq "delCatDataXRef") {  
             my $child         = $self->safeSQL($self->formValue('child'));
-            my $parent         = $self->safeSQL($self->formValue('parent'));
-            my $siteGUID         = $self->safeSQL($self->{'siteGUID'});
+            my $parent        = $self->safeSQL($self->formValue('parent'));
+            my $siteGUID      = $self->safeSQL($self->{siteGUID});
             
             #
             # we need the dataCount to prevent orphaning our products.
@@ -2659,29 +2659,29 @@ sub _processAdminAction {
             while (@itemArray) {
                 my $itemId = shift(@itemArray);
 
-                $self->runSQL(SQL=>"update guid_xref set ord='".$catOrder."' where guid_xref.site_guid='".$self->safeSQL($self->{'siteGUID'})."' and child='".$self->safeSQL($itemId)."' and parent='".$guid."'");
+                $self->runSQL(SQL=>"update guid_xref set ord='".$catOrder."' where guid_xref.site_guid='" . $self->safeSQL( $self->{siteGUID}) . "' and child='".$self->safeSQL($itemId)."' and parent='".$guid."'");
                 $catOrder++;
             }
         }
  
         if ($action eq "addToSite") {    
             my %paramHash;
-            $paramHash{'parent'} = $self->formValue('guid');
-            $paramHash{'active'} = $self->formValue('active');
-            $paramHash{'name'} = $self->formValue('name');
-            $paramHash{'type'} = $self->formValue('type');
-            $paramHash{'layout'} = $self->formValue('layout');
-            $self->saveData(%paramHash);
+            $paramHash{parent}  = $self->formValue( 'guid' );
+            $paramHash{active}  = $self->formValue( 'active' );
+            $paramHash{name}    = $self->formValue( 'name' );
+            $paramHash{type}    = $self->formValue( 'type' );
+            $paramHash{layout}  = $self->formValue( 'layout' );
+            $self->saveData( %paramHash );
         }
     }        
 
 
     if ($action eq "AJAXExt") {
         my %valueHash;
-        $valueHash{'field'}     = $self->safeSQL($self->formValue("field"));
-        $valueHash{'table'}     = $self->safeSQL($self->formValue("table"));
-        $valueHash{'value'}     = $self->formValue("value");
-        $valueHash{'guid'}    = $guid;
+        $valueHash{field}     = $self->safeSQL( $self->formValue( "field" ) );
+        $valueHash{table}     = $self->safeSQL( $self->formValue( "table" ) );
+        $valueHash{value}     = $self->formValue( "value" );
+        $valueHash{guid}      = $guid;
     
         #
         # if we are talking about the title field for the data these are actually stored in the data table,  redjust
@@ -2690,7 +2690,7 @@ sub _processAdminAction {
         # they get called as AJAXExt in the default schema operations when overloading the title or url fields in the dataSchema
         # for elements
         #
-        if ($valueHash{'table'} eq "data" && ($valueHash{'field'} eq "title" || $valueHash{'field'} eq "friendlyURL" ||  $valueHash{'field'} eq "pageFriendlyURL"  )) {
+        if ( $valueHash{table} eq "data" && ( $valueHash{field} eq "title" || $valueHash{field} eq "friendlyURL" ||  $valueHash{field} eq "pageFriendlyURL" ) ) {
             $action = "AJAXUpdate";
             $self->formValue("table","data");
             if ($self->formValue("field") eq "friendlyURL" ) {     $self->formValue("field","friendly_url") }
@@ -2701,7 +2701,7 @@ sub _processAdminAction {
             # get a hash of the groups then we can see if we are supposed to edit things or not
             #
             my $accessGranted = 0;
-            my @groups      = split(/\|/,$self->{'dataSchema'}{$valueHash{'table'}}{'extra_value'}{'AJAXGroup'});
+            my @groups      = split( /\|/, $self->{dataSchema}{$valueHash{table}}{extra_value}{AJAXGroup} );
             while (@groups) {
                 my $group = shift(@groups);
                 if ($self->userValue($group) eq '1') { $accessGranted = 1 }
@@ -2713,41 +2713,41 @@ sub _processAdminAction {
             if ($self->userValue('isAdmin') || $accessGranted) {
 
 
-                my $siteGUID = $self->{'siteGUID'};
+                my $siteGUID = $self->{siteGUID};
 
                 #
                 # if we are taling abotut eh site table adjust tehse becuase they are owned by admin... and the
                 # and the id is always the site id your currently logged into
                 #
-                if ($valueHash{'table'} eq 'site') {
+                if ( $valueHash{table} eq 'site' ) {
                     $siteGUID = $self->getSiteGUID('admin');
-                    $valueHash{'guid'} = $self->{'siteGUID'};
+                    $valueHash{guid} = $self->{siteGUID};
                 }
 
-                $self->saveExtra(table=>$self->formValue("table"),siteGUID=>$siteGUID,guid=>$valueHash{'guid'},field=>$self->formValue("field"),value=>$valueHash{'value'});
+                $self->saveExtra( table => $self->formValue( "table" ), siteGUID => $siteGUID, guid => $valueHash{guid}, field=> $self->formValue("field"), value => $valueHash{value} );
 
                 #
                 # delete any thumb we might have the record and get any other info we might need
                 #
-                if ($valueHash{'table'} eq 'data') {
+                if ( $valueHash{table} eq 'data' ) {
                     #
                     # update pages modified recrod
                     #
-                    $self->updateModifiedDate(guid=>$valueHash{'guid'});
-                    $self->createSizedImages(guid=>$valueHash{'guid'});
+                    $self->updateModifiedDate( guid => $valueHash{guid} );
+                    $self->createSizedImages( guid => $valueHash{guid} );
 
                     #
                     # get the hash  and datatypeso we can make smart descisions on how to update stuff
                     #
-                    my %dataHash    = $self->dataHash(guid=>$valueHash{'guid'});
-                    my %schemaHash  = $self->schemaHash($dataHash{'type'});
-                    my $dataType    = $schemaHash{$valueHash{'field'}}{fieldType};
+                    my %dataHash    = $self->dataHash( guid => $valueHash{guid} );
+                    my %schemaHash  = $self->schemaHash( $dataHash{type} );
+                    my $dataType    = $schemaHash{$valueHash{field}}{fieldType};
 
 
                     #
                     # get just the file name... we will use this a few times
                     #
-                    my $fileName = $self->justFileName($dataHash{$valueHash{'field'}});
+                    my $fileName = $self->justFileName( $dataHash{$valueHash{field}} );
 
 
                     #
@@ -2760,35 +2760,35 @@ sub _processAdminAction {
                         #
                         my $secureFile = '0';
                         my $fileNameFull = '0';
-                        my $extPath =  "/".$siteGUID."/".$valueHash{'guid'}."/".$self->justFileName($valueHash{'value'});
-                        if (-e $self->{'filePath'}.$extPath) {
-                            $fileNameFull = $self->{'filePath'}.$extPath;
+                        my $extPath =  "/" . $siteGUID . "/" . $valueHash{guid} . "/" . $self->justFileName( $valueHash{value} );
+                        if (-e $self->{filePath} . $extPath) {
+                            $fileNameFull = $self->{filePath} . $extPath;
                         }
-                        if (-e $self->{'fileSecurePath'}.$extPath) {
+                        if (-e $self->{fileSecurePath} . $extPath) {
                             $secureFile = '1';
-                            $fileNameFull = $self->{'fileSecurePath'}.$extPath;
+                            $fileNameFull = $self->{fileSecurePath} . $extPath;
                         }
 
-                        $self->runScript('fileSelected',
-                            'bulkUpload'    => '0',
-                            'secureFile'    => $secureFile,
-                            'dataType'      => $dataType,
-                            'fileName'      => $fileName,
-                            'fileNameFull'      => $fileNameFull,
-                            'fieldName'     => $valueHash{'field'},
-                            'id'        => $valueHash{'guid'},
-                             );
+                        $self->runScript( 'fileSelected',
+                            bulkUpload      => '0',
+                            secureFile      => $secureFile,
+                            dataType        => $dataType,
+                            fileName        => $fileName,
+                            fileNameFull    => $fileNameFull,
+                            fieldName       => $valueHash{field},
+                            id              => $valueHash{guid},
+                        );
                     }
 
                     #
                     # update the cache version automaticly
                     #
-                    $self->updateDataCache($self->dataHash(guid=>$valueHash{'guid'}));
+                    $self->updateDataCache( $self->dataHash( guid => $valueHash{guid} ) );
                 }
 
-                $self->runScript('postAJAXSave',%valueHash);
+                $self->runScript( 'postAJAXSave', %valueHash );
             }
-            $self->formValue("statusNote","Saved!");
+            $self->formValue( "statusNote", "Saved!" );
         }
     }
 
@@ -2797,60 +2797,60 @@ sub _processAdminAction {
     if ($action eq "AJAXUpdate") {
 
         my %valueHash;
-        $valueHash{'field'}        = $self->formValue('field');
-        $valueHash{'parent'}        = $self->formValue('parent');
-        $valueHash{'table'}        = $self->formValue('table');
-        $valueHash{'value'}        = $self->formValue('value');
-        $valueHash{'guid'}        = $guid;
-        $valueHash{'siteGUID'}        = $self->formValue('siteGUID');
+        $valueHash{field}         = $self->formValue('field');
+        $valueHash{parent}        = $self->formValue('parent');
+        $valueHash{table}         = $self->formValue('table');
+        $valueHash{value}         = $self->formValue('value');
+        $valueHash{guid}          = $guid;
+        $valueHash{siteGUID}      = $self->formValue('siteGUID');
 
         #
         # get a hash of the groups then we can see if we are supposed to edit things or not
         #
         my $accessGranted = 0;
-        my @groups    = split(/\|/,$self->{'dataSchema'}{$valueHash{'table'}}{$valueHash{'field'}}{'AJAXGroup'});
-        while (@groups) { 
-            my $group = shift(@groups);
-            if ($self->userValue($group) eq '1') { $accessGranted = 1 }
+        my @groups    = split( /\|/, $self->{dataSchema}{$valueHash{table}}{$valueHash{field}}{AJAXGroup} );
+        while ( @groups ) { 
+            my $group = shift( @groups );
+            if ( $self->userValue( $group ) ) { $accessGranted = 1 }
         }
         
         #
         # if crypt password is set, then crypt it up!
         #
-        if ($self->{'dataSchema'}{$valueHash{'table'}}{$valueHash{'field'}}{'cryptPassword'} eq '1')      { $valueHash{'value'} = $self->cryptPassword($valueHash{'value'}) }
+        if ( $self->{dataSchema}{$valueHash{table}}{$valueHash{field}}{cryptPassword} ) { $valueHash{value} = $self->cryptPassword( $valueHash{value} ) }
                     
         #
         # if encrypt is set, then crypt it up!
         #
-        if ($self->{'dataSchema'}{$valueHash{'table'}}{$valueHash{'field'}}{'encrypt'} eq '1')      { $valueHash{'value'} = $self->FWSEncrypt($valueHash{'value'}) }
+        if ( $self->{dataSchema}{$valueHash{table}}{$valueHash{field}}{encrypt} ) { $valueHash{value} = $self->FWSEncrypt( $valueHash{value} ) }
                     
         #
         # check for ajax access and do the deed
         #
-        if (($self->userValue('isAdmin') || ( $accessGranted eq '1' && $valueHash{'field'} ne 'extra_value')) && $valueHash{'table'} ne 'guid_xref') {
-            $self->runSQL(SQL=>"update ".$self->safeSQL($valueHash{'table'})." set ".$self->safeSQL($valueHash{'field'})."='".$self->safeSQL($valueHash{'value'})."' where guid='".$self->safeSQL($valueHash{'guid'})."'");
+        if ( ( $self->userValue( 'isAdmin' ) || ( $accessGranted  && $valueHash{field} ne 'extra_value')) && $valueHash{table} ne 'guid_xref' ) {
+            $self->runSQL(SQL=>"update " . $self->safeSQL( $valueHash{table} ) . " set ". $self->safeSQL( $valueHash{field} ) . "='" . $self->safeSQL( $valueHash{value}) . "' where guid='" . $self->safeSQL( $valueHash{guid} ) . "'");
     
         }    
 
         #
         # if there is any image resizing that is needed, lets do it
         #
-        $self->createSizedImages($valueHash{'field'}=>$valueHash{'value'},guid=>$valueHash{'guid'});
+        $self->createSizedImages( $valueHash{field} => $valueHash{value}, guid => $valueHash{guid} );
 
         if ($self->userValue('isAdmin') || $self->userValue('showDeveloper') || $self->userValue('showContent') || $self->userValue('showDesign')) {
 
             #
             # guid_xref is special, lets just deal with outside of the schema to make things clean
             # 
-            if ($valueHash{'table'} eq 'guid_xref' && $valueHash{'field'} eq 'layout') {
+            if ($valueHash{table} eq 'guid_xref' && $valueHash{field} eq 'layout') {
 
-                $self->runSQL(SQL=>"update guid_xref set ".$self->safeSQL($valueHash{'field'})."='".$self->safeSQL($valueHash{'value'})."' where site_guid='".$self->safeSQL($self->{'siteGUID'})."' and child='".$self->safeSQL($valueHash{'guid'})."' and parent='".$self->safeSQL($valueHash{'parent'})."'");
+                $self->runSQL( SQL => "update guid_xref set ".$self->safeSQL( $valueHash{field} )."='" . $self->safeSQL( $valueHash{value} ) . "' where site_guid='".$self->safeSQL( $self->{siteGUID} ) . "' and child='" . $self->safeSQL( $valueHash{guid} ) . "' and parent='" . $self->safeSQL( $valueHash{parent} ) . "'" );
             }
 
             #
             # set up internal data stuff when data is updated
             #
-            if ($valueHash{'table'} eq 'data') {
+            if ( $valueHash{table} eq 'data' ) {
                 #
                 # update pages modified recrod
                 #
@@ -2865,7 +2865,7 @@ sub _processAdminAction {
 
 
         $self->formValue("statusNote","Saved!");
-        if (($self->userValue('isAdmin') || $self->userValue('showDeveloper')) && $valueHash{'table'} eq 'element') {
+        if ( ( $self->userValue( 'isAdmin' ) || $self->userValue( 'showDeveloper' ) ) && $valueHash{table} eq 'element' ) {
             #
             # the schema might have been udpated, lets re-update it just in case
             #
@@ -2888,8 +2888,8 @@ sub _processAdminAction {
 
         if ($action eq "siteAddAdminUser") {
             my $admin_name      = $self->safeSQL($self->formValue('admin_name'));
-            my $admin_user_id       = $self->safeSQL($self->formValue('admin_user_id'));
-            my $admin_password      = $self->safeSQL($self->formValue('admin_password'));
+            my $admin_user_id   = $self->safeSQL($self->formValue('admin_user_id'));
+            my $admin_password  = $self->safeSQL($self->formValue('admin_password'));
             my $admin_active    = $self->safeSQL($self->formValue('admin_active'));
 
             #
@@ -2898,24 +2898,24 @@ sub _processAdminAction {
             $admin_user_id =~ tr/A-Z/a-z/;
             my ($accountExists) = $self->openRS("select 1 from admin_user where user_id='".$admin_user_id."'");
 
-            if (!$admin_name){              $self->formValue("statusNote","Name is required") }
-            if (!$admin_user_id){           $self->formValue("statusNote","Login Id is required") }
-            if (!$admin_password){             $self->formValue("statusNote","Password is required") }
-            if ($accountExists){            $self->formValue("statusNote","Account already exists, please use a diffrent user ID") }
-            if ($admin_user_id =~ /[^a-z]/) {       $self->formValue("statusNote","The User Id must only contain lower case characters") }
+            if (!$admin_name){                  $self->formValue("statusNote","Name is required") }
+            if (!$admin_user_id){               $self->formValue("statusNote","Login Id is required") }
+            if (!$admin_password){              $self->formValue("statusNote","Password is required") }
+            if ($accountExists){                $self->formValue("statusNote","Account already exists, please use a diffrent user ID") }
+            if ($admin_user_id =~ /[^a-z]/) {   $self->formValue("statusNote","The User Id must only contain lower case characters") }
 
             #
             # crypt the password
             #
             $admin_password = $self->cryptPassword($admin_password);
-            if ($self->formValue("statusNote") eq "") {
-                my $guid = $self->createGUID('a');
+            if ( !$self->formValue('statusNote') ) {
+                my $guid = $self->createGUID( 'a ');
                 $self->runSQL(SQL=>"insert into admin_user (guid,name,user_id,admin_user_password) values ('".$guid."','".$admin_name."','".$admin_user_id."','".$admin_password."')");
                 #
                 # if the profile is new lets send the admin an email
                 #
-                if ($self->siteValue('profileCreationEmail') ne '') {
-                    $self->send(to=>$self->siteValue('profileCreationEmail'),fromName=>$self->{'email'},from=>$self->{'email'},subject=>"New Admin Account Created",mimeType=>"text/plain",body=>'Name: '.$admin_name."\nUser Id: ".$admin_user_id."\n");
+                if ( $self->siteValue('profileCreationEmail') ) {
+                    $self->send( to => $self->siteValue( 'profileCreationEmail'), fromName => $self->{email}, from => $self->{email}, subject => "New Admin Account Created", mimeType => "text/plain", body => 'Name: ' . $admin_name . "\nUser Id: " . $admin_user_id . "\n" );
                 }
 
 
@@ -3002,7 +3002,7 @@ sub _processAdminAction {
 }
 
 sub _makeDefaultTemplate {
-    my ($self,$siteGUID,$guid) = @_;
+    my ( $self, $siteGUID, $guid ) = @_;
     $self->runSQL(SQL=>"update templates set default_template = '0' where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
     $self->runSQL(SQL=>"update templates set default_template = '1' where guid='" . $self->safeSQL($guid) . "' and site_guid='" . $self->safeSQL( $siteGUID ) . "'");
 
@@ -3010,7 +3010,7 @@ sub _makeDefaultTemplate {
 }
 
 sub _addTemplate {
-    my ($self,$siteGUID,$title,$templateDevel,$cssDevel,$jsDevel,$default_template) = @_;
+    my ( $self, $siteGUID, $title, $templateDevel, $cssDevel, $jsDevel, $default_template ) = @_;
     #
     # switch the title to sql frienldy, and then insert the data
     # switch the css, and java on the fly, because we don't want it changed before we save it to
@@ -3135,7 +3135,7 @@ sub _packageLine {
 
     $line .= "<td style=\"text-align:center;width:200px;\">" . $currentVer . "</td>";
     $line .= "<td style=\"text-align:center;width:200px;\">" . $newVer . "</td>";  
-    $line .= "<td style=\"text-align:center;width:100px;\"><a href=\"" . $self->{'scriptName'} . $self->{'queryHead'} . "p=" . $script . "\">" . $upText . "</a>"; 
+    $line .= "<td style=\"text-align:center;width:100px;\"><a href=\"" . $self->{scriptName} . $self->{queryHead} . "p=" . $script . "\">" . $upText . "</a>"; 
     $line .= "</tr>";
     return $line;
 }
@@ -3212,9 +3212,9 @@ sub _testDirWritePermission {
 sub _sessionInfo {
     my ( $self, %paramHash ) = @_;
     my %returnHash;
-    ( $returnHash{total} ) =    @{$self->runSQL( SQL => "select count(1) from fws_sessions" )};
-    ( $returnHash{'1'} ) =      @{$self->runSQL( SQL => "select count(1) from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod=>-1 ) . "'" )};
-    ( $returnHash{'3'} ) =      @{$self->runSQL( SQL => "select count(1) from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod=>-3 ) . "'" )};
+    ( $returnHash{total} ) =  @{$self->runSQL( SQL => "select count(1) from fws_sessions" )};
+    ( $returnHash{1} ) =      @{$self->runSQL( SQL => "select count(1) from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod=>-1 ) . "'" )};
+    ( $returnHash{3} ) =      @{$self->runSQL( SQL => "select count(1) from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod=>-3 ) . "'" )};
     return %returnHash;
 }
 
@@ -3238,7 +3238,7 @@ sub _importAdmin {
 
 
 sub _installZipcode {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
     #
     # make stdout hot! and start sending to browser
@@ -3256,7 +3256,7 @@ sub _installZipcode {
 
     print $self->_installFooter( 'Zipcode' );
     
-    if ($importReturn !~ /error/i) { $self->_versionData( 'live', 'zipcode', "fws_installZipcode", 1 ) }
+    if ( $importReturn !~ /error/i ) { $self->_versionData( 'live', 'zipcode', "fws_installZipcode", 1 ) }
        
     $self->{stopProcessing} = 1;
 
