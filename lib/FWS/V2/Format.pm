@@ -99,8 +99,8 @@ sub activeToggleIcon {
                                  "{this.src='" . $self->{fileFWSPath} .
                                  "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='".$self->{fileFWSPath} .
                                  "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
-                                 "&value='+currentState+'&guid=" . $paramHash{guid} .
-                                 "&table=" . $table . "&field=active&pageAction=AJAXUpdate&returnStatusNote=1',showLoading:false});",
+                                 "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
+                                 "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
                       title   => "Active Toggle",
                       alt     => "Active Toggle",
                       style   => $paramHash{style},
@@ -113,8 +113,8 @@ sub activeToggleIcon {
                                  "{this.src='" . $self->{fileFWSPath} .
                                  "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='" . $self->{fileFWSPath} .
                                  "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
-                                 "&value='+currentState+'&guid=" . $paramHash{guid} .
-                                 "&table=" . $table . "&field=active&pageAction=AJAXUpdate&returnStatusNote=1',showLoading:false});",
+                                 "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
+                                 "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
                       style   => $paramHash{style},
                       title   => "Active Toggle",
                       alt     => "Active Toggle",
@@ -1079,7 +1079,7 @@ sub jqueryEnable {
     #
     # make sure this is something before we continue
     #
-    if ( $jqueryEnable) {
+    if ( $jqueryEnable ) {
     
         #
         # get the current hash
@@ -1089,8 +1089,16 @@ sub jqueryEnable {
         #
         # if its already there lets just leave it alone
         #
-        if ( !$jqueryHash{$jqueryEnable} ) { $jqueryHash{$jqueryEnable} = keys %jqueryHash }
-    
+        if ( !$jqueryHash{$jqueryEnable} ) { 
+            
+            #
+            # set the number, but lets make sure its greater than 1
+            # so we can do boolean tests against it
+            # 
+            $jqueryHash{$jqueryEnable} = ( keys %jqueryHash ) + 1;
+            
+        }
+  
         #
         # pass the new hash back into the jqueryHash
         #
@@ -1495,6 +1503,15 @@ sub _jsEnable {
     my %jsHash = %{$self->{_jsHash}};
 
     #
+    # always add one to modifier to its never 0
+    #
+    $modifier++;
+
+    #
+    # set the number to at least one
+    #
+
+    #
     # if its already there lets just leave it alone
     #
     if ( !$jsHash{$jsEnable} ) { $jsHash{$jsEnable} = ( keys %jsHash ) + $modifier }
@@ -1519,6 +1536,11 @@ sub _cssEnable {
     # get the current hash
     #
     my %cssHash = %{$self->{_cssHash}};
+    
+    #
+    # always add one to modifier to its never 0
+    #
+    $modifier++;
 
     #
     # if its already there lets just leave it alone
