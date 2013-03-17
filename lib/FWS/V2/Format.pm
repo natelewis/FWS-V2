@@ -384,7 +384,7 @@ sub dialogWindow {
     # build the ajax load without the jquery pre object because we could use it two different ways
     #
     my $ajaxLoad = "load('" . $self->{scriptName} . $self->{queryHead} . $paramHash{queryString} . "',function(){";
-    if ( !$self->{adminLoginId} ) { $ajaxLoad .= "FWSUIInit();" }
+    if ( $self->{adminLoginId} ) { $ajaxLoad .= "FWSUIInit();" }
     $ajaxLoad .= "if (jsAutoResize.length) { \$.modal.update(); } });";
 
     #
@@ -409,7 +409,7 @@ sub dialogWindow {
         #
         # Set the hit and autoresize
         #
-        if ( !defined $paramHash{height} ) { $returnHTML .= "minHeight: " . $paramHash{height} . ",maxHeight: " . $paramHash{height} . "," }
+        if ( defined $paramHash{height} ) { $returnHTML .= "minHeight: " . $paramHash{height} . ",maxHeight: " . $paramHash{height} . "," }
         $returnHTML .= "autoResize: " . $paramHash{autoResize} . ",";
     
         #
