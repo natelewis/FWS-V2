@@ -248,7 +248,7 @@ sub tabs {
         #
         # this is the connector between the tab and its HTML
         #
-        my $tabHRef     = $paramHash{"id"} . "_" . $tabCount . "_" . $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM', lowLength => 6, highLength => 6 );
+        my $tabHRef     = $paramHash{id} . "_" . $tabCount . "_" . $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM', lowLength => 6, highLength => 6 );
 
         #
         # if tiny mce is being used on a tab, lets light it up per the clicky
@@ -436,8 +436,8 @@ sub importSiteImage {
     my $fileName;
     my $fileReading;
     my %tableSchema;
-    my $keepAliveCount      = 0;
-    my $keepAliveTop    = $paramHash{"keepAlive"};
+    my $keepAliveCount        = 0;
+    $paramHash{keepAlive}   ||= 0;
 
 
     open( my $READ_FILE, "<", $importFile );
@@ -615,7 +615,7 @@ sub importSiteImage {
                     }
                 }
             }
-            if ( $keepAliveCount > $keepAliveTop ) {
+            if ( $keepAliveCount > $paramHash{keepAlive} ) {
                 $keepAliveCount = 0;
                 if ( $paramHash{keepAlive} ) { print " ." }
             }
@@ -728,7 +728,7 @@ sub adminField {
         #
         if ( $paramHash{dateFormat} =~ /sql/i || !$paramHash{dateFormat} ) {
             my ( $year, $month, $day ) = split( /\D/, $paramHash{fieldValue} );
-            $paramHash{"fieldValue"} = $month . "-" . $day . "-" . $year;
+            $paramHash{fieldValue} = $month . "-" . $day . "-" . $year;
         }
 
         #
@@ -760,7 +760,7 @@ sub adminField {
     # set the style if we have to something to give
     #
     my $styleHTML;
-    if ( $paramHash{style} ) { $styleHTML = " style=\"" . $paramHash{"style"} . "\"" }
+    if ( $paramHash{style} ) { $styleHTML = " style=\"" . $paramHash{style} . "\"" }
 
     #
     # Seed the save JS, we will build on this depending on what we have to work with
@@ -821,9 +821,10 @@ sub adminField {
     #
     if ( $paramHash{updateType} ) {
         if ( $paramHash{updateType} eq "AJAXUpdate" || $paramHash{updateType} eq "AJAXExt" ) {
-            $AJAXSave .= "\$('<div></div>').FWSAjax({queryString:'s=" . $self->{siteId} . "&guid=" . $paramHash{ajaxUpdateGUID} . "&parent=" . $paramHash{ajaxUpdateParentId} . "&table=" . $paramHash{ajaxUpdateTable} . "&field=" . $paramHash{fieldName} . "&value='+encodeURIComponent(\$('#" . $paramHash{uniqueId} . "_ajax').val())+'&pageAction=" . $paramHash{updateType} . "&returnStatusNote=1'" . $onSaveJS . ",showLoading:false});";
+            $AJAXSave .= "\$('<div></div>').FWSAjax({queryString:'s=" . $self->{siteId} . "&p=fws_dataEdit&guid=" . $paramHash{ajaxUpdateGUID} . "&parent=" . $paramHash{ajaxUpdateParentId} . "&table=" . $paramHash{ajaxUpdateTable} . "&field=" . $paramHash{fieldName} . "&value='+encodeURIComponent(\$('#" . $paramHash{uniqueId} . "_ajax').val())+'&pageAction=" . $paramHash{updateType} . "'" . $onSaveJS . ",showLoading:false});";
         }
         else {
+            #TODO Validate if this other updateType ajax is even being used anymore
             $AJAXSave .= "\$('<div></div>').FWSAjax({queryString:'s=" . $self->{siteId} . "&guid=" . $paramHash{ajaxUpdateGUID} . "&parent=" . $paramHash{ajaxUpdateParentId} . "&field=" . $paramHash{fieldName} . "&value='+encodeURIComponent(\$('#" . $paramHash{uniqueId} . "_ajax').val())+'&pageAction=" . $paramHash{updateType} . "&p=" . $paramHash{updateType} . "'" . $onSaveJS . ",showLoading:false});";
         }
     }
@@ -903,7 +904,7 @@ sub adminField {
         $self->jqueryEnable( 'ui.datepicker-1.8.9' );
         $self->jqueryEnable( 'ui.slider-1.8.9' );
         $self->jqueryEnable( 'timepickr-0.9.6' );
-        $paramHash{"class"} .= " FWSDateTime";
+        $paramHash{class} .= " FWSDateTime";
     }
 
     if ( $paramHash{fieldType} =~ /^(currency|number|date|color|dateTime)$/ ) {
@@ -920,11 +921,11 @@ sub adminField {
         #
         # only allow numbers and such
         #
-        $paramHash{"onKeyDown"} .= "var keynum; if(window.event) { keynum = event.keyCode } else if(event.which) {";
-        $paramHash{"onKeyDown"} .= "keynum = event.which };";
-        $paramHash{"onKeyDown"} .= "if ((";
-        $paramHash{"onKeyDown"} .= "keynum&lt;48 || keynum&gt;105 || (keynum&gt;57 &amp;&amp; keynum&lt;95)";
-        $paramHash{"onKeyDown"} .= ")";
+        $paramHash{onKeyDown} .= "var keynum; if(window.event) { keynum = event.keyCode } else if(event.which) {";
+        $paramHash{onKeyDown} .= "keynum = event.which };";
+        $paramHash{onKeyDown} .= "if ((";
+        $paramHash{onKeyDown} .= "keynum&lt;48 || keynum&gt;105 || (keynum&gt;57 &amp;&amp; keynum&lt;95)";
+        $paramHash{onKeyDown} .= ")";
 
         #
         # if I'm a color let people pick a-f
@@ -1017,7 +1018,7 @@ sub adminField {
         #
         # set the Id
         #
-        $fieldHTML .= " id=\"".$paramHash{"uniqueId"}."\"";
+        $fieldHTML .= " id=\"".$paramHash{uniqueId}."\"";
         if ( $paramHash{readOnly} ) { $fieldHTML .= " disabled=\"disabled\"" }
     }
 
@@ -1104,8 +1105,8 @@ sub adminField {
         while (@optionSplit) {
             my $optionValue = shift(@optionSplit);
             my $optionName = shift(@optionSplit);
-            $fieldHTML .= "<input type=\"radio\" name=\"".$paramHash{"fieldName"}."\"".$styleHTML." class=\"".$paramHash{"class"}."\"";
-            $fieldHTML .= " onclick=\"".$paramHash{"onChange"};
+            $fieldHTML .= "<input type=\"radio\" name=\"" . $paramHash{fieldName} . "\"" . $styleHTML . " class=\"" . $paramHash{class} . "\"";
+            $fieldHTML .= " onclick=\"" . $paramHash{onChange};
             $fieldHTML .= "\$('#" . $paramHash{uniqueId} . "_ajax').val('" . $optionValue . "');";
             $fieldHTML .= $AJAXSave;
             $fieldHTML .= '"';
@@ -1191,7 +1192,7 @@ sub adminField {
 
     if ( $paramHash{updateType} && $paramHash{fieldType} eq "password" ) {
         if ( $paramHash{strongPassword} ) {
-            $fieldHTML .= "<div id=\"".$paramHash{"uniqueId"}."_passwordWeak\" style=\"color:#FF0000;display:none;\">";
+            $fieldHTML .= "<div id=\"" . $paramHash{uniqueId} . "_passwordWeak\" style=\"color:#FF0000;display:none;\">";
             $fieldHTML .= "Passwords must be at least 6 characters and contain a number, an upper case character, a lower case character.";
             $fieldHTML .= "</div>";
         }
@@ -1511,7 +1512,7 @@ sub editBox {
             if ( ( $showOrderButton || $editHash{orderTool} ) && !$editHash{disableOrderTool} ) {
                 $editHTML .= $self->FWSIcon(    
                                 icon        => "add_reorder_16.png",
-                                onClick     => $self->dialogWindow(queryString=>"p=fws_dataOrdering&guid=".$editHash{"guid"}.$pageFlag.$layoutFlag),
+                                onClick     => $self->dialogWindow(queryString=>"p=fws_dataOrdering&guid=" . $editHash{guid} . $pageFlag . $layoutFlag),
                                 alt         => "Add And Ordering",
                                 width       => "16");
             }
@@ -1566,7 +1567,7 @@ sub editBox {
             #
             # close the edit bar container
             #    
-            if ( !$editHash{"editBoxJustButtons"} ) { $editHTML .= '</div>' }
+            if ( !$editHash{editBoxJustButtons} ) { $editHTML .= '</div>' }
     
             $editHTML .= $editHash{editBoxContent};   
             $editHTML .= $editHash{editBox};
@@ -1926,19 +1927,19 @@ sub GNFTree {
 
         if ( $paramHash{expandQuery} ) { 
             if ( $paramHash{lastInList} ) {
-                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/plus.gif\" id=\"tree".$paramHash{"id"}."\"/>";
+                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/plus.gif\" id=\"tree" . $paramHash{id} . "\"/>";
             }
             else {
-                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/plusbottom.gif\" id=\"tree".$paramHash{"id"}."\"/>";
+                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/plusbottom.gif\" id=\"tree" . $paramHash{id} . "\"/>";
             }
         }
         else {
-            $lineHTML .= "<a href=\"#\" name=\"parentAnchor".$paramHash{"categoryId"}."\"></a>";
+            $lineHTML .= "<a href=\"#\" name=\"parentAnchor" . $paramHash{categoryId} . "\"></a>";
             if ( $paramHash{lastInList} ) {
-                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/join.gif\" id=\"tree".$paramHash{"id"}."\"/>";
+                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/join.gif\" id=\"tree" . $paramHash{id} . "\"/>";
             }
             else {
-                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/joinbottom.gif\" id=\"tree".$paramHash{"id"}."\"/>";
+                $lineHTML .= "<img class=\"FWSTreeEventRowImage\" src=\"" . $self->{fileFWSPath} . "/joinbottom.gif\" id=\"tree" . $paramHash{id} . "\"/>";
             }
         }
     }
@@ -1947,10 +1948,10 @@ sub GNFTree {
     #
     # create the table the line item will sit in
     #
-    my $treeHTML = "<div id=\"block_".$paramHash{"id"}."\">";
-    $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"row_".$paramHash{"id"}."\">";
+    my $treeHTML = "<div id=\"block_" . $paramHash{id} . "\">";
+    $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"row_" . $paramHash{id} . "\">";
     
-    #my $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"block_".$paramHash{"id"}."\">";
+    #my $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"block_" . $paramHash{id} . "\">";
 
     #
     # add the + - thing
@@ -1973,10 +1974,10 @@ sub GNFTree {
     my $checkedOutClass;
     if ( $paramHash{icon} =~ /lock/i ) { $checkedOutClass = "checkedOutTip "; }
     
-    $treeHTML .= "<img class=\"" . $checkedOutClass . "FWSTreeEventRowImage\" alt=\"\" src=\"" . $self->{fileFWSPath} . "/" . $paramHash{"icon"} . "\"/>";
+    $treeHTML .= "<img class=\"" . $checkedOutClass . "FWSTreeEventRowImage\" alt=\"\" src=\"" . $self->{fileFWSPath} . "/" . $paramHash{icon} . "\"/>";
              
     $treeHTML .= '<div class="FWSTreeLineTitle">';
-    $treeHTML .= "&nbsp;" . $paramHash{"name"};
+    $treeHTML .= "&nbsp;" . $paramHash{name};
     $treeHTML .= "</div>";
 
     $treeHTML .= "</span>";
@@ -1989,7 +1990,7 @@ sub GNFTree {
         # if there is a hidden field toss it in
         #
         if ( $paramHash{addHiddenField1} ) {
-            $treeHTML .= "<input value=\"" . $paramHash{"addHiddenFieldValue1"} . "\" type=\"hidden\" id=\"add_" . $paramHash{"addHiddenField1"}  . "_" . $paramHash{parentId} . "\" name=\"add_" . $paramHash{"addHiddenField1"} . "_" . $paramHash{parentId} . "\"/>";
+            $treeHTML .= "<input value=\"" . $paramHash{addHiddenFieldValue1} . "\" type=\"hidden\" id=\"add_" . $paramHash{addHiddenField1}  . "_" . $paramHash{parentId} . "\" name=\"add_" . $paramHash{addHiddenField1} . "_" . $paramHash{parentId} . "\"/>";
         }
 
         #
@@ -1997,17 +1998,17 @@ sub GNFTree {
         #
         
         for ( my $i = 1; $i < 10; $i++ ) {
-            if ( $paramHash{"addField" . $i} || $paramHash{"addCustom" . $i} ) {
-                $treeHTML .= "<div class=\"FWSTreeAddField\">" . $paramHash{"addLabel" . $i}  . "<br/>";
+            if ( $paramHash{'addField' . $i} || $paramHash{'addCustom' . $i} ) {
+                $treeHTML .= "<div class=\"FWSTreeAddField\">" . $paramHash{'addLabel' . $i}  . "<br/>";
 
                 #
                 # set the default addType to text
                 #
-                $paramHash{"addType" . $i} ||= 'text';
+                $paramHash{'addType' . $i} ||= 'text';
 
-                if ( defined $paramHash{"addCustom" . $i} ) { $treeHTML .= $paramHash{"addCustom" . $i} }
+                if ( defined $paramHash{'addCustom' . $i} ) { $treeHTML .= $paramHash{'addCustom' . $i} }
                 else {
-                    $treeHTML .= "<input value=\"" . $self->formValue( $paramHash{"addField" . $i} ) . "\" type=\"" . $paramHash{"addType" . $i} . "\" style=\"" . $paramHash{"addFieldStyle" . $i} . "\" id=\"add_" . $paramHash{"addField" . $i}  . "_" . $paramHash{parentId} . "\" name=\"" . $paramHash{"addField" . $i}  . "_".$paramHash{parentId} . "\"/>";
+                    $treeHTML .= "<input value=\"" . $self->formValue( $paramHash{'addField' . $i} ) . "\" type=\"" . $paramHash{'addType' . $i} . "\" style=\"" . $paramHash{'addFieldStyle' . $i} . "\" id=\"add_" . $paramHash{'addField' . $i}  . "_" . $paramHash{parentId} . "\" name=\"" . $paramHash{'addField' . $i}  . "_".$paramHash{parentId} . "\"/>";
                 }
                 $treeHTML .= "</div>";
             }
@@ -2029,13 +2030,13 @@ sub GNFTree {
             $onClickGo .= "&" . $paramHash{addHiddenField1} . "='+escape(document.getElementById('add_" . $paramHash{addHiddenField1} . '_' . $paramHash{parentId} . "').value)+'";
         }
         for (my $i = 1; $i < 10; $i++) {
-            if ( $paramHash{"addField" . $i} ) {
-                $onClickGo .= "&" . $paramHash{"addField" . $i} . "='+escape(document.getElementById('add_" . $paramHash{'addField' . $i} . '_' . $paramHash{parentId} . "').value)+'";
+            if ( $paramHash{'addField' . $i} ) {
+                $onClickGo .= "&" . $paramHash{'addField' . $i} . "='+escape(document.getElementById('add_" . $paramHash{'addField' . $i} . '_' . $paramHash{parentId} . "').value)+'";
             }
         }
         if ( $onClickGo ) {
             $treeHTML .= " " . $self->FWSIcon( icon    =>"go_16.png",
-                             onClick => "this.src='" . $self->loadingImage() . "';\$('#cat" . $paramHash{parentId} . "').FWSAjax({queryString: '" . $self->{queryHead} . "&guid=" . $self->formValue("id") . "&id=" . $self->formValue("id") . "&parentId=" . $paramHash{parentId} . "&p=" . $self->formValue("p") . "&".$addPageField . "=" . $paramHash{"addPageAction"} . "&depth=" . $self->formValue("depth") . $onClickGo . "',showLoading:false});return false;",
+                             onClick => "this.src='" . $self->loadingImage() . "';\$('#cat" . $paramHash{parentId} . "').FWSAjax({queryString: '" . $self->{queryHead} . "&guid=" . $self->formValue("id") . "&id=" . $self->formValue("id") . "&parentId=" . $paramHash{parentId} . "&p=" . $self->formValue("p") . "&".$addPageField . "=" . $paramHash{'addPageAction'} . "&depth=" . $self->formValue("depth") . $onClickGo . "',showLoading:false});return false;",
                              alt     =>"go",
                              width   =>"16",
                              style   =>"padding-left:3px;vertical-align:middle;");
@@ -2058,8 +2059,8 @@ sub GNFTree {
         if ( $paramHash{searchOnClick} || $hasLabel ) {
             $treeHTML .= "<div class=\"FWSTreeSearch\">";
             $treeHTML .= $self->FWSIcon( icon    =>"go_16.png",
-                            onClick =>$paramHash{"onClick1"} . $paramHash{"searchOnClick"},
-                            id     =>"sel_" . $paramHash{"id"} . "_" . $paramHash{parentId},
+                            onClick =>$paramHash{onClick1} . $paramHash{searchOnClick},
+                            id     =>"sel_" . $paramHash{id} . "_" . $paramHash{parentId},
                             alt     =>"go",
                             width   =>"16",
                             style   =>"padding-left:3px;vertical-align:middle;");
@@ -2077,11 +2078,11 @@ sub GNFTree {
              }
             $treeHTML .= "\">";
     
-            for (my $i = 1; $i < 17; $i++) { if ( $paramHash{"label" . $i} ) {$treeHTML.="<option value=\"" . $i . "\">" . $paramHash{"label" . $i}."</option>"} }
+            for (my $i = 1; $i < 17; $i++) { if ( $paramHash{'label' . $i} ) {$treeHTML.="<option value=\"" . $i . "\">" . $paramHash{'label' . $i}."</option>"} }
             $treeHTML.= "</select>";
         }
         if ( $paramHash{searchOnClick} ) {
-            $treeHTML .= "<input style=\"width:175px;\" type=\"text\" id=\"" . $paramHash{"searchField"} . "\" name=\"" . $paramHash{"searchField"} . "\"/>";
+            $treeHTML .= "<input style=\"width:175px;\" type=\"text\" id=\"" . $paramHash{searchField} . "\" name=\"" . $paramHash{searchField} . "\"/>";
         }
         $treeHTML .= "</div>";    
         
@@ -2096,8 +2097,8 @@ sub GNFTree {
         if ( $paramHash{viewTool} ) {
             my $editURL = $self->{scriptName} . $self->{queryHead};
             $editURL .= "&editMode=1";
-            $editURL .= "&p=" . $paramHash{"id"};
-            $treeHTML .= "<img alt=\"Open Page\" onclick=\"location.href='" . $editURL . "';\" title=\"" . $paramHash{"id"} . "\" style=\"cursor:pointer;display:inline;border:0pt none;\" src=\"" . $self->{fileFWSPath} . "/icons/go_16.png\"/>";
+            $editURL .= "&p=" . $paramHash{id};
+            $treeHTML .= "<img alt=\"Open Page\" onclick=\"location.href='" . $editURL . "';\" title=\"" . $paramHash{id} . "\" style=\"cursor:pointer;display:inline;border:0pt none;\" src=\"" . $self->{fileFWSPath} . "/icons/go_16.png\"/>";
             }
         else { $treeHTML .= "&nbsp;" };
         $treeHTML .= "</div>";
@@ -2112,9 +2113,9 @@ sub GNFTree {
                             onClick => "if (confirm('Are you sure you want to delete this item and all of its related sub items? (Non-reversable)'" .
                                        ")){FWSAjax('" . $self->{scriptName} . 
                                        "','" . $self->{queryHead} . 
-                                       "&pageAction=deleteElement&parent=" . $paramHash{"parentId"} . 
-                                       "&guid=" . $paramHash{"id"} . "&returnStatusNote=1');" . 
-                                       "\$('#block_" . $paramHash{"id"} . "').hide('slow');}return false;",
+                                       "&pageAction=deleteElement&parent=" . $paramHash{parentId} . 
+                                       "&guid=" . $paramHash{id} . "');" . 
+                                       "\$('#block_" . $paramHash{id} . "').hide('slow');}return false;",
                             alt     => "Delete",
                             width   => "16");
         }
@@ -2124,7 +2125,7 @@ sub GNFTree {
                                           ")){FWSAjax('" . $self->{scriptName} .
                                           "','" . $self->{queryHead} .
                                           "&pageAction=deleteMessage" .
-                                          "&guid=" . $paramHash{id} . "&returnStatusNote=1');" . 
+                                          "&guid=" . $paramHash{id} . "');" . 
                                           "\$('#block_" . $paramHash{id} . "').hide('slow');}return false;",
                             alt     => "Delete",
                             width   => "16");
@@ -2252,7 +2253,7 @@ sub GNFTree {
     #
     $treeHTML .= "</div>";
     $treeHTML .= "<div style=\"clear:both;\"></div>";
-    return $treeHTML . "<div style=\"\" id=\"cat" . $paramHash{"id"} . "\"></div></div>";
+    return $treeHTML . "<div style=\"\" id=\"cat" . $paramHash{id} . "\"></div></div>";
 }
 
 sub _selfWindow {
@@ -2675,209 +2676,6 @@ sub _processAdminAction {
         }
     }        
 
-
-    if ($action eq "AJAXExt") {
-        my %valueHash;
-        $valueHash{field}     = $self->safeSQL( $self->formValue( "field" ) );
-        $valueHash{table}     = $self->safeSQL( $self->formValue( "table" ) );
-        $valueHash{value}     = $self->formValue( "value" );
-        $valueHash{guid}      = $guid;
-    
-        #
-        # if we are talking about the title field for the data these are actually stored in the data table,  redjust
-        # and it will get picked up by the next action for AJAXUpdate
-        #
-        # they get called as AJAXExt in the default schema operations when overloading the title or url fields in the dataSchema
-        # for elements
-        #
-        if ( $valueHash{table} eq "data" && ( $valueHash{field} eq "title" || $valueHash{field} eq "friendlyURL" ||  $valueHash{field} eq "pageFriendlyURL" ) ) {
-            $action = "AJAXUpdate";
-            $self->formValue("table","data");
-            if ($self->formValue("field") eq "friendlyURL" ) {     $self->formValue("field","friendly_url") }
-            if ($self->formValue("field") eq "pageFriendlyURL" ) {     $self->formValue("field","page_friendly_url") }
-        }
-        else {
-            #
-            # get a hash of the groups then we can see if we are supposed to edit things or not
-            #
-            my $accessGranted = 0;
-            my @groups      = split( /\|/, $self->{dataSchema}{$valueHash{table}}{extra_value}{AJAXGroup} );
-            while (@groups) {
-                my $group = shift(@groups);
-                if ($self->userValue($group) eq '1') { $accessGranted = 1 }
-            }
-
-            #
-            # lets see if we have access or if we are -isAdmin
-            #    
-            if ($self->userValue('isAdmin') || $accessGranted) {
-
-
-                my $siteGUID = $self->{siteGUID};
-
-                #
-                # if we are taling abotut eh site table adjust tehse becuase they are owned by admin... and the
-                # and the id is always the site id your currently logged into
-                #
-                if ( $valueHash{table} eq 'site' ) {
-                    $siteGUID = $self->getSiteGUID('admin');
-                    $valueHash{guid} = $self->{siteGUID};
-                }
-
-                $self->saveExtra( table => $self->formValue( "table" ), siteGUID => $siteGUID, guid => $valueHash{guid}, field=> $self->formValue("field"), value => $valueHash{value} );
-
-                #
-                # delete any thumb we might have the record and get any other info we might need
-                #
-                if ( $valueHash{table} eq 'data' ) {
-                    #
-                    # update pages modified recrod
-                    #
-                    $self->updateModifiedDate( guid => $valueHash{guid} );
-                    $self->createSizedImages( guid => $valueHash{guid} );
-
-                    #
-                    # get the hash  and datatypeso we can make smart descisions on how to update stuff
-                    #
-                    my %dataHash    = $self->dataHash( guid => $valueHash{guid} );
-                    my %schemaHash  = $self->schemaHash( $dataHash{type} );
-                    my $dataType    = $schemaHash{$valueHash{field}}{fieldType};
-
-
-                    #
-                    # get just the file name... we will use this a few times
-                    #
-                    my $fileName = $self->justFileName( $dataHash{$valueHash{field}} );
-
-
-                    #
-                    # for any file selected get the goodies and use the fileSElected trigger
-                    #
-                    if ($dataType eq 'file' || $dataType eq 'secureFile') {
-
-                        #
-                        # figure out if the
-                        #
-                        my $secureFile = '0';
-                        my $fileNameFull = '0';
-                        my $extPath =  "/" . $siteGUID . "/" . $valueHash{guid} . "/" . $self->justFileName( $valueHash{value} );
-                        if (-e $self->{filePath} . $extPath) {
-                            $fileNameFull = $self->{filePath} . $extPath;
-                        }
-                        if (-e $self->{fileSecurePath} . $extPath) {
-                            $secureFile = '1';
-                            $fileNameFull = $self->{fileSecurePath} . $extPath;
-                        }
-
-                        $self->runScript( 'fileSelected',
-                            bulkUpload      => '0',
-                            secureFile      => $secureFile,
-                            dataType        => $dataType,
-                            fileName        => $fileName,
-                            fileNameFull    => $fileNameFull,
-                            fieldName       => $valueHash{field},
-                            id              => $valueHash{guid},
-                        );
-                    }
-
-                    #
-                    # update the cache version automaticly
-                    #
-                    $self->updateDataCache( $self->dataHash( guid => $valueHash{guid} ) );
-                }
-
-                $self->runScript( 'postAJAXSave', %valueHash );
-            }
-            $self->formValue( "statusNote", "Saved!" );
-        }
-    }
-
-
-
-    if ($action eq "AJAXUpdate") {
-
-        my %valueHash;
-        $valueHash{field}         = $self->formValue('field');
-        $valueHash{parent}        = $self->formValue('parent');
-        $valueHash{table}         = $self->formValue('table');
-        $valueHash{value}         = $self->formValue('value');
-        $valueHash{guid}          = $guid;
-        $valueHash{siteGUID}      = $self->formValue('siteGUID');
-
-        #
-        # get a hash of the groups then we can see if we are supposed to edit things or not
-        #
-        my $accessGranted = 0;
-        my @groups    = split( /\|/, $self->{dataSchema}{$valueHash{table}}{$valueHash{field}}{AJAXGroup} );
-        while ( @groups ) { 
-            my $group = shift( @groups );
-            if ( $self->userValue( $group ) ) { $accessGranted = 1 }
-        }
-        
-        #
-        # if crypt password is set, then crypt it up!
-        #
-        if ( $self->{dataSchema}{$valueHash{table}}{$valueHash{field}}{cryptPassword} ) { $valueHash{value} = $self->cryptPassword( $valueHash{value} ) }
-                    
-        #
-        # if encrypt is set, then crypt it up!
-        #
-        if ( $self->{dataSchema}{$valueHash{table}}{$valueHash{field}}{encrypt} ) { $valueHash{value} = $self->FWSEncrypt( $valueHash{value} ) }
-                    
-        #
-        # check for ajax access and do the deed
-        #
-        if ( ( $self->userValue( 'isAdmin' ) || ( $accessGranted  && $valueHash{field} ne 'extra_value')) && $valueHash{table} ne 'guid_xref' ) {
-            $self->runSQL(SQL=>"update " . $self->safeSQL( $valueHash{table} ) . " set ". $self->safeSQL( $valueHash{field} ) . "='" . $self->safeSQL( $valueHash{value}) . "' where guid='" . $self->safeSQL( $valueHash{guid} ) . "'");
-    
-        }    
-
-        #
-        # if there is any image resizing that is needed, lets do it
-        #
-        $self->createSizedImages( $valueHash{field} => $valueHash{value}, guid => $valueHash{guid} );
-
-        if ($self->userValue('isAdmin') || $self->userValue('showDeveloper') || $self->userValue('showContent') || $self->userValue('showDesign')) {
-
-            #
-            # guid_xref is special, lets just deal with outside of the schema to make things clean
-            # 
-            if ($valueHash{table} eq 'guid_xref' && $valueHash{field} eq 'layout') {
-
-                $self->runSQL( SQL => "update guid_xref set ".$self->safeSQL( $valueHash{field} )."='" . $self->safeSQL( $valueHash{value} ) . "' where site_guid='".$self->safeSQL( $self->{siteGUID} ) . "' and child='" . $self->safeSQL( $valueHash{guid} ) . "' and parent='" . $self->safeSQL( $valueHash{parent} ) . "'" );
-            }
-
-            #
-            # set up internal data stuff when data is updated
-            #
-            if ( $valueHash{table} eq 'data' ) {
-                #
-                # update pages modified recrod
-                #
-                $self->updateModifiedDate(guid=>$guid);
-
-                #
-                # udpate the cache version automaticly
-                #
-                $self->updateDataCache($self->dataHash(guid=>$guid));
-            }
-        }
-
-
-        $self->formValue("statusNote","Saved!");
-        if ( ( $self->userValue( 'isAdmin' ) || $self->userValue( 'showDeveloper' ) ) && $valueHash{table} eq 'element' ) {
-            #
-            # the schema might have been udpated, lets re-update it just in case
-            #
-            $self->setCacheIndex();
-        }
-        
-        #
-        # run any post AJAX save action
-        #
-        $self->runScript('postAJAXSave',%valueHash);
-    }
-
     ##############################################################################################
     #
     # showAdminUsers : Admin Users admin
@@ -3114,7 +2912,7 @@ sub _editModeLink {
     my ( $self, $conName, $linkSpacer ) = @_;
     my $hideConCSSJS = "\$('#" . $conName . "').hide('slow');";
     if ( $self->formValue( "p" ) !~ /^fws_/) {
-    return $self->_selfWindow( "editMode=" . ( $self->formValue( 'editMode' ) ? 0 : 1 ) . "&p=" . $self->formValue( "p" ) . "&id=" . $self->formValue( "id" ), "Switch&nbsp;to&nbsp;Edit&nbsp;Mode", $hideConCSSJS ) . $linkSpacer;
+    return $self->_selfWindow( "editMode=" . ( $self->formValue( 'editMode' ) ? 0 : 1 ) . "&p=" . $self->formValue( "p" ) . "&id=" . $self->formValue( "id" ), ( $self->formValue( 'editMode' ) ? 'Live' : 'Edit' ) . "&nbsp;Mode", $hideConCSSJS ) . $linkSpacer;
     }
 }
 
