@@ -158,7 +158,7 @@ sub printPage {
         #
         # do reverse friendly logic to turn friendly URLs to non friendlies
         #
-        if ( $self->siteValue( 'noFriendlies' ) && $self->formValue( "p" ) !~ /^fws_/ ) {
+        if ( $self->siteValue( 'noFriendlies' ) && $self->formValue( 'p' ) !~ /^fws_/ ) {
             my @friendlyArray = @{$self->runSQL( SQL => "SELECT friendly_url FROM data WHERE site_guid='" . $self->{siteGUID} . "'  and (element_type='page')" )};
             while (@friendlyArray) {
                 my $FURL = shift(@friendlyArray);
@@ -174,7 +174,7 @@ sub printPage {
         my %saveWithSessionHash = $self->_saveWithSessionHash();
         for my $sessionKey ( keys %saveWithSessionHash ) {
             my $keyValue = $self->formValue( $sessionKey );
-            $sessionScript .= $sessionKey . "|" . $self->urlEncode( $keyValue ) . "|";
+            $sessionScript .= $sessionKey . '|' . $self->urlEncode( $keyValue ) . '|';
         }
 
         #
@@ -186,11 +186,11 @@ sub printPage {
         # Set the cookie and update the session.. and other groovy header rutines
         # only if it is diffrent lets update it
         #
-        if ( $self->formValue("FWS_SESSION") ne $self->{userLoginId} . "|" . $self->language() . "|" . $self->{adminLoginId} . "|" . $ENV{REMOTE_ADDR} . "|" . $self->formValue( 'editMode' ) . "|" . $self->{affiliateId} . "|" . $self->{affiliateExp} . "|" . $self->{adminSafeMode} . "|" . $sessionScript ) {
+        if ( $self->formValue( 'FWS_SESSION' ) ne $self->{userLoginId} . '|' . $self->language() . '|' . $self->{adminLoginId} . '|' . $ENV{REMOTE_ADDR} . '|' . $self->formValue( 'editMode' ) . '|' . $self->{affiliateId} . '|' . $self->{affiliateExp} . '|' . $self->{adminSafeMode} . '|' . $sessionScript ) {
             #
             # run the SQL to update the session
             #
-            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "',b='" . $self->safeSQL( $self->{userLoginId} ) . "',s='" . $self->safeSQL( $self->{adminSafeMode} ) . "',bs='" . $self->safeSQL( $self->{adminLoginId} ) . "',ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "',e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "',a='" . $self->safeSQL( $self->{affiliateId} ) . "',a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "',extra='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( "session" ) ) . "'" );
+            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "',b='" . $self->safeSQL( $self->{userLoginId} ) . "',s='" . $self->safeSQL( $self->{adminSafeMode} ) . "',bs='" . $self->safeSQL( $self->{adminLoginId} ) . "',ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "',e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "',a='" . $self->safeSQL( $self->{affiliateId} ) . "',a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "',extra='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" );
         }
 
         #
@@ -205,7 +205,7 @@ sub printPage {
         }
 
         $cookie .= "Set-Cookie: " . $self->{sessionCookieName} . "=" . $self->formValue( 'session' ) . ";" . " " . $cookieDomain . " Path=/;" . " Expires=" . $self->formatDate( format => 'cookie', monthMod => 1 ) . "\n";
-        $cookie .= "Set-Cookie: fbsr_" . $self->siteValue( "facebookAppId" ) . "=deleted;" . " Path=/;" . " Expires=Thu, 01-Jan-1970 00:00:01 GMT\n";
+        $cookie .= "Set-Cookie: fbsr_" . $self->siteValue( 'facebookAppId' ) . "=deleted;" . " Path=/;" . " Expires=Thu, 01-Jan-1970 00:00:01 GMT\n";
 
         #
         # simple page rendering
@@ -823,7 +823,7 @@ sub _FWSContent {
                     #
                     # if we are not able to see the buttons lets kill them
                     #
-                    if ( ( !$self->userValue( "showDesign" ) && !$self->userValue( "showContent" ) && !$self->userValue( "developer" ) ) || ( $pageHash{siteGUID} ne $self->{siteGUID} ) ) {
+                    if ( ( !$self->userValue( 'showDesign' ) && !$self->userValue( 'showContent' ) && !$self->userValue( 'showDeveloper' ) ) || ( $pageHash{siteGUID} ne $self->{siteGUID} ) ) {
                         $pageHash{addElementTool}       = 0;
                         $pageHash{disableDeleteTool}    = 1;
                         $pageHash{disableEditTool}      = 1;
@@ -831,14 +831,14 @@ sub _FWSContent {
                         $pageHash{disableOrderTool}     = 1;
                     }
     
-                    $pageHash{editBoxColor} = "#000000";
+                    $pageHash{editBoxColor} = '#000000';
                     $FWSMenu .= $self->editBox( %pageHash );
                 }
                 # TODO This is here just in case,  at some point we will can
                 # ditch this if there is no comlaints
                 #else {
-                #    my $changeFrom      = ";FWSAdminLoggedIn#";
-                #    my $changeFromEnd   = "#FWSAdminLoggedInEnd#";
+                #    my $changeFrom      = ';FWSAdminLoggedIn#';
+                #    my $changeFromEnd   = '#FWSAdminLoggedInEnd#';
                 #    $pageHTML =~ s/$changeFrom(.*?)$changeFromEnd//g;
                 #}
     
