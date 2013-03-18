@@ -1666,24 +1666,23 @@ sub processQueue {
 
 =head2 runSQL
 
-Return an reference to an array that contains the results of the SQL ran.  In addition if you pass noUpdate=>1 the method will not run updateDatabase on errors.  This is important if you doing something that could create a recursion problem.
-
+Return an reference to an array that contains the results of the SQL ran.  In addition if you pass noUpdate => 1 the method will not run updateDatabase on errors.  This is important if you doing something that could create a recursion problem.
 
     #
     # retrieve a reference to an array of data we asked for
     #
-    my $dataArray = $fws->runSQL(SQL=>"select id,type from id_and_type_table");     # Any SQL statement or query
+    my $dataArray = $fws->runSQL( SQL => "select id,type from id_and_type_table" );     # Any SQL statement or query
 
     #
     # loop though the array
     #
-    while (@$dataArray) {
+    while ( @$dataArray ) {
 
         #
         # collect the data each row at a time
         #
-        my $id      = shift(@$dataArray);
-        my $type    = shift(@$dataArray);
+        my $id      = shift( @$dataArray );
+        my $type    = shift( @$dataArray );
 
         #
         # display or do something with the data
