@@ -77,6 +77,50 @@ sub formValue {
 }
 
 
+=head2 fwsGUID
+
+Retrieve the GUID for the fws site. If it does not yet exist, make a new one.
+
+    print $fws->fwsGUID();
+
+=cut
+
+sub fwsGUID {
+    my ( $self ) = @_;
+
+    #
+    # if is not set, set it and create the site id
+    #
+    if ( !$self->siteValue('fwsGUID') ) {
+
+        #
+        # get the sid for the fws site
+        #
+        my ( $fwsGUID ) = $self->getSiteGUID( 'fws' );
+
+        #
+        # if its blank make a new one
+        #
+        if ( !$fwsGUID ) {
+            $fwsGUID = $self->createGUID( 'f' );
+            my ( $adminGUID ) = $self->getSiteGUID( 'admin' );
+            $self->runSQL(SQL=>"insert into site set sid='fws',guid='" . $fwsGUID . "',site_guid='" . $self->safeSQL( $adminGUID ) . "'");
+        }
+
+        #
+        # add it as a siteValue and return the result
+        #
+        $self->siteValue('fwsGUID',$fwsGUID) ;
+        return $fwsGUID;
+    }
+
+    #
+    # I already know it, just return the result
+    #
+    return $self->siteValue('fwsGUID');
+}
+
+
 =head2 setFormValues
 
 Gather the passed form values, and from it set the language formValue and the session formValue.
