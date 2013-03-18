@@ -1834,8 +1834,10 @@ sub displayAdminPage {
             $backup .= "<div class=\"FWSStatusNote\">".$self->formValue("restoreStatusNote")."</div>";
 
             my $publish = "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you flush your search cache? (Depending on the size of your site this could take several minutes)')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushSearchCache';}\" value=\"Flush And Rebuild Search Cache\"/>";
-                   $publish .= " Cache data will be unavailable while the flush process is taking place.";
-            $publish .= "<div class=\"FWSStatusNote\">".$self->formValue("statusNote")."</div>";
+            $publish .= " Cache data will be unavailable while the flush process is taking place.<br/>";
+            $publish .= "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you flush your web cache?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushWebCache';}\" value=\"Flush Web Cache\"/>";
+            $publish .= " Remove all combined js and css files, and recreate them as needed.";
+            $publish .= "<div class=\"FWSStatusNote\">" . $self->formValue("statusNote") . "</div>";
 
             #
             # DB Pakckages
@@ -1854,12 +1856,12 @@ sub displayAdminPage {
 
 
             $pageHTML .= "<div style=\"width:90%;margin:auto;padding:10px;text-align:right;color:#ff0000;\">FrameWork&nbsp;Sites&nbsp;Version&nbsp; " . $self->{FWSVersion} . "</div>";
-            $pageHTML .= $self->panel(title=>"FWS Installation And Health",content=>$self->systemInfo().$coreElement);
-            $pageHTML .= $self->panel(title=>"Session Maintenance",content=>$sess);
-            $pageHTML .= $self->panel(title=>"Log Files",content=>$log);
-            $pageHTML .= $self->panel(title=>"FWS Site Backups",content=>$backup);
-            $pageHTML .= $self->panel(title=>"MySQL Search Cache Tables",content=>$publish);
-            $pageHTML .= $self->panel(title=>"Core Database Packages",content=>$dbPackages);
+            $pageHTML .= $self->panel( title => "FWS Installation And Health"      ,content => $self->systemInfo() . $coreElement );
+            $pageHTML .= $self->panel( title => "Session Maintenance"              ,content => $sess);
+            $pageHTML .= $self->panel( title => "Log Files"                        ,content => $log);
+            $pageHTML .= $self->panel( title => "FWS Site Backups"                 ,content => $backup);
+            $pageHTML .= $self->panel( title => "Flush Cache Engines"              ,content => $publish);
+            $pageHTML .= $self->panel( title => "Core Database Packages"           ,content => $dbPackages);
             $self->siteValue("pageHead","");
             $self->siteValue("pageKeywords","");
             $self->siteValue("pageDescription","");
@@ -2398,7 +2400,7 @@ sub _processAdminAction {
         }
 
              
-    if (($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) && ($action eq "publishPlugin" || $action eq "deleteArchived" || $action eq "addElement" || $action eq "deleteScriptElement" || $action eq "getLiveScript" || $action eq "getArchivedScript" || $action eq "makeLiveScript" || $action eq "FWSRestore" || $action eq "FWSBackup" || $action eq "installCore" || $action eq "installPlugin" || $action eq "updatePlugin" || $action eq "updateScript" || $action eq "updateDesign" || $action eq "updatePageDesign" || $action eq "updateTemplate")) {
+    if (($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) && ($action eq "flushWebSearch" || $action eq "flushSearchCache" || $action eq "publishPlugin" || $action eq "deleteArchived" || $action eq "addElement" || $action eq "deleteScriptElement" || $action eq "getLiveScript" || $action eq "getArchivedScript" || $action eq "makeLiveScript" || $action eq "FWSRestore" || $action eq "FWSBackup" || $action eq "installCore" || $action eq "installPlugin" || $action eq "updatePlugin" || $action eq "updateScript" || $action eq "updateDesign" || $action eq "updatePageDesign" || $action eq "updateTemplate")) {
                    
 
                     
@@ -2594,6 +2596,7 @@ sub _processAdminAction {
             unlink $self->{fileSecurePath} . '/FWS.log';
             $self->formValue("logStatusNote", "The FWS.log file was cleared");
         }
+
         if ($action eq "flushSessions") {
             if ($self->formValue('months') ne '') { 
                 $self->runSQL(SQL=>"delete from fws_sessions where created < '".$self->formatDate(format=>'SQL',monthMod=>-($self->formValue('months')))."'");
@@ -2601,11 +2604,20 @@ sub _processAdminAction {
                 $self->formValue("sessionStatusNote", "Your sessions table was optimized");
             }
         }
+
         if ($action eq "flushSearchCache") { 
             my ($dataUnits) = $self->flushSearchCache( $self->{siteGUID} ) ;
-            $self->formValue("statusNote", "Your search cache was rebuilt using a total of ".$dataUnits." records.");
-            }
+            $self->formValue( "statusNote", "Your search cache was rebuilt using a total of " . $dataUnits . " records.");
+        }
     
+        if ($action eq "flushWebCache") { 
+            $self->flushWebCache();
+            $self->formValue( "statusNote", "Your web search cache was emptied" );
+        }
+    
+
+
+
         if ($action eq "addCatDataXRef") {  
             my $idList = $self->safeSQL($self->formValue('idList'). $self->formValue('child'));
             my @idArray = split(',', $idList);
