@@ -548,8 +548,7 @@ sub savePlugin {
     #
     # Remove JS and CSS Cache
     #
-    my @fileArray = @{$self->fileArray(directory=>$self->{filePath}."/fws/cache")};
-    for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{fullFile} }
+    $self->flushWebCache();
 
     #
     # publish the plugin also
@@ -893,7 +892,7 @@ sub makeDir {
             # make the dir and send a debug message
             #
             $directory .= '/' . $thisDir;
-            mkdir( $directory, '0755' );
+            mkdir( $directory, 0755 );
         }
     }
 
