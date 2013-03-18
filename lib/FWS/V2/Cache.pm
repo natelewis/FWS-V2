@@ -115,7 +115,7 @@ sub deleteCache {
 	
 	my $cacheDir = $self->{fileSecurePath} . "/cache/" . $self->safeFile( $paramHash{key} );
 
-	my @fileArray = @{$self->fileArray( directory=>$cacheDir ) };
+	my @fileArray = @{$self->fileArray( directory => $cacheDir ) };
     for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{fullFile} }
 
 	rmdir $cacheDir;
@@ -151,8 +151,33 @@ sub flushCache {
 	# eat each cache in the dir
 	#
     foreach my $dirFile (@getDir) { if (-d $cacheDir.'/'.$dirFile) { $self->deleteCache( key => $dirFile ) } }
+    
+    $self->FWSLog( 'Cache Flushed' );
 	
 	return;
+}
+
+
+=head2 flushWebCache
+
+Removes all files located in your web cache.  These are the files that are your combined js, and css files created on the fly when pages are rendered.    When pages are loaded after this is ran, it will start to repopulate the cache with newly created web cache files.
+
+    #
+    # Remove all web cache files
+    #
+    $fws->flushWebCache();
+
+=cut
+
+sub flushWebCache {
+    my ( $self ) = @_;
+
+    my @fileArray = @{$self->fileArray( directory => $self->{filePath} . '/fws/cache' )};
+    for my $i ( 0 .. $#fileArray ) { unlink $fileArray[$i]{fullFile} }
+
+    $self->FWSLog( 'Web Cache Flushed' );
+
+    return;
 }
 
 
@@ -260,9 +285,7 @@ sub cacheHead {
     my $cacheFile   = $self->{filePath} . "/fws/cache/" . $fileName;
     my $cacheWeb    = $self->{fileFWSPath} . "/cache/" . $fileName;
 
-
     if ( $cacheFileName ) {
-
         if ( !-e $cacheFile . ".js" ) {
 
             #
