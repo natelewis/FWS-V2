@@ -828,7 +828,7 @@ sub dataHash {
 
 =head2 deleteData
 
-Delete something from the data table.   %dataHash must contain guid and either containerId or parent. By passing noOrphanDelete with a value of 1, any data ophaned from the act of this delete will also be deleted.
+Delete something from the data table.   %dataHash must contain guid and either containerId or parent. By passing noOrphanDelete with a value of 1, any data orphaned from the act of this delete will also be deleted.
 
     my %dataHash;
     $dataHash{noOrphanDelete} = '0';
@@ -965,14 +965,13 @@ sub deleteUser {
 }
 
 
-
 =head2 deleteQueue
 
 Delete from the message and process queue
 
     my %queueHash;
     $queueHash{guid} = 'someQueueGUID';
-    my %queueHash $fws->deleteData( %queueHash );
+    my %queueHash $fws->deleteQueue( %queueHash );
 
 =cut
 
@@ -980,10 +979,9 @@ sub deleteQueue {
     my ( $self, %paramHash ) = @_;
     %paramHash = $self->runScript( 'preDeleteQueue', %paramHash );
     $self->runSQL(SQL=>"delete from queue where guid = '" . $self->safeSQL( $paramHash{guid} ) . "'");
-    %paramHash = $self->runScript('postDeleteQueue',%paramHash);
+    %paramHash = $self->runScript( 'postDeleteQueue', %paramHash );
     return %paramHash;
 }
-
 
 
 =head2 elementArray
@@ -1215,14 +1213,14 @@ sub flushSearchCache {
     #
     # drop the current data
     #
-    $self->runSQL(SQL=>"delete from data_cache where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
+    $self->runSQL( SQL => "delete from data_cache where site_guid='" . $self->safeSQL( $siteGUID ) . "'" );
 
     #
     # lets make the stuff we might need
     #
-    my %dataCacheFields = %{$self->{"dataCacheFields"}};
+    my %dataCacheFields = %{$self->{dataCacheFields}};
     foreach my $key ( keys %dataCacheFields ) {
-        $self->alterTable(table=>"data_cache",field=>$key,type=>"text",key=>"FULLTEXT",default=>"");
+        $self->alterTable( table => "data_cache", field => $key, type => "text", key => "FULLTEXT", default => "" );
     }
 
     #
@@ -1233,7 +1231,7 @@ sub flushSearchCache {
     #
     # get a list of the current data, and update the cache for each one
     #
-    my $dataArray = $self->runSQL(SQL=>"select guid from data where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
+    my $dataArray = $self->runSQL( SQL => "select guid from data where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
     while (@$dataArray) {
         my $guid = shift(@$dataArray);
         $self->updateDataCache( $self->dataHash( guid => $guid ) );
@@ -1242,72 +1240,14 @@ sub flushSearchCache {
     return $dataUnits;
 }
 
-=head2 fwsGUID
-
-Retrieve the GUID for the fws site. If it does not yet exist, make a new one.
-
-    print $fws->fwsGUID();
-
-=cut
-
-sub fwsGUID {
-    my ( $self ) = @_;
-
-    #
-    # if is not set, set it and create the site id
-    #
-    if ( !$self->siteValue('fwsGUID') ) {
-
-        #
-        # get the sid for the fws site
-        #
-        my ( $fwsGUID ) = $self->getSiteGUID( 'fws' );
-
-        #
-        # if its blank make a new one
-        #
-        if ( !$fwsGUID ) {
-            $fwsGUID = $self->createGUID( 'f' );
-            my ( $adminGUID ) = $self->getSiteGUID( 'admin' );
-            $self->runSQL(SQL=>"insert into site set sid='fws',guid='" . $fwsGUID . "',site_guid='" . $self->safeSQL( $adminGUID ) . "'");
-        }
-
-        #
-        # add it as a siteValue and return the result
-        #
-        $self->siteValue('fwsGUID',$fwsGUID) ;
-        return $fwsGUID;
-    }
-
-    #
-    # I already know it, just return the result
-    #
-    return $self->siteValue('fwsGUID');
-}
-
-
-
-
-=head2 gatewayPassword
-
-Retrieve the payment gateway password
-
-    my $gatewayPass =  $fws->gatewayPassword();
-
-=cut
-
-sub gatewayPassword {
-    my ( $self ) = @_;
-    my ( $gateway_password ) = @{$self->runSQL( SQL => "select gateway_password from site where guid='" . $self->safeSQL( $self->{siteGUID} ) . "'" )};
-    return $self->FWSDecrypt( $gateway_password );
-}
-
 
 =head2 getSiteGUID
 
 Get the site GUID for a site by passing the SID of that site.  If the SID does not exist it will return an empty string.
 
-    print $fws->getSiteGUID('somesite');
+    print $fws->getSiteGUID( 'somesite' );
+
+NOTE: This should not be used and will eventually be pulled in as a FWS internal method only, but is available for legacy reasons.
 
 =cut
 
@@ -1316,17 +1256,17 @@ sub getSiteGUID {
     #
     # get the ID to the sid for site ids these always match the corrisponding sid
     #
-    my ( $guid ) = @{$self->runSQL(SQL=>"select guid from site where sid='" . $self->safeSQL( $sid ) . "'")};
+    my ( $guid ) = @{$self->runSQL( SQL => "select guid from site where sid='" . $self->safeSQL( $sid ) . "'" )};
     return $guid;
 }
 
 =head2 getPageGUID
 
-Get the GUID for a site by passing a guid of an item on a page.  If the guid is referenced in more than one place, the page it will be passed could be random.
+Get the GUID for a page by passing a guid of an item on that page.  If the guid is referenced in more than one place, the page it will be passed could be random.
 
     my $pageGUID =  $fws->getPageGUID( $valueHash{elementId}, 10 );
 
-Note: This procedure is very database extensive and should be used lightly.  The default depth to look before giving up is 5, the example above shows searching for 10 depth before giving up. 
+Note: This procedure is very database extensive and should be used lightly, in almost all occurances there is always a better way to achieve this result.
 
 =cut
 
@@ -1347,16 +1287,16 @@ sub getPageGUID {
     # get the inital type
     #
     my $recId = -1;
-    my ( $type ) = @{$self->runSQL(SQL=>"select element_type from data where guid='" . $self->safeSQL( $guid ) . "'")};
+    my ( $type ) = @{$self->runSQL(  SQL => "select element_type from data where guid='" . $self->safeSQL( $guid ) . "'" )};
 
     #
     # recursivly head down till you get "page" or "" as refrence.
     #
     while ( $type ne 'page' && $type ne 'home' && $guid ) {
-        my @idsAndTypes = @{$self->runSQL(SQL=>"select parent,element_type from guid_xref left join data on data.guid=parent where child='" . $self->safeSQL( $guid ) . "'")};
+        my @idsAndTypes = @{$self->runSQL( SQL => "select parent,element_type from guid_xref left join data on data.guid=parent where child='" . $self->safeSQL( $guid ) . "'" )};
         while (@idsAndTypes) {
-            $guid           = shift(@idsAndTypes);
-            my $listType    = shift(@idsAndTypes);
+            $guid           = shift( @idsAndTypes );
+            my $listType    = shift( @idsAndTypes );
             if ( $listType eq 'page' ) {
                 $recId = $guid;
                 $type = 'page';
@@ -2345,7 +2285,7 @@ sub schemaHash {
     #
     # Get it from the element hash, (with caching enabled)
     #
-    my %elementHash = $self->elementHash(guid=>$guid);
+    my %elementHash = $self->elementHash( guid => $guid );
 
     #
     # make sure schemaHash is defined before we run the code
