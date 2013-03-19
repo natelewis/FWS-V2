@@ -674,6 +674,8 @@ sub new {
     $self->{dataSchema}{data} = {
         site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
         guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
+        groups_guid           => { type => 'char(36)' ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        page_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => $EMPTY              },
         name                  => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         title                 => { type => 'char(255)',key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         nav_name              => { type => 'char(255)',key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
@@ -681,7 +683,6 @@ sub new {
         lang                  => { type => 'char(2)'  ,key => 'MUL'         ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         disable_title         => { type => 'int(1)'   ,key => 'MUL'         ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         element_type          => { type => 'char(50)' ,key => 'MUL'         ,default => $EMPTY              },
-        groups_guid           => { type => 'char(36)' ,key => $EMPTY        ,default => $EMPTY              ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         created_date          => { type => 'datetime' ,key => $EMPTY        ,default => '0000-00-00'        },
         disable_edit_mode     => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         default_element       => { type => 'int(2)'   ,key => $EMPTY        ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
