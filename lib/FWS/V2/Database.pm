@@ -93,7 +93,7 @@ Return an array of the admin users.   The hash array will contain name, userId, 
     #
     # get a reference to the hash array
     #
-    my $dataArrayRef = $fws->adminUserArray( ref => 1 );
+    my $adminUserArray = $fws->adminUserArray( ref => 1 );
 
 =cut
 
@@ -308,6 +308,15 @@ sub alterTable {
 
 Return a hash array of make, model, and year from the default automotive tables if they are installed.
 
+    #
+    # get a list of autos make model and year based on year
+    #
+    my @autoArray = $fws->autoArray( year => '1994' );
+    for my $i (0 .. $#autoArray) {
+        print $autoArray[$i]{make} . "\t" . $autoArray[$i]{model} . "\n";
+    }    
+ 
+
 =cut
 
 sub autoArray {
@@ -419,7 +428,15 @@ sub connectDBH {
 
 Make a copy of data hash giving it a unique guid, and appending (Copy) text to name and title if you pass the extra key of addTail.
 
+    #
+    # duplicate a data record
+    #
     my %newHash = $fws->copyData( %dataHash );
+
+    #
+    # do the same thing but add (Copy) to the end of the name and title
+    #
+    my %copyHash = $fws->copyData( addTail => 1, %dataHash );
 
 =cut
 
@@ -497,9 +514,9 @@ sub changeUserEmail {
 
 Retrieve a hash array based on any combination of keywords, type, guid, or tags
 
-    my @dataArray = $fws->dataArray(guid=>$someParentGUID);
-    for my $i (0 .. $#dataArray) {
-             $valueHash{html} .= $dataArray[$i]{name} . "<br/>";
+    my @dataArray = $fws->dataArray( guid => $someParentGUID );
+    for my $i ( 0 .. $#dataArray ) {
+         $valueHash{html} .= $dataArray[$i]{name} . "<br/>";
     }
 
 Any combination of the following parameters will restrict the results.  At least one is required.
@@ -687,8 +704,7 @@ sub dataArray {
         }
 
     my @hashArray;
-    my $arrayRef = $self->runSQL(SQL=>"select distinct " . $keywordScoreSQL . "," . $dataCacheSQL . ",data.extra_value,data.guid,data.created_date,data.show_mobile,data.lang,guid_xref.site_guid,data.site_guid,data.site_guid,data.active,data.friendly_url,data.page_friendly_url,data.title,data.disable_title,data.default_element,data.disable_edit_mode,data.element_type,data.nav_name,data.name,guid_xref.parent,guid_xref.layout from guid_xref " . $dataCacheJoin . "  left join data on (guid_xref.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "') and " . $dataConnector . " " . $addToDataXRefJoin . " " . $addToExtJoin . " where guid_xref.parent != '' and guid_xref.site_guid is not null " . $addToDataWhere . " order by guid_xref.ord");
-
+    my $arrayRef = $self->runSQL(SQL=>"select distinct " . $keywordScoreSQL . ", " . $dataCacheSQL . ", data.extra_value, data.guid, data.created_date, data.show_mobile, data.lang, guid_xref.site_guid, data.site_guid, data.site_guid, data.active, data.friendly_url, data.page_friendly_url, data.title, data.disable_title, data.default_element, data.disable_edit_mode, data.element_type, data.nav_name, data.name, guid_xref.parent, data.page_guid, guid_xref.layout from guid_xref " . $dataCacheJoin . "  left join data on (guid_xref.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "') and " . $dataConnector . " " . $addToDataXRefJoin . " " . $addToExtJoin . " where guid_xref.parent != '' and guid_xref.site_guid is not null " . $addToDataWhere . " order by guid_xref.ord");
 
     #
     # for speed we will add this to here so we don't have to ask it EVERY single time we loop though the while statemnent
@@ -723,6 +739,7 @@ sub dataArray {
         $dataHash{navigationName}         = shift( @{$arrayRef} );
         $dataHash{name}                   = shift( @{$arrayRef} );
         $dataHash{parent}                 = shift( @{$arrayRef} );
+        $dataHash{pageGUID}               = shift( @{$arrayRef} );
         $dataHash{layout}                 = shift( @{$arrayRef} );
 
 
@@ -750,6 +767,7 @@ sub dataArray {
             # overwriting these, just in case someone tried to save them in the extended hash
             #
             $dataHash{keywordScore}       = $keywordScore;
+            $dataHash{pageIdOfElement}    = $pageIdOfElement;
             $dataHash{pageIdOfElement}    = $pageIdOfElement;
 
             #
@@ -790,13 +808,13 @@ sub dataHash {
     #
     $paramHash{siteGUID} ||= $self->{siteGUID};
 
-    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value,data.element_type,'lang',lang,'guid',data.guid,'pageFriendlyURL',page_friendly_url,'friendlyURL',friendly_url,'defaultElement',data.default_element,'guid_xref_site_guid',data.site_guid,'showLogin',data.show_login,'showMobile',data.show_mobile,'showResubscribe',data.show_resubscribe,'groupId',data.groups_guid,'disableEditMode',data.disable_edit_mode,'siteGUID',data.site_guid,'site_guid',data.site_guid,'title',data.title,'disableTitle',data.disable_title,'active',data.active,'navigationName',nav_name,'name',data.name from data left join site on site.guid=data.site_guid where data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
+    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value, data.element_type, 'pageGUID', data.page_guid, 'lang', lang, 'guid', data.guid, 'pageFriendlyURL', page_friendly_url, 'friendlyURL', friendly_url, 'defaultElement', data.default_element, 'guid_xref_site_guid', data.site_guid, 'showLogin', data.show_login, 'showMobile', data.show_mobile, 'showResubscribe', data.show_resubscribe, 'groupId', data.groups_guid, 'disableEditMode',data.disable_edit_mode, 'siteGUID', data.site_guid, 'site_guid', data.site_guid, 'title', data.title, 'disableTitle', data.disable_title, 'active', data.active, 'navigationName', nav_name, 'name', data.name from data left join site on site.guid=data.site_guid where data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
 
     #
     # pull off the first two fields because we need to manipulate them
     #
-    my $extraValue  = shift(@$arrayRef);
-    my $dataType    = shift(@$arrayRef);
+    my $extraValue      = shift(@$arrayRef);
+    my $dataType        = shift(@$arrayRef);
 
     #
     # convert it to a hash
@@ -809,6 +827,7 @@ sub dataHash {
     $dataHash{type}         = $dataType;
     $dataHash{element_type} = $dataType;
 
+    
     #
     # combine the hash
     #
@@ -1195,6 +1214,8 @@ Delete all cached data and rebuild it from scratch.  Will return the number of r
 
     print $fws->flushSearchCache( $fws->{siteGUID} );
 
+This also will set the parent id of the data record if it is not already set
+
 =cut
 
 sub flushSearchCache {
@@ -1234,7 +1255,10 @@ sub flushSearchCache {
     my $dataArray = $self->runSQL( SQL => "select guid from data where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
     while (@$dataArray) {
         my $guid = shift(@$dataArray);
-        $self->updateDataCache( $self->dataHash( guid => $guid ) );
+        $self->FWSLog( ' CACHE: ' . $guid );
+        my %dataHash = $self->dataHash( guid => $guid );
+        $self->FWSLog( ' DATA HASH : ' . $dataHash{guid}  );
+        $self->updateDataCache( %dataHash );
         $dataUnits++;
     }
     return $dataUnits;
@@ -1260,57 +1284,6 @@ sub getSiteGUID {
     return $guid;
 }
 
-=head2 getPageGUID
-
-Get the GUID for a page by passing a guid of an item on that page.  If the guid is referenced in more than one place, the page it will be passed could be random.
-
-    my $pageGUID =  $fws->getPageGUID( $valueHash{elementId}, 10 );
-
-Note: This procedure is very database extensive and should be used lightly, in almost all occurances there is always a better way to achieve this result.
-
-=cut
-
-sub getPageGUID {
-    my ( $self, $guid, $depth ) = @_;
-
-    #
-    # set the depth to how far you will look before giving up
-    #
-    $depth ||= 10;
-
-    #
-    # set the cap counter
-    #
-    my $recurCap = 0;
-
-    #
-    # get the inital type
-    #
-    my $recId = -1;
-    my ( $type ) = @{$self->runSQL(  SQL => "select element_type from data where guid='" . $self->safeSQL( $guid ) . "'" )};
-
-    #
-    # recursivly head down till you get "page" or "" as refrence.
-    #
-    while ( $type ne 'page' && $type ne 'home' && $guid ) {
-        my @idsAndTypes = @{$self->runSQL( SQL => "select parent,element_type from guid_xref left join data on data.guid=parent where child='" . $self->safeSQL( $guid ) . "'" )};
-        while (@idsAndTypes) {
-            $guid           = shift( @idsAndTypes );
-            my $listType    = shift( @idsAndTypes );
-            if ( $listType eq 'page' ) {
-                $recId = $guid;
-                $type = 'page';
-            }
-        }
-
-        #
-        # give up after 5 
-        #
-        if ( $recurCap > 5 ) { $type = 'page'; $recId =  -1 }
-        $recurCap++;
-    }
-    return $recId;
-}
 
 =head2 hashArray
 
@@ -2620,7 +2593,7 @@ Update the cache version of the data record.  This is called automatically when 
 =cut
 
 sub updateDataCache {
-    my ( $self,%dataHash ) = @_;
+    my ( $self, %dataHash ) = @_;
 
     #
     # get the field hash so we don't have to try to add fields that might not be there EVERY time
@@ -2630,8 +2603,8 @@ sub updateDataCache {
     #
     # set the page id of the guid for easy access on search pages
     #
-    $dataHash{pageIdOfElement} = $self->getPageGUID( $dataHash{guid} );
-
+    $dataHash{pageIdOfElement} = $self->_setPageGUID( guid => $dataHash{guid} );
+    
     #
     # get the page hash of the page, and update the page description to the data for easy access on search pages
     #
@@ -3102,10 +3075,72 @@ sub sortDataByNumber {
 
 
 
-############################################################################################
-# DATA: Delete a orphened data
-############################################################################################
+#
+# Set the data records current parent.  If more than one
+# parent, one will be chosen at random
+#
+sub _setPageGUID {
+    my ( $self, %paramHash ) =@_;
 
+    my $guid    = $paramHash{guid};
+    my $depth   = $paramHash{depth};
+
+    #
+    # hang on to this so we can do a DB update to this
+    #
+    my $updateGUID = $guid;
+    $self->FWSLog( "update data set page_guid='' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
+
+    #
+    # set the depth to how far you will look before giving up
+    #
+    $depth ||= 10;
+
+    #
+    # set the cap counter
+    #
+    my $recurCap = 0;
+
+    #
+    # get the inital type
+    #
+    my $pageGUID = 0;
+    my ( $type ) = @{$self->runSQL(  SQL => "select element_type from data where guid='" . $self->safeSQL( $guid ) . "'" )};
+
+    #
+    # recursivly head down till you get "page" or "" as refrence.
+    #
+    while ( $type ne 'page' && $type ne 'home' && $guid ) {
+        my @idsAndTypes = @{$self->runSQL( SQL => "select parent,element_type from guid_xref left join data on data.guid=parent where child='" . $self->safeSQL( $guid ) . "'" )};
+        while (@idsAndTypes) {
+            $guid           = shift( @idsAndTypes );
+            my $listType    = shift( @idsAndTypes );
+            if ( $listType eq 'page' ) {
+                $pageGUID = $guid;
+                $type = 'page';
+            }
+        }
+
+        #
+        # give up after 5 
+        #
+        if ( $recurCap > 5 ) { $type = 'page'; $pageGUID = 0 }
+        $recurCap++;
+    }
+
+    #
+    # set the data record
+    #
+    $self->FWSLog( "update data set page_guid='". $self->safeSQL( $pageGUID ) . "' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
+    $self->runSQL( SQL => "update data set page_guid='". $self->safeSQL( $pageGUID ) . "' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
+
+    return $pageGUID;
+}
+
+
+#
+# remove all the data orphaned by a delete
+#
 sub _deleteOrphanedData {
     my ( $self, $table, $field, $refTable, $refField, $extraWhere, $DBH ) = @_;
 
@@ -3145,21 +3180,20 @@ sub _deleteOrphanedData {
     return;
 }
 
-############################################################################################
-# DATA: Delete a guid XRef
-############################################################################################
 
+#
+# Delete a guid XRef
+#
 sub _deleteXRef {
     my ( $self, $child, $parent, $siteGUID ) = @_;
     return $self->runSQL( SQL => "delete from guid_xref where child='" . $self->safeSQL( $child ) . "' and parent='" . $self->safeSQL( $parent ) . "' and site_guid='" . $self->safeSQL( $siteGUID ) . "'");
 }
 
-############################################################################################
-# DATA: Lookup all the elements and return the hash
-#
-# NOTE: This does NOT pull back schema and scripts.  This is for lean element lookups
-############################################################################################
 
+#
+# Lookup all the elements and return the hash
+# This does NOT pull back schema and scripts.  This is for lean element lookups
+#
 sub _fullElementHash {
     my ( $self, %paramHash ) = @_;
 
@@ -3197,7 +3231,6 @@ sub _fullElementHash {
             $self->{_fullElementHashCache}->{$guid}{rootElement}    = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{public}         = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{checkedout}     = shift( @$elementArray );
-
         }
 
         #
@@ -3218,10 +3251,10 @@ sub _fullElementHash {
     return %{$self->{_fullElementHashCache}};
 }
 
-############################################################################################
-# _recordInit: do creation of a record if needed, and also set pins and guids
-############################################################################################
 
+#
+# creation of a record if needed, and also set pins and guids
+#
 sub _recordInit {
     my ( $self, %paramHash ) = @_;
 
@@ -3255,11 +3288,11 @@ sub _recordInit {
     return %paramHash;
 }
 
-############################################################################################
-# _recordHash: return a generic record hash
-#         Pass: table, where
-############################################################################################
 
+#
+# return a generic record hash
+# Pass: table, where
+#
 sub _recordHash {
     my ( $self, %paramHash ) = @_;
 
@@ -3310,10 +3343,9 @@ sub _recordHash {
 }
 
 
-############################################################################################
-# _recordSave: save a record with generic record structure
-############################################################################################
-
+#
+# save a record with generic record structure
+#
 sub _recordSave {
     my ( $self, %paramHash ) = @_;
 
@@ -3390,11 +3422,11 @@ sub _recordSave {
     return %paramHolder;
 }
 
-############################################################################################
-# FORMAT: Pass keywords and field list, and create a wellformed where statement for keyword
-#     searches
-############################################################################################
 
+#
+# Pass keywords and field list, and create a wellformed where statement for keyword
+# searches
+#
 sub _getKeywordSQL {
     my ( $self, $keywords, @likeFields ) = @_;
     #
@@ -3438,10 +3470,10 @@ sub _getKeywordSQL {
     return $keywordSQL;
 }
 
-############################################################################################
-# DATA: Save a guid XRef
-############################################################################################
 
+#
+# Save a guid XRef
+#
 sub _saveXRef {
     my ( $self, $child, $layout, $ord, $parent, $siteGUID ) = @_;
 
@@ -3455,6 +3487,7 @@ sub _saveXRef {
     #
     return $self->runSQL( SQL => "insert into guid_xref (child,layout,ord,parent,site_guid) values ('" . $self->safeSQL( $child ) . "','" . $self->safeSQL( $layout ) . "','" . $self->safeSQL( $ord ) . "','".$self->safeSQL( $parent ) . "','" . $self->safeSQL( $siteGUID ) . "')" );
 }
+
 
 =head1 AUTHOR
 

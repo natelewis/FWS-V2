@@ -1833,8 +1833,8 @@ sub displayAdminPage {
             $backup .= ' Overwrite your database,&nbsp;files,&nbsp;and plugins with a backup';
             $backup .= "<div class=\"FWSStatusNote\">".$self->formValue("restoreStatusNote")."</div>";
 
-            my $publish = "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you flush your search cache? (Depending on the size of your site this could take several minutes)')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushSearchCache';}\" value=\"Flush And Rebuild Search Cache\"/>";
-            $publish .= " Cache data will be unavailable while the flush process is taking place.<br/>";
+            my $publish = "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you flush your search cache? (Depending on the size of your site this could take several minutes)')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushSearchCache';}\" value=\"Rebuild Search Cache\"/>";
+            $publish .= " Replace all search cache, and update parent page references. (This will be slow on large sites)<br/>";
             $publish .= "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you flush your web cache?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushWebCache';}\" value=\"Flush Web Cache\"/>";
             $publish .= " Remove all combined js and css files, and recreate them as needed.";
             $publish .= "<div class=\"FWSStatusNote\">" . $self->formValue("statusNote") . "</div>";
@@ -2598,7 +2598,7 @@ sub _processAdminAction {
         }
 
         if ($action eq "flushSessions") {
-            if ($self->formValue('months') ne '') { 
+            if ( $self->formValue('months') ) { 
                 $self->runSQL(SQL=>"delete from fws_sessions where created < '".$self->formatDate(format=>'SQL',monthMod=>-($self->formValue('months')))."'");
                 if ($self->DBType() =~ /^mysql$/i) { $self->runSQL(SQL=>"optimize table fws_sessions") }
                 $self->formValue("sessionStatusNote", "Your sessions table was optimized");
@@ -2606,7 +2606,7 @@ sub _processAdminAction {
         }
 
         if ($action eq "flushSearchCache") { 
-            my ($dataUnits) = $self->flushSearchCache( $self->{siteGUID} ) ;
+            my ( $dataUnits ) = $self->flushSearchCache( $self->{siteGUID} ) ;
             $self->formValue( "statusNote", "Your search cache was rebuilt using a total of " . $dataUnits . " records.");
         }
     
