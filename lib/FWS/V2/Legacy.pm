@@ -298,6 +298,24 @@ sub googleAppsKeyFile {
 }
 
 
+=head2 getPageGUID
+
+This is depricated.  To get this value you can retrieve it from the dataHash or dataArray under the pageGUID key.
+
+=cut
+
+sub getPageGUID {
+    my ( $self, $guid, $depth ) = @_;
+
+    my ( $pageGUID ) = @{$self->runSQL( SQL => "select page_guid from data where guid='" . $self->safeSQL( $guid ) . "'" )};
+
+    $self->FWSLog( ' PAGE GUID ' . $guid );
+    $pageGUID ||= $self->_setPageGUID( guid => $guid, depth => $depth );
+
+    return $pageGUID;
+}
+
+
 =head2 navigationHref
 
 Deprecated, use navigationLink() and add hrefOnly flag.
