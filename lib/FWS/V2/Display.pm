@@ -328,7 +328,7 @@ sub _FWSContent {
             $pageHash{guid}               = shift( @pageArray );
             $pageHash{type}               = shift( @pageArray );
             $pageHash{name}               = shift( @pageArray );
-            %pageHash = $self->addExtraHash( $pageExtraValue, %pageHash );
+            %pageHash = $self->mergeExtra( $pageExtraValue, %pageHash );
 
             #
             # if this is blank, that means we are talking about a homepage that does not exist yet
@@ -473,7 +473,7 @@ sub _FWSContent {
                 # start with ext hash, and then overwrite if there is conflicts
                 #
                 my $extraValue                = shift( @elements );
-                my %valueHash                 = $self->addExtraHash( $extraValue );
+                my %valueHash                 = $self->mergeExtra( $extraValue );
 
                 $valueHash{siteGUID}          = shift( @elements );
                 my $elementTemplateId         = shift( @elements );
