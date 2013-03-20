@@ -428,10 +428,10 @@ sub _FWSContent {
             #
             # if the pageTitle ends with ' - ' then eat it
             #
-            ( my $cleanTitle = $self->siteValue( 'pageTitle' ) ) =~ s/(\s-|\s\||\s)$//g;
+            ( my $cleanTitle = $self->siteValue( 'pageTitle' ) ) =~ s/\s*(-|\|)\s*$//g;
             $self->siteValue( 'pageTitle', $cleanTitle );
 
-            my @elements = $self->openRS("select distinct d1.extra_value,d1.site_guid,x2.layout,d1.active,x1.ord+(d1.default_element*100000) as real_ord,x1.layout, d1.disable_edit_mode, d1.groups_guid, d1.guid, d1.element_type,d1.name,d1.title,d1.show_resubscribe,d1.show_login,d1.show_mobile,d1.lang,d1.friendly_url,d1.page_friendly_url,d1.default_element,d1.disable_title,d1.nav_name  from data d1 LEFT JOIN guid_xref x1 ON (d1.guid = x1.child) left join guid_xref x2 on (x2.child = x1.parent) left join data d2 on (x2.child=d2.guid) where (d1.site_guid = '" . $self->safeSQL( $self->{siteGUID} ) . "' or d1.site_guid = '" . $self->safeSQL( $self->fwsGUID() ) . "') and d1.element_type <> 'data' and d1.element_type <> 'url' and d1.element_type <> 'page' and (x1.parent='' or d1.guid='" . $self->safeSQL( $pageId ) . "' or (d2.element_type='page')) and (((x1.parent='" . $self->safeSQL( $pageId ) . "') or d1.default_element <> '0') or d1.guid='" . $self->safeSQL( $pageId ) . "') order by x1.layout, real_ord", 1);
+            my @elements = $self->openRS("select distinct d1.extra_value, d1.site_guid, x2.layout, d1.active, x1.ord+(d1.default_element*100000) as real_ord, x1.layout, d1.disable_edit_mode, d1.groups_guid, d1.guid, d1.element_type, d1.name, d1.title, d1.show_resubscribe, d1.show_login, d1.show_mobile, d1.lang, d1.friendly_url, d1.page_friendly_url, d1.default_element, d1.disable_title, d1.nav_name  from data d1 LEFT JOIN guid_xref x1 ON (d1.guid = x1.child) left join guid_xref x2 on (x2.child = x1.parent) left join data d2 on (x2.child=d2.guid) where (d1.site_guid = '" . $self->safeSQL( $self->{siteGUID} ) . "' or d1.site_guid = '" . $self->safeSQL( $self->fwsGUID() ) . "') and d1.element_type <> 'data' and d1.element_type <> 'url' and d1.element_type <> 'page' and (x1.parent='' or d1.guid='" . $self->safeSQL( $pageId ) . "' or (d2.element_type='page')) and (((x1.parent='" . $self->safeSQL( $pageId ) . "') or d1.default_element <> '0') or d1.guid='" . $self->safeSQL( $pageId ) . "') order by x1.layout, real_ord", 1);
 
             #
             # set the pageTitle Hash into a fws var
