@@ -329,6 +329,18 @@ sub navigationHref {
 }
 
 
+=head2 newDBCheck
+
+Renamed to createFWSDatabase().
+
+=cut
+
+sub newDBCheck {
+    my ( $self ) = @_;
+    $self->createFWSDatabase();
+}
+
+
 =head2 phone
 
 Deprecated, use formatPhone()
