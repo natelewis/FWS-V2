@@ -34,6 +34,18 @@ FWS version 2 legacy methods are here for compatibility from upgrade paths of 1.
 
 =head1 METHODS
 
+=head2 addExtraHash
+
+This was renamed to mergeExtra().
+
+=cut
+
+sub addExtraHash {
+    my ( $self, $extraValue, %addHash ) = @_;
+    return $self->mergeExtra( $extraValue, %addHash );
+}
+
+
 =head2 adminLoginId
 
 Should NEVER be set manually, it will be set during processLogin().  Will return the current admin user logged in.  If it is blank then no admin user is logged in and can be accessed via $fws->{adminLoginId};
@@ -60,7 +72,7 @@ sub adminPageId {
 
 =head2 adminPassword
 
-Should be set when calling new().  This is only used for internal security for the first time log in, and is disabled once an admin account is created
+Should be set when calling new().  This is only used for internal security for the first time log in, and is disabled once an admin account is created.
 
 =cut
 
