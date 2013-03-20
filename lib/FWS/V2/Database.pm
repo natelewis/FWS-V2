@@ -48,21 +48,20 @@ Framework Sites version 2 common methods that connect, read, write, reorder or a
 
 =head1 METHODS
 
-=head2 addExtraHash
+=head2 mergeExtra
 
 In FWS database tables there is a field named extra_value.  This field holds a hash that is to be appended to the return hash of the record it belongs to.
 
     #
     # If we have an extra_value field and a real hash lets combine them together
     #
-    %dataHash = $fws->addExtraHash( $extra_value, %dataHash );
+    %dataHash = $fws->mergeExtra( $extra_value, %dataHash );
 
 Note: If anything but stored extra_value strings are passed, the method will throw an error
 
 =cut
 
-
-sub addExtraHash {
+sub mergeExtra {
     my ( $self, $extraValue, %addHash ) = @_;
 
     #
@@ -140,7 +139,7 @@ sub adminUserHash {
     my $extArray        = $self->runSQL( SQL => "select extra_value, 'email', email, 'userId', user_id, 'name', name from admin_user where guid='" . $self->safeSQL( $paramHash{guid} ) . "'");
     my $extraValue      = shift( @$extArray );
     my %adminUserHash   = @$extArray;
-    %adminUserHash      = $self->addExtraHash( $extraValue, %adminUserHash );
+    %adminUserHash      = $self->mergeExtra( $extraValue, %adminUserHash );
     if ( $paramHash{ref} ) { return \%adminUserHash }
     return %adminUserHash;
 }
@@ -761,7 +760,7 @@ sub dataArray {
             #
             # add the extended fields and create the hash
             #
-            %dataHash = $self->addExtraHash( $extraValue, %dataHash );
+            %dataHash = $self->mergeExtra( $extraValue, %dataHash );
 
             #
             # overwriting these, just in case someone tried to save them in the extended hash
@@ -831,7 +830,7 @@ sub dataHash {
     #
     # combine the hash
     #
-    %dataHash               = $self->addExtraHash( $extraValue, %dataHash );
+    %dataHash               = $self->mergeExtra( $extraValue, %dataHash );
 
     #
     # Overwrite the title with the name if it is blank
@@ -1390,7 +1389,7 @@ sub queueArray {
     # Add keywords if they exist to select statement
     #
     if ( $paramHash{keywords} ) {
-        $keywordSQL = $self->_getKeywordSQL( $paramHash{keywords}, "guid", "queue_from", "queue_to", "from_name", "subject" );
+        $keywordSQL = $self->_getKeywordSQL( $paramHash{keywords}, "queue_from", "queue_to", "from_name", "subject" );
         if ( $keywordSQL ) { $keywordSQL = " and ( " . $keywordSQL . " ) " }
     }
 
@@ -1404,6 +1403,7 @@ sub queueArray {
     if ( $paramHash{to} )             { $whereStatement .= " and queue_to = '" . $self->safeSQL( $paramHash{to} ) . "'" }
     if ( $paramHash{fromName} )       { $whereStatement .= " and from_name = '" . $self->safeSQL( $paramHash{fromName} ) . "'" }
     if ( $paramHash{subject} )        { $whereStatement .= " and subject = '" . $self->safeSQL( $paramHash{subject} ) . "'" }
+    if ( $paramHash{type} )           { $whereStatement .= " and type = '" . $self->safeSQL( $paramHash{type} ) . "'" }
 
     #
     # add date critiria if appicable
@@ -1969,10 +1969,13 @@ sub saveData {
 
 Save data that is part of the extra hash for a FWS table.
 
-    $self->saveExtra(   table       =>'table_name',
-                        siteGUID    =>'site_guid_not_required',
-                        guid        =>'some_guid',
-                        field       =>'table_field','the value we are setting it to');
+    $self->saveExtra(   
+        table       => 'table_name',
+        siteGUID    => 'site_guid_not_required',
+        guid        => 'some_guid',
+        field       => 'table_field',
+        value       => 'the value we are setting it to'
+    );
 
 =cut
 
@@ -2730,7 +2733,7 @@ sub userArray {
         # add the extra stuff to the hash
         #
         my $extra_value = shift( @$userArray );
-        %userHash       = $self->addExtraHash( $extra_value, %userHash );
+        %userHash       = $self->mergeExtra( $extra_value, %userHash );
 
         #
         # push it into the array
@@ -2836,7 +2839,7 @@ sub userHash {
             #
             # add extra Hash
             #
-            %userHash = $self->addExtraHash( $extraValue, %userHash );
+            %userHash = $self->mergeExtra( $extraValue, %userHash );
 
             #
             # add all the groups I have access too
@@ -3357,7 +3360,7 @@ sub _recordHash {
     #
     if ( $self->{dataSchema}{$paramHash{_table}}{extra_value}{type} ) {
         my $extraValue = pop( @returnArray );
-        return $self->addExtraHash( $extraValue, @returnArray );
+        return $self->mergeExtra( $extraValue, @returnArray );
     }
 
     #
