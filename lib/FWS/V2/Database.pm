@@ -1308,66 +1308,72 @@ sub hashArray {
 
 Do a new database check and then create the base records for a new install of FWS if the database doesn't have an admin record.  The return is the HTML that would render for a browser to let them know what just happened.
 
+This will auto trigger a flag to only it allow it to execute once so it doesn't recurse itself.
+
 =cut
 
 sub createFWSDatabase {
     my ( $self ) = @_;
 
     #
-    # Set this flag so we know if we changed anything
-    # if we did the return will be the message of what happened
+    # make sure I didn't do this yet
     #
-    my $somethingNew = 0;
-
-    #
-    # make the admin record if not there
-    #
-    my ( $adminGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='admin'", noUpdate => 1 )};
-    if ( !$adminGUID ) {
-        $adminGUID = $self->createGUID( 's' );
-        $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $adminGUID . "', 'admin', '" . $adminGUID . "')" );
-        $somethingNew++;
-    }
+    if ( !$self->{createFWSDatabaseRan} ) { 
     
-    #
-    # make the FWS record if not there
-    #
-    my ( $fwsGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='fws'", noUpdate => 1 )};
-    if ( !$fwsGUID ) {
-        $fwsGUID = $self->createGUID( 'f' );
-        $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $fwsGUID . "', 'fws', '" . $adminGUID . "')" );
-        $somethingNew++;
-    }
+        #
+        # Set this flag so we know if we changed anything
+        # if we did the return will be the message of what happened
+        #
+        my $somethingNew = 0;
 
-    #
-    # make the default site record if not there
-    #
-    my ( $siteGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='site'", noUpdate => 1 )};
-    if ( !$siteGUID ) {
-        $siteGUID = $self->createGUID( 's' );
-        $self->runSQL( SQL => "insert into site (guid, sid, default_site, site_guid) values ('" . $siteGUID . "', 'site', '1', '" . $adminGUID . "')" );
+        #
+        # make the admin record if not there
+        #
+        my ( $adminGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='admin'", noUpdate => 1 )};
+        if ( !$adminGUID ) {
+            $adminGUID = $self->createGUID( 's' );
+            $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $adminGUID . "', 'admin', '" . $adminGUID . "')" );
+            $somethingNew++;
+        }
         
         #
-        # create new home page GUID
+        # make the FWS record if not there
         #
-        $self->homeGUID( $siteGUID );
-        $somethingNew++;
-    }
-
-    if ( $somethingNew ) { 
-        $self->printPage( head=> "<title>New Database Detected</title>",
-            content => "<body><h2>Setting up New Database Users</h2><br/>".
-            "<b>Admin User Account</b><hr/>".
-            "User Id: admin<br/>".
-            "Password: This was set in the " . $self->{scriptName} . " file<br/>".
-            "<br/>".
-            "Note: Once an admin level user is created on this installation, the admin account will be disabled for security reasons. ".
-            "Please do this before working on your new site for security!<br/><br/>".
-            "<br/><br/><a href=\"" . $self->{scriptName} . "\">Click here to continue to</a> -> " . $self->domain() . $self->{scriptName} . 
-            "</body>");
-    }
-
-    return;
+        my ( $fwsGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='fws'", noUpdate => 1 )};
+        if ( !$fwsGUID ) {
+            $fwsGUID = $self->createGUID( 'f' );
+            $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $fwsGUID . "', 'fws', '" . $adminGUID . "')" );
+            $somethingNew++;
+        }
+    
+        #
+        # make the default site record if not there
+        #
+        my ( $siteGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='site'", noUpdate => 1 )};
+        if ( !$siteGUID ) {
+            $siteGUID = $self->createGUID( 's' );
+            $self->runSQL( SQL => "insert into site (guid, sid, default_site, site_guid) values ('" . $siteGUID . "', 'site', '1', '" . $adminGUID . "')" );
+            
+            #
+            # create new home page GUID
+            #
+            $self->homeGUID( $siteGUID );
+            $somethingNew++;
+        }
+    
+        if ( $somethingNew ) { 
+            $self->printPage( head=> "<title>New Database Detected</title>",
+                content => "<body><h2>Setting up New Database Users</h2><br/>".
+                "<b>Admin User Account</b><hr/>".
+                "User Id: admin<br/>".
+                "Password: This was set in the " . $self->{scriptName} . " file<br/><br/>".
+                "Note: Once an admin level user is created on this installation, the admin account will be disabled for security reasons. ".
+                "Please do this before working on your new site for security!<br/><br/>".
+                "<br/><br/><a href=\"" . $self->{scriptName} . "\">Click here to continue to</a> -> " . $self->domain() . $self->{scriptName} . 
+                "</body>");
+        }
+    }    
+    return $self->{createFWSDatabaseRan} = 1;
 }
 
 =head2 queueArray
@@ -2945,7 +2951,7 @@ Alter the database to match the schema for FWS 2.   The return will print the SQ
 
     print $fws->updateDatabase()."\n";
 
-This method is automatically called when on the web optimized version of FWS when rendering the 'System' screen.
+This method is automatically called when on the web optimized version of FWS when rendering the 'System' screen.  This will also auto trigger a flag to only it allow it to execute once so it doesn't recurse itself.
 
 =cut
 
@@ -2953,26 +2959,37 @@ sub updateDatabase {
     my ( $self ) = @_;
 
     #
-    # loop though the records and make or update the tables
+    # our passback for what we did
     #
     my $dbResponse;
-
-    for my $table ( keys %{$self->{dataSchema}} ) {
-        for my $field ( keys %{$self->{dataSchema}{$table}} ) {
-
-            my $type        = $self->{dataSchema}{$table}{$field}{type};
-            my $key         = $self->{dataSchema}{$table}{$field}{key};
-            my $default     = $self->{dataSchema}{$table}{$field}{default};
-
-            #
-            # make sure this isn't a bad record.   It at least needs a table name
-            #
-            if ( $table ) { $dbResponse .= $self->alterTable( table => $table, field => $field, type => $type, key => $key, default => $default ) }
+    
+    #
+    # make sure I didn't do this yet
+    #
+    if ( !$self->{upadateDatabaseRan} ) { 
+        
+        #
+        # loop though the records and make or update the tables
+        #
+        for my $table ( keys %{$self->{dataSchema}} ) {
+            for my $field ( keys %{$self->{dataSchema}{$table}} ) {
+    
+                my $type        = $self->{dataSchema}{$table}{$field}{type};
+                my $key         = $self->{dataSchema}{$table}{$field}{key};
+                my $default     = $self->{dataSchema}{$table}{$field}{default};
+    
+                #
+                # make sure this isn't a bad record.   It at least needs a table name
+                #
+                if ( $table ) { $dbResponse .= $self->alterTable( table => $table, field => $field, type => $type, key => $key, default => $default ) }
+            }
         }
     }
-
+        
+    $self->{upadateDatabaseRan} = 1; 
     return $dbResponse;
 }
+
 
 =head2 updateModifiedDate
 
