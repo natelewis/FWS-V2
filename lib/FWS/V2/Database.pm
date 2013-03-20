@@ -589,9 +589,9 @@ sub dataArray {
             my $type = shift(@typeArray);
             $addToDataWhere .= "data.element_type like '" . $type . "' or ";
         }
-        $addToExtWhere  =~ s/ or $//g;
+        $addToExtWhere  =~ s/\s*or\s*$//g;
         $addToExtWhere  .= ')';
-        $addToDataWhere =~ s/ or $//g;
+        $addToDataWhere =~ s/\s*or\s*$//g;
         $addToDataWhere .= ')';
     }
 
@@ -1255,9 +1255,7 @@ sub flushSearchCache {
     my $dataArray = $self->runSQL( SQL => "select guid from data where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
     while (@$dataArray) {
         my $guid = shift(@$dataArray);
-        $self->FWSLog( ' CACHE: ' . $guid );
         my %dataHash = $self->dataHash( guid => $guid );
-        $self->FWSLog( ' DATA HASH : ' . $dataHash{guid}  );
         $self->updateDataCache( %dataHash );
         $dataUnits++;
     }
@@ -1307,41 +1305,69 @@ sub hashArray {
 }
 
 
-=head2 newDBCheck
+=head2 createFWSDatabase
 
 Do a new database check and then create the base records for a new install of FWS if the database doesn't have an admin record.  The return is the HTML that would render for a browser to let them know what just happened.
 
 =cut
 
-sub newDBCheck {
+sub createFWSDatabase {
     my ( $self ) = @_;
-    my ( $isADMIN ) = @{$self->runSQL( SQL => "select 1 from site where sid='admin'" )};
 
-    if ( !$isADMIN ) {
-        my $fwsGUID     = $self->createGUID( 'f' );
-        my $adminGUID   = $self->createGUID( 's' );
-        my $siteGUID    = $self->createGUID( 's' );
-        $self->runSQL( SQL => "insert into site (guid,sid,site_guid) values ('" . $fwsGUID . "','fws','" . $adminGUID . "')" );
-        $self->runSQL( SQL => "insert into site (guid,sid,site_guid) values ('" . $adminGUID . "','admin','" . $adminGUID . "')" );
-        $self->runSQL( SQL => "insert into site (guid,sid,default_site,site_guid) values ('" . $siteGUID . "','site','1','" . $adminGUID . "')" );
+    #
+    # Set this flag so we know if we changed anything
+    # if we did the return will be the message of what happened
+    #
+    my $somethingNew = 0;
 
+    #
+    # make the admin record if not there
+    #
+    my ( $adminGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='admin'", noUpdate => 1 )};
+    if ( !$adminGUID ) {
+        $adminGUID = $self->createGUID( 's' );
+        $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $adminGUID . "', 'admin', '" . $adminGUID . "')" );
+        $somethingNew++;
+    }
+    
+    #
+    # make the FWS record if not there
+    #
+    my ( $fwsGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='fws'", noUpdate => 1 )};
+    if ( !$fwsGUID ) {
+        $fwsGUID = $self->createGUID( 'f' );
+        $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $fwsGUID . "', 'fws', '" . $adminGUID . "')" );
+        $somethingNew++;
+    }
+
+    #
+    # make the default site record if not there
+    #
+    my ( $siteGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='site'", noUpdate => 1 )};
+    if ( !$siteGUID ) {
+        $siteGUID = $self->createGUID( 's' );
+        $self->runSQL( SQL => "insert into site (guid, sid, default_site, site_guid) values ('" . $siteGUID . "', 'site', '1', '" . $adminGUID . "')" );
+        
         #
         # create new home page GUID
         #
         $self->homeGUID( $siteGUID );
+        $somethingNew++;
+    }
 
-        $self->{stopProcessing} = 1;
-
-        return "Content-Type: text/html; charset=UTF-8\n\n<html><head><title>New Database Detected</title></head><body><h2>Setting up New Database Users</h2><br/>".
+    if ( $somethingNew ) { 
+        $self->printPage( head=> "<title>New Database Detected</title>",
+            content => "<body><h2>Setting up New Database Users</h2><br/>".
             "<b>Admin User Account</b><hr/>".
             "User Id: admin<br/>".
             "Password: This was set in the " . $self->{scriptName} . " file<br/>".
             "<br/>".
             "Note: Once an admin level user is created on this installation, the admin account will be disabled for security reasons. ".
-            "Please do this before working on your new site for security!".
-            "<br/><br/>Finished: <a href=\"" . $self->{scriptName} . "\">Click here to continue to</a> -> " . $self->domain() . $self->{scriptName} . 
-            "</body></html>";
+            "Please do this before working on your new site for security!<br/><br/>".
+            "<br/><br/><a href=\"" . $self->{scriptName} . "\">Click here to continue to</a> -> " . $self->domain() . $self->{scriptName} . 
+            "</body>");
     }
+
     return;
 }
 
@@ -3089,7 +3115,6 @@ sub _setPageGUID {
     # hang on to this so we can do a DB update to this
     #
     my $updateGUID = $guid;
-    $self->FWSLog( "update data set page_guid='' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
 
     #
     # set the depth to how far you will look before giving up
@@ -3131,7 +3156,6 @@ sub _setPageGUID {
     #
     # set the data record
     #
-    $self->FWSLog( "update data set page_guid='". $self->safeSQL( $pageGUID ) . "' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
     $self->runSQL( SQL => "update data set page_guid='". $self->safeSQL( $pageGUID ) . "' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
 
     return $pageGUID;
@@ -3466,7 +3490,7 @@ sub _getKeywordSQL {
     #
     # kILL THE last and and then wrap it in parans so it will fit will in sql statements
     #
-    $keywordSQL =~ s/ and $//sg;
+    $keywordSQL =~ s/\s*and\s*$//sg;
     return $keywordSQL;
 }
 
