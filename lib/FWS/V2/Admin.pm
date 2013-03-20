@@ -1657,14 +1657,22 @@ sub FWSMenu {
 
     $FWSMenu .= $self->_logOutLink();
     
-    if ( $self->userValue( 'isAdmin' ) || $self->userValue( "showDesign" ) || $self->userValue( "showContent" ) || $self->userValue( "showDeveloper" ) )  {
-        $FWSMenu .= $linkSpacer;
-        $FWSMenu .= $self->FWSIcon( 
-                           icon    => "add_reorder_16.png",
-                           onClick => $self->dialogWindow( queryString => "p=fws_dataOrdering&guid=" . $paramHash{pageId} . "&pageOnly=1" ),
-                           alt     => "Add And Ordering",
-                           width   => "16");
+    if ( $self->userValue( 'isAdmin' ) || $self->userValue( 'showDesign' ) || $self->userValue( 'showContent' ) || $self->userValue( 'showDeveloper' ) )  {
+
+        #
+        # just in case we havn't installed FWS core yet, lets make sure the image is there before we 
+        # try to display it.
+        #
+        if ( -e $self->{filePath} . '/fws/icons/add_reorder_16.png' ) {
+            $FWSMenu .= $linkSpacer;
+            $FWSMenu .= $self->FWSIcon( 
+                icon    => 'add_reorder_16.png',
+                onClick => $self->dialogWindow( queryString => 'p=fws_dataOrdering&guid=' . $paramHash{pageId} . '&pageOnly=1' ),
+                alt     => 'Add And Ordering',
+                width   => '16',
+            );
         }
+    }
 
     $FWSMenu .= $linkSpacer;
 
