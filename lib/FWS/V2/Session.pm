@@ -602,7 +602,7 @@ sub _localLogin {
                 # combine the hashes together and check for isAdmin
                 #
                 my $extraValue = shift @extraArray;
-                my %adminHash = $self->addExtraHash( $extraValue );
+                my %adminHash = $self->mergeExtra( $extraValue );
                 if ( $adminHash{isAdmin} ) {
                     $adminPass  = '';
                     $noAdmin    = 0;
@@ -740,7 +740,7 @@ sub _localLogin {
         #
         # combine the hashes together
         #
-        my %adminHash = $self->addExtraHash( $extraValue );
+        my %adminHash = $self->mergeExtra( $extraValue );
 
         #
         # get the keys and and set them
@@ -904,7 +904,7 @@ sub setSiteValues {
     #
     # convert the values and fields to global valuse
     #
-    my %siteHash = $self->addExtraHash( $siteExtraValue );
+    my %siteHash = $self->mergeExtra( $siteExtraValue );
 
     #
     # get the keys and and set them
