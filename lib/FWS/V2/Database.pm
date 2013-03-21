@@ -492,14 +492,14 @@ sub changeUserEmail {
         #
         #my @transArray = $self->transactionArray(email=>$emailFrom);
         #for my $i (0 .. $#transArray) {
-        #       $self->runSQL(SQL=>"update trans set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'");
+        #       $self->runSQL( SQL => "update trans set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
 #
 #               }
 
         #
         # update the profile we are changing
         #
-        $self->runSQL(SQL=>"update profile set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'");
+        $self->runSQL( SQL => "update profile set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
 
 
 
@@ -668,8 +668,8 @@ sub dataArray {
         #
         # build the field list we will search against
         #
-        my @fieldList = ("data_cache.title","data_cache.name");
-        for my $key ( keys %{$self->{"dataCacheFields"}} ) { push(@fieldList,"data_cache." . $key) }
+        my @fieldList = ( 'data_cache.title', 'data_cache.name' );
+        for my $key ( keys %{$self->{dataCacheFields}} ) { push( @fieldList, 'data_cache.' . $key ) }
 
         #
         # set the cache and join statement starters
@@ -703,7 +703,7 @@ sub dataArray {
         }
 
     my @hashArray;
-    my $arrayRef = $self->runSQL(SQL=>"select distinct " . $keywordScoreSQL . ", " . $dataCacheSQL . ", data.extra_value, data.guid, data.created_date, data.show_mobile, data.lang, guid_xref.site_guid, data.site_guid, data.site_guid, data.active, data.friendly_url, data.page_friendly_url, data.title, data.disable_title, data.default_element, data.disable_edit_mode, data.element_type, data.nav_name, data.name, guid_xref.parent, data.page_guid, guid_xref.layout from guid_xref " . $dataCacheJoin . "  left join data on (guid_xref.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "') and " . $dataConnector . " " . $addToDataXRefJoin . " " . $addToExtJoin . " where guid_xref.parent != '' and guid_xref.site_guid is not null " . $addToDataWhere . " order by guid_xref.ord");
+    my $arrayRef = $self->runSQL( SQL => "select distinct " . $keywordScoreSQL . ", " . $dataCacheSQL . ", data.extra_value, data.guid, data.created_date, data.show_mobile, data.lang, guid_xref.site_guid, data.site_guid, data.site_guid, data.active, data.friendly_url, data.page_friendly_url, data.title, data.disable_title, data.default_element, data.disable_edit_mode, data.element_type, data.nav_name, data.name, guid_xref.parent, data.page_guid, guid_xref.layout from guid_xref " . $dataCacheJoin . "  left join data on (guid_xref.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "') and " . $dataConnector . " " . $addToDataXRefJoin . " " . $addToExtJoin . " where guid_xref.parent != '' and guid_xref.site_guid is not null " . $addToDataWhere . " order by guid_xref.ord" );
 
     #
     # for speed we will add this to here so we don't have to ask it EVERY single time we loop though the while statemnent
@@ -895,7 +895,7 @@ sub deleteData {
             #
             # set up the tests
             #
-            my ( $firstTest )         = @{$self->runSQL( SQL=> "select count(1) from guid_xref" )};
+            my ( $firstTest )         = @{$self->runSQL( SQL => "select count(1) from guid_xref" )};
             my ( $firstTestData )     = @{$self->runSQL( SQL => "select count(1) from data" )};
 
             #
@@ -996,7 +996,7 @@ Delete from the message and process queue
 sub deleteQueue {
     my ( $self, %paramHash ) = @_;
     %paramHash = $self->runScript( 'preDeleteQueue', %paramHash );
-    $self->runSQL(SQL=>"delete from queue where guid = '" . $self->safeSQL( $paramHash{guid} ) . "'");
+    $self->runSQL( SQL => "delete from queue where guid = '" . $self->safeSQL( $paramHash{guid} ) . "'" );
     %paramHash = $self->runScript( 'postDeleteQueue', %paramHash );
     return %paramHash;
 }
@@ -1137,7 +1137,7 @@ sub elementHash {
         #
         # get tha hash from the DB
         #
-        my (@scriptArray) = @{$self->runSQL(SQL=>"select 'jsDevel',js_devel,'cssDevel',css_devel,'adminGroup',admin_group,'classPrefix',class_prefix,'siteGUID',site_guid,'guid',guid,'ord',ord,'tags',tags,'public',public,'rootElement',root_element,'type',type,'parent',parent,'title',title,'schemaDevel',schema_devel,'scriptDevel',script_devel,'checkedout',checkedout from element where " . $addToWhere . " order by ord limit 1")};
+        my (@scriptArray) = @{$self->runSQL( SQL => "select 'jsDevel',js_devel,'cssDevel',css_devel,'adminGroup',admin_group,'classPrefix',class_prefix,'siteGUID',site_guid,'guid',guid,'ord',ord,'tags',tags,'public',public,'rootElement',root_element,'type',type,'parent',parent,'title',title,'schemaDevel',schema_devel,'scriptDevel',script_devel,'checkedout',checkedout from element where " . $addToWhere . " order by ord limit 1" )};
 
         #
         # create the hash and return it
@@ -1564,7 +1564,7 @@ sub queueHistoryHash {
     #
     # get an array of the all stuff we need,  in a name\value pair format
     #
-    my $arrayRef = $self->runSQL(SQL=>"select 'hash',hash,'guid',guid,'scheduledDate',scheduled_date,'queueGUID',queue_guid,'from',queue_from,'to',queue_to,'failureCode',failure_code,'body',body,'synced',synced,'success',success,'response',response,'subject',subject,'sentDate',sent_date from queue_history where " . $whereStatement);
+    my $arrayRef = $self->runSQL( SQL => "select 'hash',hash,'guid',guid,'scheduledDate',scheduled_date,'queueGUID',queue_guid,'from',queue_from,'to',queue_to,'failureCode',failure_code,'body',body,'synced',synced,'success',success,'response',response,'subject',subject,'sentDate',sent_date from queue_history where " . $whereStatement );
 
     #
     # convert the array
@@ -1720,7 +1720,7 @@ sub runSQL {
     # or I didn't have one to begin with
     #
     if ( $errorResponse ) { 
-        $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} );
+        $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $errorResponse );
 
         #
         # run update DB on an error to fix anything that was broke :(
@@ -2661,7 +2661,7 @@ sub updateDataCache {
     # make any fields that "might" be needed
     #
     foreach my $key ( keys %dataHash ) {
-        if ( $dataCacheFields{$key} || $key =~ /^site_guid|guid|name|title|pageIdOfElement|pageDescription$/ ) {
+        if ( $dataCacheFields{$key} || $key =~ /^(site_guid|guid|name|title|pageIdOfElement|pageDescription)$/ ) {
 
             #
             # if the type is blank, then this is new
@@ -2850,7 +2850,7 @@ sub userHash {
             #
             # add all the groups I have access too
             #
-            my @groups = @{$self->runSQL("select profile_groups_xref.groups_guid from profile left join profile_groups_xref on profile_groups_xref.profile_guid = profile.guid where profile.guid = '" . $self->safeSQL( $guid ) . "'" )};
+            my @groups = @{$self->runSQL( SQL => "select profile_groups_xref.groups_guid from profile left join profile_groups_xref on profile_groups_xref.profile_guid = profile.guid where profile.guid = '" . $self->safeSQL( $guid ) . "'" )};
             while (@groups) {
                 my $groupId = shift(@groups);
                 $userHash{group}{$groupId} = 1;
@@ -2972,6 +2972,7 @@ sub updateDatabase {
         # loop though the records and make or update the tables
         #
         for my $table ( keys %{$self->{dataSchema}} ) {
+
             for my $field ( keys %{$self->{dataSchema}{$table}} ) {
     
                 my $type        = $self->{dataSchema}{$table}{$field}{type};
@@ -3206,13 +3207,13 @@ sub _deleteOrphanedData {
         #
         # do the actual delete
         #
-        $self->runSQL(DBH=>$DBH,SQL=>"delete ".$fromSQL);
+        $self->runSQL( DBH => $DBH, SQL => "delete " . $fromSQL );
 
         #
         # if we are talking about the data field, lets do the same thing to the data cache table
         #
         if ( $table eq 'data' ) {
-            $self->runSQL(DBH=>$DBH,SQL=>"delete from " . $table . "_cache where " . $table . "_cache . " . $field . " in (select " . $field . " from (select distinct " . $table . "_cache." . $field . " from " . $table . "_cache left join " . $refTable . " on " . $refTable . "." . $refField . " = " . $table . "_cache." . $field . " where " . $refTable . "." . $refField . " is null " . $extraWhere . ") as delete_list)");
+            $self->runSQL( DBH => $DBH, SQL => "delete from " . $table . "_cache where " . $table . "_cache . " . $field . " in (select " . $field . " from (select distinct " . $table . "_cache." . $field . " from " . $table . "_cache left join " . $refTable . " on " . $refTable . "." . $refField . " = " . $table . "_cache." . $field . " where " . $refTable . "." . $refField . " is null " . $extraWhere . ") as delete_list)" );
         }
 
         #
