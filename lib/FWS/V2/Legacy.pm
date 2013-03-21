@@ -321,7 +321,6 @@ sub getPageGUID {
 
     my ( $pageGUID ) = @{$self->runSQL( SQL => "select page_guid from data where guid='" . $self->safeSQL( $guid ) . "'" )};
 
-    $self->FWSLog( ' PAGE GUID ' . $guid );
     $pageGUID ||= $self->_setPageGUID( guid => $guid, depth => $depth );
 
     return $pageGUID;
