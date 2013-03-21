@@ -351,7 +351,7 @@ sub setSiteFriendly {
             my $addToUnion;
             my $adminCount = 3;
             for my $table ( keys %{$self->{dataSchema}} ) {
-                if ( $table ne 'data' && $self->{dataSchema}{$table}{friendly_url}{type} ne '' ) {
+                if ( $table ne 'data' && $self->{dataSchema}{$table}{friendly_url}{type} ) {
                     $addToUnion .= "union SELECT " . $self->safeSQL( $table ) . ".guid," . $self->safeSQL( $table ) . ".page_friendly_url," . $self->safeSQL( $adminCount ) . " as ordering from " . $self->safeSQL( $table ) . " where friendly_url='" . $self->safeSQL ( $friendlyURL ) . "' ";
                     $adminCount++;
                 }
