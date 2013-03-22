@@ -1,6 +1,7 @@
 blib*
 make.sh
 test.pl
+nytprof.out
 Makefile
 Makefile.old
 Build
