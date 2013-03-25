@@ -271,57 +271,6 @@ sub createPassword {
 }
 
 
-
-=head2 dateDiff
-
-Return the amount of time between two dates in days or seconds.
-
-Possible Parameters:
-
-=over 4
-
-=item * date
-
-The base date to compare against
-
-=item * compDate
-
-A date in the future or past compare it to.  If not passed, the current date will be used.
-
-=item * format
-
-The date format used.  Default is SQLTime,  you can choose epoch as an alternative
-
-=item * type
-
-The compare type to return as.  Default is in 'seconds', you set this to 'days' if you would like the amount in days with its remainder as a decimal.
-
-=back
-
-=cut
-
-sub dateDiff {
-    my ( $self, %paramHash ) = @_;
-
-    my $format = 'SQLTime';
-    
-    my $epoch1 = $self->formatDate( format => 'epoch', $format => $paramHash{date} );
-    my $epoch2 = $self->formatDate( format => 'epoch', $format => $paramHash{compDate} );
-    
-    my $secDiff = ( $epoch2 - $epoch1 );
-
-    #
-    # if its 0 lets get out of here so we don't have devide by 0 errors
-    #
-    if ( $secDiff == 0 ) { return 0 }
-
-    if ( $paramHash{type} =~ /day/i ) { return $secDiff / 86400 }
-
-    return $secDiff;
-}
-
-
-
 =head2 dialogWindow
 
 Return a modal window link or onclick javascript.
@@ -432,6 +381,39 @@ sub dialogWindow {
     if ( $paramHash{linkHTML} ) { return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>" }
 
     return $returnHTML;
+}
+
+
+=head2 splitDirectory
+
+Return directory with the last part of the directory split into two parts.  If a directory passed into it ends with a slash, then it will be removed.
+
+    #
+    # this will return /first/part/su/supertsplitter
+    #
+    print $fws->splitDirectory( directory => '/first/part/supersplitter' );
+    
+=cut
+
+sub splitDirectory {
+    my ( $self, %paramHash ) = @_;
+    
+    #
+    # set the default length to 2
+    #
+    $paramHash{splitLength} = $paramHash{splitLength} ||= 2;
+
+    #
+    # managable parts
+    #
+    my @dirParts = split( /\//, $paramHash{directory} );
+
+    #
+    # take the one off the ened
+    #
+    my $lastDirPart = pop( @dirParts );
+    
+    return join( '/', @dirParts ) . '/' . substr( $lastDirPart, 0, $paramHash{splitLength} ) . '/' . $lastDirPart;
 }
 
 
@@ -650,9 +632,11 @@ sub formatDate {
         }
         
         #
-        # fix anything that could rock the boat
+        # fix anything that could rock the boat older versions of perl need this for
+        # timelocal to work, 1902 -> 2037 is safe
         #
-        if ( $timeSplit[0] < 1970) {$timeSplit[0] = '1970';}
+        if ( $timeSplit[0] < 1902) {$timeSplit[0] = '1902';}
+        if ( $timeSplit[0] > 2037) {$timeSplit[0] = '2037';}
         if ( $timeSplit[1] eq '' || $timeSplit[1] == 0) {$timeSplit[1] = '1'}
         if ( $timeSplit[2] eq '' || $timeSplit[2] == 0) {$timeSplit[2] = '1'}
         if ( $timeSplit[3] eq '') {$timeSplit[3] = '0'}
@@ -895,6 +879,7 @@ Return a number in USD Format.
 
 sub formatCurrency {
     my ( $self, $amount ) = @_;
+    #TODO convert this method to use paramHash with international support yet still legacy to work in this fasion
     my $negative = '';
     if ( $amount =~ /^-/ ) { $negative = '-' }
     $amount =~ s/[^\d.]+//g;
