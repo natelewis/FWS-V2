@@ -263,6 +263,8 @@ sub createPassword {
     # set the composition to the easy say set if its blank
     #
     $paramHash{composition} ||= "qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM23456789";
+    $paramHash{lowLength}   ||= 6;
+    $paramHash{heighLength} ||= 6;
 
     my @pass = split( //, $paramHash{composition} );
     my $length = int( rand( $paramHash{highLength} - $paramHash{lowLength} + 1 ) ) + $paramHash{lowLength};
@@ -1350,7 +1352,11 @@ sub SQLDate {
 
 Return content based on nearest ended word to the length parameter.
 
-    print $fws->truncateContent(content=>'this is some long content I want just a preview of.', length=>10, postText=>'...');
+    print $fws->truncateContent(
+        content     => 'this is some long content I want just a preview of.',
+        length      => 10, 
+        postText    => '...',
+    );
 
 =cut
 
