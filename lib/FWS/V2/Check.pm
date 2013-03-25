@@ -170,6 +170,55 @@ sub isElementPresent {
 }
 
 
+=head2 dateDiff
+
+Return the amount of time between two dates in days or seconds.
+
+Possible Parameters:
+
+=over 4
+
+=item * date
+
+The base date to compare against
+
+=item * compDate
+
+A date in the future or past compare it to.  If not passed, the current date will be used.
+
+=item * format
+
+The date format used.  Default is SQLTime,  you can choose epoch as an alternative
+
+=item * type
+
+The compare type to return as.  Default is in 'seconds', you set this to 'days' if you would like the amount in days with its remainder as a decimal.
+
+=back
+
+=cut
+
+sub dateDiff {
+    my ( $self, %paramHash ) = @_;
+
+    my $format = 'SQLTime';
+
+    my $epoch1 = $self->formatDate( format => 'epoch', $format => $paramHash{date} );
+    my $epoch2 = $self->formatDate( format => 'epoch', $format => $paramHash{compDate} );
+
+    my $secDiff = ( $epoch2 - $epoch1 );
+
+    #
+    # if its 0 lets get out of here so we don't have devide by 0 errors
+    #
+    if ( $secDiff == 0 ) { return 0 }
+
+    if ( $paramHash{type} =~ /day/i ) { return $secDiff / 86400 }
+
+    return $secDiff;
+}
+
+
 =head1 AUTHOR
 
 Nate Lewis, C<< <nlewis at gnetworks.com> >>
