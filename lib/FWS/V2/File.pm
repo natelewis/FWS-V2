@@ -406,176 +406,6 @@ sub getEncodedBinary {
     return $rawfile;
 }
 
-=head2 savePlugin
-
-Save a plugin and publish it to frameworksites.com.  All information needs to be known to save it.   If any paramater isn't passed it will be considered blank.
-
-    #
-    # save a plugin
-    #
-    my $status = $fws->savePlugin(
-                    plugin          => $fws->formValue( 'plugin' ),
-                    scriptInit      => $fws->formValue( 'scriptInit' ),
-                    script          => $fws->formValue( 'script' ),
-                    css             => $fws->formValue( 'css' ),
-                    js              => $fws->formValue( 'js' ),
-                    authorEmail     => $fws->formValue( 'authorEmail' ),
-                    version         => $fws->formValue( 'version' ),
-                    changeLog       => $fws->formValue( 'change' ),
-                    changeMessage   => $fws->formValue( 'changeLog' ),
-                    publish         => 0,
-                    publishPassword => $fws->formValue( 'auth' ),
-    )
-
-When publish is set to 1, you must also ensure you have a valid FWSKey and domain set for the fws object.   The publish password is your frameworksites.com password for the account that owns the domain.
-
-=cut
-
-sub savePlugin {
-    my ( $self, %paramHash ) = @_;
-
-    my $pluginName  = $self->safeFile( $paramHash{plugin} );
-    my $pluginDir   = $self->{filePath} . '/plugins';
-    my $pluginFile  = $self->{fileSecurePath} . '/plugins/' . $pluginName . '.pm';
-    my $pluginLog   = $self->{fileSecurePath} . '/plugins/' . $pluginName . '.log';
-
-    #
-    # clean up trailing spaces so they don't expand
-    #
-    ( my $scriptInit =  $paramHash{scriptInit} )    =~ s/\n*$//sg;
-    ( my $script     =  $paramHash{script} )        =~ s/\n*$//sg;
-
-    #
-    # make the author email so it is less spammy
-    #
-    ( my $authorEmail = $paramHash{authorEmail} ) =~ s/\@/ at /g;
-
-    # this is broken up goofy because the source compressor gets silly on 's inside of "s and use and the POD
-    # as a reserved word.  this was easier than fixing the web code compressor for now
-    my $pluginScript    = "package " . $pluginName . ";\n" .
-                  'u' . 'se 5.006;' . "\n" . 'u' . 'se strict;' . "\n" .
-                  "no warnings \"uninitialized\";\n" .
-                  "BEGIN { push \@FWS::V2::ISA, '" .
-                  $pluginName .
-                  "' }\n" .
-                  "our \$VERSION = '" .
-                  $paramHash{version} .
-                  "';\n\n=" . "head2 pluginInit\n\n".
-                  "The pluginInit will be executed as a result of using \$fws->registerPlugin( \"".$pluginName . "\" );\n\n" .
-                  "=" . "cut\n\nsub pluginInit {\nmy (\$" .
-                  "self,\$fws) = \@_;\n" .
-                  "( my \$"  .
-                  "distName = __PACKAGE__ ) ".
-                  " =~ s/.*:://sg;\n" .
-                  "\$fws->_cssEnable(\"plugins/\".\$" .
-                  "distName.\"/FWSElement-\".\$VERSION);\n" .
-                  "\$fws->_jsEnable(\"plugins/\".\$" .
-                  "distName.\"/FWSElement-\".\$VERSION);\n\n" .
-                  $scriptInit . "\n\nreturn \$fws;\n}\n\n=" .
-                  "head1 ELEMENTS AND METHODS\n\n" .
-                  $script . "\n\n=".
-                  "head1 AUTHOR\n\n" .
-                  $paramHash{authorName} .
-                  ',' . ' ' . 'C<<' . ' ' . '<' . $authorEmail . ' ' . '>' . ' ' . '>>' .
-                  "\n\n=" .
-                  "cut\n\n1;";
-
-    #
-    # validate the perl before we save it, but we will need VERSION
-    #
-    my $fws         = $self;
-    my $VERSION     = 0;
-    my $distName    = '';
-
-    ## no critic
-    eval $paramHash{scriptInit};
-    ## use critic
-
-    my $initFailed = 0;
-    if ( $@ ) { return 'INIT: ' . $@ }
-
-    ## no critic
-    eval $paramHash{script};
-    ## use critic
-
-    if ( $@ ) { return 'METHOD: ' . $@ }
-
-    #
-    # Make any directory we might need
-    #
-    $self->makeDir( $self->{fileSecurePath} . '/plugins' );
-    $self->makeDir( $pluginDir );
-    $self->makeDir( $pluginDir . '/' . $pluginName );
-
-    #
-    # Save plugin
-    #
-    open( my $FILE, ">", $pluginFile );
-    print $FILE $pluginScript;
-    close $FILE;
-
-    #
-    # get its version
-    #
-    my $pluginVer = $self->getPluginVersion( $pluginFile );
-
-
-    #
-    # save its changelog
-    #
-    my $changeLog = $paramHash{changeLog};
-    if ( $paramHash{publish} ) {
-        $changeLog = $pluginVer . " " . $self->formatDate(format => 'yearFirstDate') . "\n\t- " . $paramHash{changeMessage} . "\n" . $changeLog;
-    }
-    open( my $CHANGEFILE, ">", $pluginLog );
-    print $CHANGEFILE $changeLog;
-    close $CHANGEFILE;
-
-    #
-    # save its css
-    #
-    open ( my $CSSFILE, ">", $pluginDir.'/'.$pluginName.'/FWSElement-'.$pluginVer.".css" );
-    print $CSSFILE $paramHash{css};
-    close $CSSFILE;
-
-    #
-    # save its js
-    #
-    open ( my $JSFILE, ">", $pluginDir.'/'.$pluginName.'/FWSElement-'.$pluginVer.".js" );
-    print $JSFILE $paramHash{js};
-    close $JSFILE;
-
-    #
-    # Remove JS and CSS Cache
-    #
-    $self->flushWebCache();
-
-    #
-    # publish the plugin also
-    #
-    if ( $paramHash{publish} ) {
-
-        #
-        # get the domain minus the stuff before //
-        #
-        my $cleanDomain = $self->{domain};
-        $cleanDomain =~ s/.*\/\///sg;
-
-        #
-        # do the post
-        #
-        my $responseRef = $self->HTTPRequest( type =>'post', url=> $self->{FWSPluginServer} . '/cgi-bin/go.pl?p=publishPlugin&plugin=' . $pluginName . '&auth='.$paramHash{publishPassword} . '&FWSKey=' . $self->{FWSKey} . '&domain=' . $cleanDomain . '&changeLog=' . $self->urlEncode( $changeLog ) . '&script=' . $self->urlEncode( $pluginScript ) . '&files=' . $self->urlEncode( $self->packDirectory( directory => $pluginDir . '/' . $pluginName ) ) );
-
-        #
-        # post to the log we did something cool and return
-        #
-        my $publishStatus = 'Publishing Plugin ' . $pluginName . ': ' . $responseRef->{content};
-        $self->FWSLog( $publishStatus );
-        return $publishStatus;
-    }
-
-    return;
-}
 
 =head2 unpackDirectory
 
@@ -850,39 +680,49 @@ sub getPluginVersion {
 
 Make a new directory with built in safety mechanics.   If the directory is not under the filePath or fileSecurePath then nothing will be created.
 
-    $fws->makeDir( $self->{filePath} . '/thisNewDir' );
+    $fws->makeDir( directory => $self->{filePath} . '/thisNewDir' );
+
+This by default is ran in safe mode, making sure directorys are only created in the filePath or fileSecurePath.  This can be turned off by passing nonFWS => 1.
 
 =cut
 
 sub makeDir {
-    my ( $self, $directory ) = @_;
+    my ( $self, @paramArray ) = @_;
+    
+    #
+    # set paramHash if its a hash or, its in single value
+    # mode using the directory
+    #
+    my %paramHash;
+    if ( $#paramArray ) { %paramHash = @paramArray }
+    else { $paramHash{directory} = $paramArray[0] }
 
     #
     # to make sure nothing fishiy is going on, you should only be making dirs under this area
     #
     my $filePath = $self->{filePath};
     my $fileSecurePath  = $self->{fileSecurePath};
-    if ( $directory =~ /^$filePath/ || $directory =~ /^$fileSecurePath/ ) {
+    if ( $paramHash{directory} =~ /^$filePath/ || $paramHash{directory} =~ /^$fileSecurePath/ || $paramHash{nonFWS} ) {
 
         #
         # kill double ..'s so noobdy tries to leave our tight environment of security
         #
-        $directory = $self->safeDir( $directory );
+        $paramHash{directory} = $self->safeDir( $paramHash{directory} );
 
         #
         # eat the leading / if it exists ... and it should (this is for the split
         #
-        $directory =~ s/^\///sg;
+        $paramHash{directory} =~ s/^\///sg;
 
         #
         # create an array we can loop though to rebuild it making them on the fly
         #
-        my @directories = split(/\//,$directory);
+        my @directories = split( /\//, $paramHash{directory} );
 
         #
-        # delete the $directory because we will rebuild it
+        # delete the $paramHash{directory} because we will rebuild it
         #
-        $directory = '';
+        $paramHash{directory} = '';
 
         #
         # loop though each one making them if they need to
@@ -891,17 +731,18 @@ sub makeDir {
             #
             # make the dir and send a debug message
             #
-            $directory .= '/' . $thisDir;
-            mkdir( $directory, 0755 );
+            $paramHash{directory} .= '/' . $thisDir;
+            mkdir( $paramHash{directory}, 0755 );
         }
     }
 
     else {
-        $self->FWSLog( 'MKDIR trying to make directory not in tree: ' . $directory );
-        return 0;
+        $self->FWSLog( 'MKDIR trying to make directory not in tree: ' . $paramHash{directory} );
+        return;
     }
-    return 1;
+    return $paramHash{directory}; 
 }
+
 
 =head2 runInit
 
