@@ -2525,35 +2525,6 @@ sub _processAdminAction {
         #
         if ( $action eq "installPlugin" ) { $self->_installPlugin( plugin  => $self->safeFile( $self->formValue( "plugin" ) ) ) }
 
-        if ( $action eq "updatePlugin" || $action eq "publishPlugin" ) {
-
-            my $status = $self->savePlugin(    plugin         => $self->formValue("plugin"),
-                            scriptInit    => $self->formValue("scriptInit"),
-                            script        => $self->formValue("script"),
-                            css        => $self->formValue("css"),
-                            js        => $self->formValue("js"),
-                            authorName    => $self->formValue("authorName"),
-                            authorEmail    => $self->formValue("authorEmail"),
-                            version        => $self->formValue("version"),
-                            changeLog    => $self->formValue("change"),
-                            changeMessage    => $self->formValue("changeLog"),
-                            publish        => ( $action eq "publishPlugin" ) ? 1 : 0,
-                            publishPassword    => $self->formValue("auth"),
-            );
-            if ( $status ) {
-
-                #
-                # always return status as statusNote unless we are talking about an update then we format to fit
-                # where it will display
-                # 
-                $self->formValue( 'statusNote', $status );
-                if ( $action eq "updatePlugin" ) {
-                    $self->formValue('statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">' . $status . '</textarea><br/>') 
-                }
-            }
-        }
-
-
         if ( $action eq "updateScript" ) {
             my %valueHash;
             my $fws = $self;
