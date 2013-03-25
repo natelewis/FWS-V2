@@ -2704,7 +2704,7 @@ sub updateDataCache {
 
 =head2 userArray
 
-Return an array or reference to an array of the users on an installation.    You can pass they keywords paramater and it will look though name and email address.
+Return an array or reference to an array of the users on an installation.    You can pass the keywords parameter and it will look though name and email address.
 
 =cut
 
