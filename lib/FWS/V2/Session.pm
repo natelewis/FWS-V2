@@ -295,6 +295,16 @@ sub setSiteFriendly {
     # 404 page descisions
     #
     my $sid = $self->formValue( 's' );
+
+    #
+    # clean up the sid to make sure there is no funny business going on
+    # its used pretty loosly so this will save some front end work
+    #
+    $sid =~ s/[^a-z0-1]//sgi;
+
+    #
+    # if sid is 404 or '' lets default out sid
+    #
     if ( $sid eq '404' || $sid eq '' ) {
 
         #
