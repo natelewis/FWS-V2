@@ -2123,7 +2123,7 @@ sub GNFTree {
                             onClick => "if (confirm('Are you sure you want to delete this item and all of its related sub items? (Non-reversable)'" .
                                        ")){FWSAjax('" . $self->{scriptName} . 
                                        "','" . $self->{queryHead} . 
-                                       "&pageAction=deleteElement&parent=" . $paramHash{parentId} . 
+                                       "p=fws_dataEdit&pageAction=deleteElement&parent=" . $paramHash{parentId} . 
                                        "&guid=" . $paramHash{id} . "');" . 
                                        "\$('#block_" . $paramHash{id} . "').hide('slow');}return false;",
                             alt     => "Delete",
@@ -2594,77 +2594,6 @@ sub _processAdminAction {
             $self->formValue( "statusNote", "Your web search cache was emptied" );
         }
     
-
-
-
-        if ($action eq "addCatDataXRef") {  
-            my $idList = $self->safeSQL($self->formValue('idList'). $self->formValue('child'));
-            my @idArray = split(',', $idList);
-            my $parent = $self->safeSQL( $self->formValue('parent') );
-            my $siteGUID = $self->safeSQL( $self->{siteGUID} );
-    
-            #
-            # loop the idArary and add each one
-            #
-            while (@idArray) {
-                my $child = shift(@idArray);
-                my ( $layout, $ord ) = $self->openRS("select layout,ord from guid_xref where child='".$child."'");
-                my ($alreadyOne) = $self->openRS("select 1 from guid_xref where child='".$child."' and parent='".$parent."' and site_guid='".$siteGUID."'");
-                if (!$alreadyOne) { $self->_saveXRef($child,$layout,$ord,$parent,$siteGUID) } 
-            }
-        }
-
-        if ($action eq "moveCatDataXRef") {  
-            my $child           = $self->safeSQL( $self->formValue( 'child' ) );
-            my $parent          = $self->safeSQL( $self->formValue( 'parent' ) );
-            my $parentId        = $self->safeSQL( $self->formValue( 'parentId' ) );
-            my $siteGUID        = $self->safeSQL( $self->{siteGUID});
-            my ( $layout, $ord )= $self->openRS("select layout,ord from guid_xref where child='".$child."'");
-            my ( $alreadyOne )  = $self->openRS("select 1 from guid_xref where child='".$child."' and parent='".$parent."' and site_guid='".$siteGUID."'");
-            if (!$alreadyOne) { $self->_saveXRef($child,$layout,$ord,$parent,$siteGUID) } 
-            $self->_deleteXRef($child,$parentId,$siteGUID); 
-        }
-
-        if ($action eq "delCatDataXRef") {  
-            my $child         = $self->safeSQL($self->formValue('child'));
-            my $parent        = $self->safeSQL($self->formValue('parent'));
-            my $siteGUID      = $self->safeSQL($self->{siteGUID});
-            
-            #
-            # we need the dataCount to prevent orphaning our products.
-            #
-            my ($dataCount)     = $self->openRS("select count(1) from guid_xref where child='".$child."' and site_guid='".$siteGUID."'");
-            if ($dataCount > 1) { $self->_deleteXRef($child,$parent,$siteGUID) }
-        }
-          
-        if ($action eq "deleteElement") {
-            $self->deleteData(parent=>$self->formValue('parent'),guid=>$self->formValue('guid'));
-        }
-
-        if ($action eq "reorderItems") {
-            my $itemOrder = $self->safeSQL($self->formValue('itemOrder'));
-            my @itemArray = split(/\|/,$itemOrder);
-            my $catOrder = 0;
-            my $proOrder = 0;
-            my $listOrder = 0;
-    
-            while (@itemArray) {
-                my $itemId = shift(@itemArray);
-
-                $self->runSQL(SQL=>"update guid_xref set ord='".$catOrder."' where guid_xref.site_guid='" . $self->safeSQL( $self->{siteGUID}) . "' and child='".$self->safeSQL($itemId)."' and parent='".$guid."'");
-                $catOrder++;
-            }
-        }
- 
-        if ($action eq "addToSite") {    
-            my %paramHash;
-            $paramHash{parent}  = $self->formValue( 'guid' );
-            $paramHash{active}  = $self->formValue( 'active' );
-            $paramHash{name}    = $self->formValue( 'name' );
-            $paramHash{type}    = $self->formValue( 'type' );
-            $paramHash{layout}  = $self->formValue( 'layout' );
-            $self->saveData( %paramHash );
-        }
     }        
 
     ##############################################################################################
