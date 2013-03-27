@@ -468,7 +468,7 @@ Return the date time in a given format.  By passing epochTime, SQLTime you can d
     #
     my $humanDate = $fws->formatDate( SQLTime => '2012-10-12 10:09:33', format => 'date' );
 
-By passing monthMod or dayMod you can adjust the month forward or backwards by the given number of months or days
+By passing minuteMod, monthMod or dayMod you can adjust the month forward or backwards by the given number of months or days
 
     #
     # 3 months from today (negative numbers are ok)
@@ -491,11 +491,15 @@ epoch time which could be created with time()
 
 =item * monthMod
 
-modify the current month ahead or behind.  (Note: If your current day is 31st, and you mod to a month that has less than 31 days it will move to the highest day of that month)
+Modify the current month ahead or behind.  (Note: If your current day is 31st, and you mod to a month that has less than 31 days it will move to the highest day of that month)
 
 =item * dayMod
 
-modify the current day ahead or behind.
+Modify the current day ahead or behind.
+
+=item * minuteMod
+
+Modify the current minute ahead or behind.
 
 =item * dateSeparator
 
@@ -596,6 +600,7 @@ sub formatDate {
     $paramHash{format}        ||= 'dateTime';
     $paramHash{monthMod}      ||= 0;
     $paramHash{dayMod}        ||= 0;
+    $paramHash{minuteMod}     ||= 0;
     $paramHash{epochTime}     ||= time();
     $paramHash{dateSeparator} ||= '-';
 
@@ -662,7 +667,12 @@ sub formatDate {
     #
     # move the day around if passed
     #
-    if ( defined $paramHash{dayMod}  ) { $paramHash{epochTime} += ( $paramHash{dayMod}  * 86400 ) }
+    $paramHash{epochTime} += ( $paramHash{dayMod} * 86400 );
+
+    #
+    # move the minute around if passed
+    #
+    $paramHash{epochTime} += ( $paramHash{minuteMod} * 60 ); 
 
     #
     # get the localtime
