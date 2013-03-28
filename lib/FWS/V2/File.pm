@@ -230,7 +230,7 @@ sub createSizedImages {
                     #
                     # Make the subdir if its not already there
                     #
-                    $self->makeDir( $newDirectory, '0755' );
+                    $self->makeDir( $newDirectory );
 
                     #
                     # create the new image
@@ -240,12 +240,12 @@ sub createSizedImages {
                     #
                     # if its a secure file, we only save it from site guid on...
                     #
-                    if ( $dataType eq 'secureFile' ) { $webFile = '/'.$paramHash{siteGUID}.'/'.$paramHash{guid}.'/'.$fileName }
+                    if ( $dataType eq 'secureFile' ) { $webFile = '/' . $paramHash{siteGUID} . '/' . $paramHash{guid} . '/' . $fileName }
 
                     #
                     # if the new image is not there, then lets blank out the file
                     #
-                    if (!-e $newFile) { $webFile = '' }
+                    if ( !-e $newFile ) { $webFile = '' }
 
                     if ( $paramHash{guid} ) {
                         #
@@ -1174,7 +1174,7 @@ sub _saveElementFile {
         # set the directory and make it if it might not exist
         #
         my $directory = $self->{filePath}."/".$siteGUID."/".$guid;
-        $self->makeDir( $directory , "0755" );
+        $self->makeDir( $directory );
 
         #
         # set the timestamp so we will add this to the file name for the cachable named ones
