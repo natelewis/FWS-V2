@@ -197,7 +197,7 @@ sub setSession {
         $a_exp = '0';
         $self->adminLogOut();
         $self->userLogOut();
-        $self->formValue( 'session', $self->createPassword( composition => '1234567890qwertyuioplkjhgfdsazxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM', lowLength => 32, highLength => 32 ) );
+        $self->formValue( 'session', $self->createGUID( 'u' ) );
         $self->runSQL( SQL => "insert into fws_sessions ( id ) values ('" . $self->safeSQL( $self->formValue( 'session' ) ) . "')" );
     }
 
@@ -300,7 +300,7 @@ sub setSiteFriendly {
     # clean up the sid to make sure there is no funny business going on
     # its used pretty loosly so this will save some front end work
     #
-    $sid =~ s/[^a-z0-1]//sgi;
+    $sid =~ s/[^a-z0-9]//sgi;
 
     #
     # if sid is 404 or '' lets default out sid
@@ -892,7 +892,7 @@ sub setSiteValues {
     # but only do it, if we have a real site.  Just skip it because we could
     # be doing something else that isn't site rendering
     #
-    if ( !defined $self->{site}{homeGUID} && defined $self->{siteGUID} ) {
+    if ( !$self->{site}{homeGUID} && $self->{siteGUID} ) {
         my $homeGUID = $self->{siteGUID};
         $homeGUID =~ s/^./h/sg;
         $self->siteValue( 'homeGUID', $homeGUID );
@@ -909,7 +909,7 @@ sub setSiteValues {
     #
     # check to see if there is no level... if so then we need create a new admin account
     #
-    if ( !defined $self->{siteGUID} ) { print $self->newDBCheck() }
+    if ( !$self->{siteGUID} ) { print $self->newDBCheck() }
 
     #
     # convert the values and fields to global valuse
