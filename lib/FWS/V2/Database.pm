@@ -1331,6 +1331,15 @@ sub createFWSDatabase {
         #
         my ( $adminGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='admin'", noUpdate => 1 )};
         if ( !$adminGUID ) {
+        
+            #
+            # because we don't have an admin we probably don't have a DB at all, lets make it
+            #
+            $self->updateDatabase();
+
+            #
+            # now that the db is there, lets do this!
+            #
             $adminGUID = $self->createGUID( 's' );
             $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $adminGUID . "', 'admin', '" . $adminGUID . "')" );
             $somethingNew++;
@@ -1709,8 +1718,10 @@ sub runSQL {
 
     #
     # if errstr is populated, lets EXPLODE!
+    # but not if its fetch without windows 7 will give this genericly when
+    # returns without records are passed
     #
-    if ( $sth->errstr ) { 
+    if ( $sth->errstr && $sth->errstr !~ /fetch\(\) without execute\(\)/i ) {
         $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $sth->errstr );
 
         #
