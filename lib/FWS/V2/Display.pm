@@ -200,11 +200,20 @@ sub printPage {
         #
         my $cookieDomain;
         my $cookie;
-        if ( $self->cookieDomainName() ){
-            $cookieDomain = 'domain=' . $self->cookieDomainName() . ';';
+        if ( $self->{cookieDomainName} ) {
+            $cookieDomain = ' domain=' . $self->{cookieDomainName} . ';';
         }
+        
+        #
+        # if domainName doesn't have more than two dots in it, it is invalid by browsers
+        # so lets kill it if thats the case so it will use a null/empty type value
+        #
+        if ( ($cookieDomain =~ tr/\.//) < 2 ) { $cookieDomain = '' }
 
-        $cookie .= "Set-Cookie: " . $self->{sessionCookieName} . "=" . $self->formValue( 'session' ) . ";" . " " . $cookieDomain . " Path=/;" . " Expires=" . $self->formatDate( format => 'cookie', monthMod => 1 ) . "\n";
+        #
+        # build the cookies for display
+        #
+        $cookie .= "Set-Cookie: " . $self->{sessionCookieName} . "=" . $self->formValue( 'session' ) . ";" . $cookieDomain . " Path=/;" . " Expires=" . $self->formatDate( format => 'cookie', monthMod => 1 ) . "\n";
         $cookie .= "Set-Cookie: fbsr_" . $self->siteValue( 'facebookAppId' ) . "=deleted;" . " Path=/;" . " Expires=Thu, 01-Jan-1970 00:00:01 GMT\n";
 
         #
