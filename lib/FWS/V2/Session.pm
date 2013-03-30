@@ -271,7 +271,7 @@ sub setSession {
     #
     $self->{affiliateId}      = $self->formValue( 'a' );
     $self->{affiliateExp}     = $a_exp;
-    $self->{adminSafeMode}    = $s_s;
+    $self->{adminSafeMode}    = $s_s ||= 0;
 
     return;
 }

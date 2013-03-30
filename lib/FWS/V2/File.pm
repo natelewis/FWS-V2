@@ -397,7 +397,7 @@ sub getEncodedBinary {
     use MIME::Base64;
     my $rawFile;
 
-    open ( my $FILE, '<', $fileName ) or die 'Can not open file:'. $fileName;
+    open ( my $FILE, '<', $fileName ) || $self->FWSLog( 'Could not read file: ' . $fileName );
     binmode $FILE;
     while ( read ( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
     close $FILE;
@@ -513,7 +513,7 @@ sub uploadFile {
     #
     # if we meet the restrictions write the file to the filesystem and create thumbnails and icons.
     #
-    open( my $SFILE, ">", $directory."/".$fileName ) || die "could not open file: " . $directory . "/" . $fileName;
+    open( my $SFILE, ">", $directory."/".$fileName ) || $self->FWSLog( "Could not write to file: " . $directory . "/" . $fileName );
     print $SFILE $fileHolder;
     close $SFILE;
 
@@ -593,7 +593,7 @@ sub packDirectory {
                 # get the file
                 #
                 my $rawFile;
-                open ( my $FILE, "<", $fullFileName ) or die "Can not open file:" .  $!;
+                open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not read file: " .  $! );
                 binmode $FILE;
                 while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
                 close $FILE;
@@ -696,18 +696,20 @@ sub makeDir {
     my %paramHash;
     if ( $#paramArray ) { %paramHash = @paramArray }
     else { $paramHash{directory} = $paramArray[0] }
+        
+    #
+    # kill double ..'s so noobdy tries to leave our tight environment of security
+    #
+    $paramHash{directory} = $self->safeDir( $paramHash{directory} );
 
     #
     # to make sure nothing fishiy is going on, you should only be making dirs under this area
     #
-    my $filePath = $self->{filePath};
-    my $fileSecurePath  = $self->{fileSecurePath};
+    my $filePath        = $self->safeDir( $self->{filePath} );
+    my $fileSecurePath  = $self->safeDir( $self->{fileSecurePath} );
+    
     if ( $paramHash{directory} =~ /^$filePath/ || $paramHash{directory} =~ /^$fileSecurePath/ || $paramHash{nonFWS} ) {
 
-        #
-        # kill double ..'s so noobdy tries to leave our tight environment of security
-        #
-        $paramHash{directory} = $self->safeDir( $paramHash{directory} );
 
         #
         # eat the leading / if it exists ... and it should (this is for the split
@@ -934,7 +936,7 @@ sub saveImage {
         # safe the the physical file
         # save as what ever extnesion was passed for the name
         #
-        open ( my $IMG, '>', $paramHash{fileName} ) or die 'Error:'. $!;
+        open ( my $IMG, '>', $paramHash{fileName} ) || $self->FWSLog( 'Could not write to file: ' . $! );
         binmode $IMG;
         if ( $paramHash{fileName} =~ /\.(jpg|jpeg|jpe)$/i ) {   print $IMG $newImage->jpeg() }
         if ( $paramHash{fileName} =~ /\.png$/i ) {              print $IMG $newImage->png() }
@@ -1190,7 +1192,7 @@ sub _saveElementFile {
         #
         # save the file to the FS
         #
-        open ( my $FILE, ">", $name ) || die "could not open file: " . $name;
+        open ( my $FILE, ">", $name ) || $self->FWSLog( "Could not write to file: " . $name );
         print $FILE $content;
         close $FILE;
 
@@ -1214,7 +1216,7 @@ sub _saveElementFile {
             #
             # save the cacheable one
             #
-            open ( my $FILE, ">", $cacheName ) || die "could not open file: ".$cacheName;
+            open ( my $FILE, ">", $cacheName ) || $self->FWSLog( "Could not write to file: " . $cacheName );
             print $FILE $content;
             close $FILE;
         }
@@ -1353,7 +1355,7 @@ sub _installPlugin {
     # backup the script and save it
     #
     if ( -e $fileName ) { rename( $fileName, $fileName . '.' . $backupNumber ) }
-    open ( my $FILE, ">", $fileName ) || die "could not save plugin: ".$fileName;
+    open ( my $FILE, ">", $fileName ) || $self->FWSLog( "Could not write to file: " . $fileName );
     print $FILE $script;
     close $FILE;
 
@@ -1361,7 +1363,7 @@ sub _installPlugin {
     # backup the change log and save it
     #
     if ( -e $changeFileName ) { rename( $changeFileName, $changeFileName . '.' . $backupNumber ) }
-    open ( my $FILE, ">", $changeFileName ) || die "could not save plugin: ".$changeFileName;
+    open ( my $FILE, ">", $changeFileName ) || $self->FWSLog( "Could not write to file: " . $changeFileName );
     print $FILE $change;
     close $FILE;
 

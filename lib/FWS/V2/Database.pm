@@ -1692,33 +1692,40 @@ sub runSQL {
         $sth->execute();
 
         #
-        # SQL lite gathing and normilization
+        # only continue if there is no errors
+        # and we are doing something warrents fetching
         #
-        if ( $self->{DBType} =~ /^SQLite$/i ) {
-            while ( my @row = $sth->fetchrow ) {
-                my @cleanRow;
-                while ( @row ) {
-                    my $clean = shift( @row );
-                    $clean = '' if !defined $clean;
-                    $clean =~ s/\\\\/\\/sg;
-                    push( @cleanRow, $clean );
-                }
-                push( @data, @cleanRow );
-            }
-        }
+        if ( !$sth->errstr && $paramHash{SQL} =~ /^(select|desc|show) /i ) {
 
-        #
-        # Fault to MySQL if we didn't find another type
-        #
-        else {
-            while ( my @row = $sth->fetchrow ) {
-                my @cleanRow;
-                while ( @row ) {
-                    my $clean = shift( @row );
-                    $clean = '' if !defined $clean;
-                    push ( @cleanRow, $clean );
+            #
+            # SQL lite gathing and normilization
+            #
+            if ( $self->{DBType} =~ /^SQLite$/i ) {
+                while ( my @row = $sth->fetchrow ) {
+                    my @cleanRow;
+                    while ( @row ) {
+                        my $clean = shift( @row );
+                        $clean = '' if !defined $clean;
+                        $clean =~ s/\\\\/\\/sg;
+                        push( @cleanRow, $clean );
+                    }
+                    push( @data, @cleanRow );
                 }
-                push ( @data, @cleanRow );
+            }
+    
+            #
+            # Fault to MySQL if we didn't find another type
+            #
+            else {
+                while ( my @row = $sth->fetchrow ) {
+                    my @cleanRow;
+                    while ( @row ) {
+                        my $clean = shift( @row );
+                        $clean = '' if !defined $clean;
+                        push ( @cleanRow, $clean );
+                    }
+                    push ( @data, @cleanRow );
+                }
             }
         }
     }
@@ -1728,7 +1735,6 @@ sub runSQL {
     # but not if its fetch without windows 7 will give this genericly when
     # returns without records are passed
     #
-    #if ( $sth->errstr && $sth->errstr !~ /fetch\(\) without execute\(\)/i ) {
     if ( $sth->errstr ){
         $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $sth->errstr );
 

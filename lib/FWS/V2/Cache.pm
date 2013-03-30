@@ -296,8 +296,8 @@ sub cacheHead {
             #
             # open files to print to
             #
-            open ( my $CSS, ">", $cacheFile . ".css" ) or die "Can not open file:" . $cacheFile . ".css";
-            open ( my $JS, ">", $cacheFile . ".js" ) or die "Can not open file:" . $cacheFile . ".js";
+            open ( my $CSS, ">", $cacheFile . ".css" )  || $self->FWSLog( "Could not write to file: " . $cacheFile . ".css" );
+            open ( my $JS, ">", $cacheFile . ".js" )    || $self->FWSLog( "Could not write to file: " . $cacheFile . ".js" );
 
             print $JS "// FWS Generated JS Cache File - " .     $self->formatDate( format => "dateTime" ) . "\n";
             print $CSS "/* FWS Generated CSS Cache File - " .   $self->formatDate( format => "dateTime" ) . " */\n";
@@ -314,7 +314,7 @@ sub cacheHead {
 
                 my $fwsJS = $self->{filePath} . "/fws/fws-" . $self->{FWSVersion} . ".min.js";
                 if ( -e $fwsJS ) {
-                    open ( my $FILE, "<", $fwsJS ) or die "Can not open file:" .  $fwsJS;
+                    open ( my $FILE, "<", $fwsJS ) || $self->FWSLog( "Could not read file: " . $fwsJS );
                     print $JS "\n\n// fws-" . $self->{FWSVersion} . ".min.js\n\n";
                     while ( my $line = <$FILE> ) { print $JS $line }
                     close $FILE;
@@ -322,7 +322,7 @@ sub cacheHead {
 
                 my $fwsCSS = $self->{filePath} . "/fws/fws-" . $self->{FWSVersion} . ".css";
                 if ( -e $fwsCSS ) {
-                    open ( my $FILE, "<", $fwsCSS ) or die "Can not open file:" .  $fwsCSS;
+                    open ( my $FILE, "<", $fwsCSS ) || $self->FWSLog( "Could not read file:  " .  $fwsCSS );
                     print $CSS "\n\n/* fws-" . $self->{FWSVersion} . ".css */\n\n";
                     while ( my $line = <$FILE> ) { print $CSS $line }
                     close $FILE;
@@ -337,7 +337,7 @@ sub cacheHead {
 
                 my $tinyMCEInit = $self->{filePath} . "/fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js";
                 if ( -e $tinyMCEInit ) {
-                    open ( my $FILE, "<", $tinyMCEInit ) or die "Can not open file:" .  $tinyMCEInit;
+                    open ( my $FILE, "<", $tinyMCEInit ) || $self->FWSLog( "Can not open file:" .  $tinyMCEInit );
                     print $JS "\n\n// /fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js\n\n";
                     while ( my $line = <$FILE> ) { print $JS $line }
                     close $FILE;
@@ -350,7 +350,7 @@ sub cacheHead {
             foreach my $jqueryLibrary (sort {$jqueryHash{$a} <=> $jqueryHash{$b} } keys %jqueryHash) {
                 my $fileName = $self->{filePath} . "/fws/jquery/jquery." . $jqueryLibrary . ".min.js";
                 if ( -e $fileName ) {
-                    open ( my $FILE, "<", $fileName ) or die "Can not open file:" .  $fileName;
+                    open ( my $FILE, "<", $fileName ) || $self->FWSLog( "Can not open file:" .  $fileName );
                     print $JS "\n\n// jquery." . $jqueryLibrary . ".min.js\n\n";
                     while ( my $line = <$FILE> ) { print $JS $line }
                     close $FILE;
@@ -358,7 +358,7 @@ sub cacheHead {
 
                 $fileName =  $self->{filePath} . "/fws/jquery/jquery." . $jqueryLibrary . ".css";
                 if ( -e $fileName ) {
-                    open ( my $FILE, "<", $fileName ) or die "Can not open file:" .  $fileName;
+                    open ( my $FILE, "<", $fileName ) || $self->FWSLog( "Can not open file:" .  $fileName );
                     print $CSS "\n\n/* jquery." . $jqueryLibrary . ".css */\n\n";
                     while ( my $line = <$FILE> ) { print $CSS $line }
                     close $FILE;
@@ -382,7 +382,7 @@ sub cacheHead {
                     my $fullFileName = $self->{filePath} . "/" . $fileName . ".css";
 
                     if (-e $fullFileName) {
-                        open ( my $FILE, "<", $fullFileName ) or die "Can not open file:" .  $fullFileName;
+                        open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not open file:" .  $fullFileName );
                         print $CSS "\n\n/* " . $fileName . ".css */\n\n";
                         while ( my $line = <$FILE> ) { print $CSS $line }
                         close $FILE;
@@ -401,7 +401,7 @@ sub cacheHead {
 
                     my $fullFileName = $self->{filePath} . "/" . $fileName . ".js";
                     if (-e $fullFileName) {
-                        open ( my $FILE, "<", $fullFileName ) or die "Can not open file:" .  $fullFileName;
+                        open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not open file:" .  $fullFileName );
                         print $JS "\n\n// " . $fileName . ".js\n\n";
                         while ( my $line = <$FILE> ) { print $JS $line }
                         close $FILE;
