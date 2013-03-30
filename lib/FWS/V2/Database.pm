@@ -1666,16 +1666,14 @@ sub runSQL {
     #
     # prepare the SQL and loop though the arrays
     #
-
     my $sth = $paramHash{DBH}->prepare( $paramHash{SQL} );
     if ( $sth ) {
-        $sth->{PrintError} = 0;
-        $sth->execute();
 
         #
-        # set the row variable ready to be populated
+        # ensure errors are turned off and execute
         #
-        my $clean;
+        $sth->{PrintError} = 0;
+        $sth->execute();
 
         #
         # SQL lite gathing and normilization
@@ -1684,7 +1682,7 @@ sub runSQL {
             while ( my @row = $sth->fetchrow ) {
                 my @cleanRow;
                 while ( @row ) {
-                    $clean = shift( @row );
+                    my $clean = shift( @row );
                     $clean = '' if !defined $clean;
                     $clean =~ s/\\\\/\\/sg;
                     push( @cleanRow, $clean );
@@ -1700,7 +1698,7 @@ sub runSQL {
             while ( my @row = $sth->fetchrow ) {
                 my @cleanRow;
                 while ( @row ) {
-                    $clean = shift( @row );
+                    my $clean = shift( @row );
                     $clean = '' if !defined $clean;
                     push ( @cleanRow, $clean );
                 }
