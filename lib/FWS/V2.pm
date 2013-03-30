@@ -511,6 +511,9 @@ sub new {
     # set the default FWS log level
     $self->{FWSLogLevel}                  ||= 1;
 
+    # set the adminSafeMode for shared mode ( Not yet implemented fully ) 
+    $self->{adminSafeMode}                ||= 0;
+
     # set the default SQL log level
     $self->{SQLLogLevel}                  ||= 0;
 
