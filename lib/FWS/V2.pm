@@ -736,7 +736,7 @@ sub new {
         s                     => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
         a                     => { type => 'char(50)' ,key => $EMPTY        ,default => $EMPTY              },
         a_exp                 => { type => 'int(11)'  ,key => $EMPTY        ,default => '0'                 },
-        extra                 => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        extra_value           => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
         created               => { type => 'timestamp',key => $EMPTY        ,default => 'CURRENT_TIMESTAMP' },
     };
 

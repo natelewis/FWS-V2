@@ -190,7 +190,7 @@ sub printPage {
             #
             # run the SQL to update the session
             #
-            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "',b='" . $self->safeSQL( $self->{userLoginId} ) . "',s='" . $self->safeSQL( $self->{adminSafeMode} ) . "',bs='" . $self->safeSQL( $self->{adminLoginId} ) . "',ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "',e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "',a='" . $self->safeSQL( $self->{affiliateId} ) . "',a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "',extra='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" );
+            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "', b='" . $self->safeSQL( $self->{userLoginId} ) . "', s='" . $self->safeSQL( $self->{adminSafeMode} ) . "', bs='" . $self->safeSQL( $self->{adminLoginId} ) . "', ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "', e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "', a='" . $self->safeSQL( $self->{affiliateId} ) . "', a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "', extra_value='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" );
         }
 
         #

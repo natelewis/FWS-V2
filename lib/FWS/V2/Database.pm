@@ -1721,7 +1721,8 @@ sub runSQL {
     # but not if its fetch without windows 7 will give this genericly when
     # returns without records are passed
     #
-    if ( $sth->errstr && $sth->errstr !~ /fetch\(\) without execute\(\)/i ) {
+    #if ( $sth->errstr && $sth->errstr !~ /fetch\(\) without execute\(\)/i ) {
+    if ( $sth->errstr ){
         $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $sth->errstr );
 
         #
