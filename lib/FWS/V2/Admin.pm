@@ -2068,12 +2068,13 @@ sub GNFTree {
     if ( $paramHash{searchOnClick} || $paramHash{actionHTML} || $hasLabel) {
         if ( $paramHash{searchOnClick} || $hasLabel ) {
             $treeHTML .= "<div class=\"FWSTreeSearch\">";
-            $treeHTML .= $self->FWSIcon( icon    =>"go_16.png",
-                            onClick =>$paramHash{onClick1} . $paramHash{searchOnClick},
-                            id     =>"sel_" . $paramHash{id} . "_" . $paramHash{parentId},
-                            alt     =>"go",
-                            width   =>"16",
-                            style   =>"padding-left:3px;vertical-align:middle;");
+            $treeHTML .= $self->FWSIcon( 
+                            icon    => "go_16.png",
+                            onClick => $paramHash{onClick1} . $paramHash{searchOnClick},
+                            id      => "sel_" . $paramHash{id} . "_" . $paramHash{parentId},
+                            alt     => "go",
+                            width   => "16",
+                            style   => "padding-left:3px;vertical-align:middle;");
             $treeHTML .= "</div>";    
         }
         
@@ -2604,50 +2605,10 @@ sub _processAdminAction {
 
     if ($self->userValue('isAdmin') || $self->userValue('showAdminUsers')) {
 
-        if ($action eq "siteAddAdminUser") {
-            my $admin_name      = $self->safeSQL($self->formValue('admin_name'));
-            my $admin_user_id   = $self->safeSQL($self->formValue('admin_user_id'));
-            my $admin_password  = $self->safeSQL($self->formValue('admin_password'));
-            my $admin_active    = $self->safeSQL($self->formValue('admin_active'));
-
-            #
-            # Check account Exists, and make it all lower case.
-            #
-            $admin_user_id =~ tr/A-Z/a-z/;
-            my ($accountExists) = $self->openRS("select 1 from admin_user where user_id='".$admin_user_id."'");
-
-            if (!$admin_name){                  $self->formValue("statusNote","Name is required") }
-            if (!$admin_user_id){               $self->formValue("statusNote","Login Id is required") }
-            if (!$admin_password){              $self->formValue("statusNote","Password is required") }
-            if ($accountExists){                $self->formValue("statusNote","Account already exists, please use a diffrent user ID") }
-            if ($admin_user_id =~ /[^a-z]/) {   $self->formValue("statusNote","The User Id must only contain lower case characters") }
-
-            #
-            # crypt the password
-            #
-            $admin_password = $self->cryptPassword($admin_password);
-            if ( !$self->formValue('statusNote') ) {
-                my $guid = $self->createGUID( 'a ');
-                $self->runSQL(SQL=>"insert into admin_user (guid,name,user_id,admin_user_password) values ('".$guid."','".$admin_name."','".$admin_user_id."','".$admin_password."')");
-                #
-                # if the profile is new lets send the admin an email
-                #
-                if ( $self->siteValue('profileCreationEmail') ) {
-                    $self->send( to => $self->siteValue( 'profileCreationEmail'), fromName => $self->{email}, from => $self->{email}, subject => "New Admin Account Created", mimeType => "text/plain", body => 'Name: ' . $admin_name . "\nUser Id: " . $admin_user_id . "\n" );
-                }
-
-
-            }
-
-        }
-
         if ($action eq "deleteMessage") {
             $self->runSQL(SQL=>"delete from email_queue where guid='".$guid."'");
         }
         
-        if ($action eq "adminUserDelete") {
-            $self->runSQL(SQL=>"delete from admin_user where guid='".$guid."'");
-        }
     }
 
     ##############################################################################################
@@ -3076,13 +3037,13 @@ sub uploadSiteFile {
             #
             # now that we know the guid, lets set the file name
             #
-            $paramHash{$uploadField}     = $self->{fileWebPath} . "/" . $self->{siteGUID} . "/" . $paramHash{guid} . "/" . $paramHash{name};
-            %paramHash             = $self->saveData(%paramHash);
+            $paramHash{$uploadField}    = $self->{fileWebPath} . '/' . $self->{siteGUID} . '/' . $paramHash{guid} . '/' . $paramHash{name};
+            %paramHash                  = $self->saveData(%paramHash);
 
             #
             # because we are saving a record lets flag this so we do image cleanup at the end
             #
-            $runFileCleanup         = 1;
+            $runFileCleanup = 1;
         }
 
         #
