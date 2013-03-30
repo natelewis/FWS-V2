@@ -103,7 +103,7 @@ sub adminUserArray {
     #
     # get the data from the database and push it into the hash array
     #
-    my $adminUserArray = $self->runSQL( SQL => "select name,user_id,guid from admin_user" );
+    my $adminUserArray = $self->runSQL( SQL => "select name, user_id, guid from admin_user" );
     while ( @$adminUserArray ) {
         #
         # assign the data to variables: Perl likes it done this way
@@ -118,7 +118,7 @@ sub adminUserArray {
         #
         push ( @userHashArray, {%userHash} );
     }
-    if ( $paramHash{ 'ref' } ) { return \@userHashArray }
+    if ( $paramHash{ref} ) { return \@userHashArray }
     return @userHashArray;
 }
 
@@ -1657,7 +1657,6 @@ sub runSQL {
     # based on a default setting
     #
     my @data;
-    my $errorResponse;
 
     #
     # send this off to the log
@@ -1672,11 +1671,6 @@ sub runSQL {
     if ( $sth ) {
         $sth->{PrintError} = 0;
         $sth->execute();
-
-        #
-        # clean way to get error response
-        #
-        if ( $DBI::errstr ) { $errorResponse .= $DBI::errstr }
 
         #
         # set the row variable ready to be populated
@@ -1716,11 +1710,10 @@ sub runSQL {
     }
 
     #
-    # check if myDBH has been blanked - if so we have an error
-    # or I didn't have one to begin with
+    # if errstr is populated, lets EXPLODE!
     #
-    if ( $errorResponse ) { 
-        $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $errorResponse );
+    if ( $sth->errstr ) { 
+        $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $sth->errstr );
 
         #
         # run update DB on an error to fix anything that was broke :(
