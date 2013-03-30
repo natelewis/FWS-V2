@@ -190,9 +190,17 @@ sub alterTable {
         $paramHash{default} = "'" . $paramHash{default} . "'";
     }
 
-    my $addStatement        = "alter table " . $paramHash{table} . " add " . $paramHash{field} . " " . $paramHash{type} . " NOT NULL default " . $paramHash{default};
-    my $changeStatement     = "alter table " . $paramHash{table} . " change " . $paramHash{field} . " " . $paramHash{field} . " " . $paramHash{type} . " NOT NULL default " . $paramHash{default};
+    #
+    # the default value is not applicable to text types lets not set it!
+    #
+    my $default = " NOT NULL default " . $paramHash{default};
+    if ( $paramHash{type} =~ /^text/i ) { $default = '' }
 
+    #
+    # build teh statements
+    #
+    my $addStatement        = "alter table " . $paramHash{table} . " add " . $paramHash{field} . " " . $paramHash{type} . $default;
+    my $changeStatement     = "alter table " . $paramHash{table} . " change " . $paramHash{field} . " " . $paramHash{field} . " " . $paramHash{type} . $default;
 
     #
     # add primary key if the table is not an ext field
@@ -212,7 +220,6 @@ sub alterTable {
         $indexStatement         = "create index " . $paramHash{table} . "_" . $paramHash{field} . " on " . $paramHash{table} . " (" . $paramHash{field} . ")";
         $showTablesStatement    = "select name from sqlite_master where type='table'";
     }
-
 
     #
     # do mySQL changes
