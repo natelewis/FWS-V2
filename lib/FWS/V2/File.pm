@@ -710,16 +710,10 @@ sub makeDir {
     
     if ( $paramHash{directory} =~ /^$filePath/ || $paramHash{directory} =~ /^$fileSecurePath/ || $paramHash{nonFWS} ) {
 
-
-        #
-        # eat the leading / if it exists ... and it should (this is for the split
-        #
-        $paramHash{directory} =~ s/^\///sg;
-
         #
         # create an array we can loop though to rebuild it making them on the fly
         #
-        my @directories = split( /\//, $paramHash{directory} );
+        my @directories = split( /(\/|\\)/, $paramHash{directory} );
 
         #
         # delete the $paramHash{directory} because we will rebuild it
@@ -733,13 +727,13 @@ sub makeDir {
             #
             # make the dir and send a debug message
             #
-            $paramHash{directory} .= '/' . $thisDir;
+            $paramHash{directory} .= $thisDir . '/';
             mkdir( $paramHash{directory}, 0755 );
         }
     }
 
     else {
-        $self->FWSLog( 'MKDIR trying to make directory not in tree: ' . $paramHash{directory} );
+        $self->FWSLog( 'makeDir() in authorized directory: ' . $paramHash{directory} );
         return;
     }
     return $paramHash{directory}; 
