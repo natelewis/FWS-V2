@@ -511,6 +511,9 @@ sub new {
     # set the default FWS log level
     $self->{FWSLogLevel}                  ||= 1;
 
+    # set the adminSafeMode for shared mode ( Not yet implemented fully ) 
+    $self->{adminSafeMode}                ||= 0;
+
     # set the default SQL log level
     $self->{SQLLogLevel}                  ||= 0;
 
@@ -736,7 +739,7 @@ sub new {
         s                     => { type => 'int(1)'   ,key => $EMPTY        ,default => '0'                 },
         a                     => { type => 'char(50)' ,key => $EMPTY        ,default => $EMPTY              },
         a_exp                 => { type => 'int(11)'  ,key => $EMPTY        ,default => '0'                 },
-        extra                 => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
+        extra_value           => { type => 'text'     ,key => $EMPTY        ,default => $EMPTY              },
         created               => { type => 'timestamp',key => $EMPTY        ,default => 'CURRENT_TIMESTAMP' },
     };
 

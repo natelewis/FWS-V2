@@ -231,7 +231,7 @@ sub send {
 
                     use MIME::Base64;
 
-                    open ( my $SENDMAIL, "|-", $self->{sendmailBin} . " -t" ) or die "Cannot open " . $self->{sendmailBin};
+                    open ( my $SENDMAIL, "|-", $self->{sendmailBin} . " -t" ) || $self->FWSLog( "Sendmail execute failed: " . $self->{sendmailBin} );
 
                     print $SENDMAIL "Reply-To: \"" . $paramHash{fromName} . "\" <" . $paramHash{from} . ">\n";
                     print $SENDMAIL "From: \"" . $paramHash{fromName} . "\" <" . $paramHash{from} . ">\n";
@@ -245,8 +245,6 @@ sub send {
                     print $SENDMAIL "Content-Type: " . $paramHash{mimeType} . "; charset=" . $paramHash{characterSet} . "\n";
                     print $SENDMAIL "Content-Transfer-Encoding: " . $paramHash{transferEncoding} . "\n\n";
                     print $SENDMAIL $paramHash{body};
-
-
 
                     #
                     # Add the attachments

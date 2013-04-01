@@ -190,9 +190,17 @@ sub alterTable {
         $paramHash{default} = "'" . $paramHash{default} . "'";
     }
 
-    my $addStatement        = "alter table " . $paramHash{table} . " add " . $paramHash{field} . " " . $paramHash{type} . " NOT NULL default " . $paramHash{default};
-    my $changeStatement     = "alter table " . $paramHash{table} . " change " . $paramHash{field} . " " . $paramHash{field} . " " . $paramHash{type} . " NOT NULL default " . $paramHash{default};
+    #
+    # the default value is not applicable to text types lets not set it!
+    #
+    my $default = " NOT NULL default " . $paramHash{default};
+    if ( $paramHash{type} =~ /^text/i ) { $default = '' }
 
+    #
+    # build teh statements
+    #
+    my $addStatement        = "alter table " . $paramHash{table} . " add " . $paramHash{field} . " " . $paramHash{type} . $default;
+    my $changeStatement     = "alter table " . $paramHash{table} . " change " . $paramHash{field} . " " . $paramHash{field} . " " . $paramHash{type} . $default;
 
     #
     # add primary key if the table is not an ext field
@@ -212,7 +220,6 @@ sub alterTable {
         $indexStatement         = "create index " . $paramHash{table} . "_" . $paramHash{field} . " on " . $paramHash{table} . " (" . $paramHash{field} . ")";
         $showTablesStatement    = "select name from sqlite_master where type='table'";
     }
-
 
     #
     # do mySQL changes
@@ -1331,6 +1338,15 @@ sub createFWSDatabase {
         #
         my ( $adminGUID ) = @{$self->runSQL( SQL => "select guid from site where sid='admin'", noUpdate => 1 )};
         if ( !$adminGUID ) {
+        
+            #
+            # because we don't have an admin we probably don't have a DB at all, lets make it
+            #
+            $self->updateDatabase();
+
+            #
+            # now that the db is there, lets do this!
+            #
             $adminGUID = $self->createGUID( 's' );
             $self->runSQL( SQL => "insert into site (guid, sid, site_guid) values ('" . $adminGUID . "', 'admin', '" . $adminGUID . "')" );
             $somethingNew++;
@@ -1676,41 +1692,50 @@ sub runSQL {
         $sth->execute();
 
         #
-        # SQL lite gathing and normilization
+        # only continue if there is no errors
+        # and we are doing something warrents fetching
         #
-        if ( $self->{DBType} =~ /^SQLite$/i ) {
-            while ( my @row = $sth->fetchrow ) {
-                my @cleanRow;
-                while ( @row ) {
-                    my $clean = shift( @row );
-                    $clean = '' if !defined $clean;
-                    $clean =~ s/\\\\/\\/sg;
-                    push( @cleanRow, $clean );
-                }
-                push( @data, @cleanRow );
-            }
-        }
+        if ( !$sth->errstr && $paramHash{SQL} =~ /^(select|desc|show) /i ) {
 
-        #
-        # Fault to MySQL if we didn't find another type
-        #
-        else {
-            while ( my @row = $sth->fetchrow ) {
-                my @cleanRow;
-                while ( @row ) {
-                    my $clean = shift( @row );
-                    $clean = '' if !defined $clean;
-                    push ( @cleanRow, $clean );
+            #
+            # SQL lite gathing and normilization
+            #
+            if ( $self->{DBType} =~ /^SQLite$/i ) {
+                while ( my @row = $sth->fetchrow ) {
+                    my @cleanRow;
+                    while ( @row ) {
+                        my $clean = shift( @row );
+                        $clean = '' if !defined $clean;
+                        $clean =~ s/\\\\/\\/sg;
+                        push( @cleanRow, $clean );
+                    }
+                    push( @data, @cleanRow );
                 }
-                push ( @data, @cleanRow );
+            }
+    
+            #
+            # Fault to MySQL if we didn't find another type
+            #
+            else {
+                while ( my @row = $sth->fetchrow ) {
+                    my @cleanRow;
+                    while ( @row ) {
+                        my $clean = shift( @row );
+                        $clean = '' if !defined $clean;
+                        push ( @cleanRow, $clean );
+                    }
+                    push ( @data, @cleanRow );
+                }
             }
         }
     }
 
     #
     # if errstr is populated, lets EXPLODE!
+    # but not if its fetch without windows 7 will give this genericly when
+    # returns without records are passed
     #
-    if ( $sth->errstr ) { 
+    if ( $sth->errstr ){
         $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $sth->errstr );
 
         #
