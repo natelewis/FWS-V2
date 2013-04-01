@@ -91,7 +91,7 @@ sub fwsGUID {
     #
     # if is not set, set it and create the site id
     #
-    if ( !$self->siteValue('fwsGUID') ) {
+    if ( !$self->siteValue( 'fwsGUID' ) ) {
 
         #
         # get the sid for the fws site
@@ -104,20 +104,20 @@ sub fwsGUID {
         if ( !$fwsGUID ) {
             $fwsGUID = $self->createGUID( 'f' );
             my ( $adminGUID ) = $self->getSiteGUID( 'admin' );
-            $self->runSQL(SQL=>"insert into site set sid='fws',guid='" . $fwsGUID . "',site_guid='" . $self->safeSQL( $adminGUID ) . "'");
+            $self->runSQL( SQL => "insert into site set sid='fws', guid='" . $fwsGUID . "', site_guid='" . $self->safeSQL( $adminGUID ) . "'" );
         }
 
         #
         # add it as a siteValue and return the result
         #
-        $self->siteValue('fwsGUID',$fwsGUID) ;
+        $self->siteValue( 'fwsGUID', $fwsGUID ) ;
         return $fwsGUID;
     }
 
     #
     # I already know it, just return the result
     #
-    return $self->siteValue('fwsGUID');
+    return $self->siteValue( 'fwsGUID' );
 }
 
 
@@ -182,7 +182,7 @@ sub setSession {
     #
     # pull the current session
     #
-    my ( $id, $fws_lang, $s_e, $s_a, $a_exp, $s_s, $s_b, $s_bs, $s_ip, $extra ) = @{$self->runSQL( SQL => "select id,fws_lang,e,a,a_exp,s,b,bs,ip,extra from fws_sessions where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" )};
+    my ( $id, $fws_lang, $s_e, $s_a, $a_exp, $s_s, $s_b, $s_bs, $s_ip, $extra ) = @{$self->runSQL( SQL => "select id,fws_lang,e,a,a_exp,s,b,bs,ip,extra_value from fws_sessions where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" )};
 
     #
     # set the FWS_SESSION so we can see if it changed
@@ -192,7 +192,7 @@ sub setSession {
     #
     # if the session isn't in there, or the session is blank
     #
-    if ( $id eq "" || $ENV{REMOTE_ADDR} ne $s_ip ) {
+    if ( !$id || $ENV{REMOTE_ADDR} ne $s_ip ) {
         $s_b = $s_bs = $s_ip  = $s_e = $s_a = $s_s = $extra = '';
         $a_exp = '0';
         $self->adminLogOut();
@@ -271,7 +271,7 @@ sub setSession {
     #
     $self->{affiliateId}      = $self->formValue( 'a' );
     $self->{affiliateExp}     = $a_exp;
-    $self->{adminSafeMode}    = $s_s;
+    $self->{adminSafeMode}    = $s_s ||= 0;
 
     return;
 }
@@ -909,7 +909,7 @@ sub setSiteValues {
     #
     # check to see if there is no level... if so then we need create a new admin account
     #
-    if ( !$self->{siteGUID} ) { print $self->newDBCheck() }
+    if ( !$self->{siteGUID} ) { print $self->createFWSDatabase() }
 
     #
     # convert the values and fields to global valuse

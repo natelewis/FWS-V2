@@ -45,7 +45,9 @@ FWS version 2 safety methods are used for security when using unknown parameters
 
 =head2 safeDir
 
-All directories should be wrapped in this method before being applied.  It will remove any context that could change its scope to higher than its given location.  When using directories ALWAYS prepend them with $fws->{"fileDir"} or $fws->{"secureFileDir"} to ensure they root path is always in a known location to further prevent any tampering.  NEVER use a directory that is not prepended with a known depth!
+All directories or directry with file combination should be wrapped in this method before being used.  It will remove any context that could change its scope to higher than its given location.  When using directories ALWAYS prepend them with $fws->{fileDir} or $fws->{secureFileDir} to ensure they root path is always in a known location to further prevent any tampering.  NEVER use a directory that is not prepended with a known depth!
+
+In addition this also will convert any directory that is a windows to back slashes, and anything that is not to forward slashes.  This is ment to normilize installations that may be split between two os's.
 
     #
     # will return //this/could/be/dangerous
@@ -57,11 +59,28 @@ All directories should be wrapped in this method before being applied.  It will 
     #
     print $fws->safeDir( "this/is/fine" );
 
+    #
+    # using this with files is fine also
+    #
+    print $fws->safeDir( "this/is/fine/also.zip" );
+
 =cut
 
 sub safeDir {
     my ( $self, $incomingText ) = @_;
     $incomingText =~ s/(\.\.|\||;)//sg;
+
+    #
+    # if we are on windows make sure all the slashes are the right way
+    # if we are not, then make sure they are the other way
+    #
+    if ( $^O eq 'MSWin32' ) {
+        $incomingText =~ s/\//\\/sg;
+    }
+    else {
+        $incomingText =~ s/\\/\//sg;
+    }
+
     return $incomingText;
 }
 
