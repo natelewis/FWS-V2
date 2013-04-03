@@ -2697,6 +2697,12 @@ sub _addTemplate {
     #
     $title = $self->safeSQL( $title );
     my $guid = $self->createGUID( 't' );
+	
+	#
+	# set defaults
+	#
+	$default_template ||= 0;
+	
     $self->runSQL( SQL => "insert into templates (guid,site_guid,title,template_devel,default_template) values ('" . $guid . "','" . $self->safeSQL($siteGUID) . "','" . $title . "','" . $self->safeSQL($templateDevel) . "','" . $self->safeSQL($default_template) . "')" );
 
     #
