@@ -2629,25 +2629,26 @@ sub _processAdminAction {
             # default profile_active to on, if its not specified
             #
             if ($profile_active eq "") { $profile_active = "1" }
-    
             
-            if (length($profile_name) < 4)        { $self->formValue("statusNote","Your full name must be longer than 3 characters"); return; }
-            if (!$profile_name)            { $self->formValue("statusNote","Your full name is required"); return; }
-            if ($profile_email !~ /^\w+[\w|\.|-]*\w+@(\w+[\w|\.|-]*\w+\.[a-z]{2,4}|(\d{1,3}\.){3}\d{1,3})$/i) { $self->formValue("statusNote","Your eMail address must have a valid format."); return; }
-            if (!$profile_password)            { $self->formValue("statusNote","Password is required"); return; }
-            if (length($profile_password) < 6)    { $self->formValue("statusNote","Passwords must be 6 characters long"); return; }
+            if (length($profile_name) < 4)          { $self->formValue("statusNote","Your full name must be longer than 3 characters"); return; }
+            if (!$profile_name)                     { $self->formValue("statusNote","Your full name is required"); return; }
+            if ($profile_email !~ /^\w+[\w|\.|-]*\w+@(\w+[\w|\.|-]*\w+\.[a-z]{2,4}|(\d{1,3}\.){3}\d{1,3})$/i) 
+                                                    { $self->formValue("statusNote","Your eMail address must have a valid format."); return; }
+            if (!$profile_password)                 { $self->formValue("statusNote","Password is required"); return; }
+            if (length($profile_password) < 6)      { $self->formValue("statusNote","Passwords must be 6 characters long"); return; }
             
             #check to see if this profile is unique within the site were currently on
-            if ($self->openRS("select 1 from profile where email like '".$profile_email."' LIMIT 1")) {
+            if ( @{$self->runSQL( SQL=>"select 1 from profile where email like '" . $fws->safeSQL( $profile_email ) . "' LIMIT 1" )} ) {
                 my $emailBody  = "User profile [".$profile_email."] could not be created\n\nUser profile already exists\n";
                 $self->formValue("statusNote",$emailBody);
                 return;
             }
                     
-            $self->saveUser( name    => $profile_name,
-                    password    => $profile_password,
-                    email        => $profile_email,
-                    active        => $profile_active);
+            $self->saveUser( 
+                    name            => $profile_name,
+                    password        => $profile_password,
+                    email           => $profile_email,
+                    active          => $profile_active);
         }    
     
         if ($action eq "groupAdd") {
