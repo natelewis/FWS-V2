@@ -2638,7 +2638,7 @@ sub _processAdminAction {
             if (length($profile_password) < 6)      { $self->formValue("statusNote","Passwords must be 6 characters long"); return; }
             
             #check to see if this profile is unique within the site were currently on
-            if ( @{$self->runSQL( SQL=>"select 1 from profile where email like '" . $fws->safeSQL( $profile_email ) . "' LIMIT 1" )} ) {
+            if ( @{$self->runSQL( SQL=>"select 1 from profile where email like '" . $self->safeSQL( $profile_email ) . "' LIMIT 1" )} ) {
                 my $emailBody  = "User profile [".$profile_email."] could not be created\n\nUser profile already exists\n";
                 $self->formValue("statusNote",$emailBody);
                 return;
