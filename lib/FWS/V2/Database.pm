@@ -2746,7 +2746,7 @@ sub userArray {
         my %userHash;
         $userHash{FBId}           = shift( @$userArray );
         $userHash{FBAccessToken}  = shift( @$userArray );
-        $userHash{name}           = shift( @$userArray );
+        $userHash{name}           = $self->removeHTML( shift( @$userArray ) );
         $userHash{email}          = shift( @$userArray );
         $userHash{guid}           = shift( @$userArray );
         $userHash{active}         = shift( @$userArray );
@@ -2893,6 +2893,12 @@ sub userHash {
             if ( !$lookupGUID ) { %{$self->{profileHash}} = %userHash }
         }
     }
+
+    #
+    # make sure nobody is putting anything dangrous in the user name
+    #
+    $userHash{name} = $self->removeHTML( $userHash{name} );
+
     return %userHash;
 }
 

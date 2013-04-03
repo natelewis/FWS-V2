@@ -708,7 +708,7 @@ sub makeDir {
     my $filePath        = $self->safeDir( $self->{filePath} );
     my $fileSecurePath  = $self->safeDir( $self->{fileSecurePath} );
     
-    if ( $paramHash{directory} =~ /^$filePath/ || $paramHash{directory} =~ /^$fileSecurePath/ || $paramHash{nonFWS} ) {
+    if ( $paramHash{directory} =~ /^\Q$filePath\E/ || $paramHash{directory} =~ /^\Q$fileSecurePath\E/ || $paramHash{nonFWS} ) {
 
         #
         # create an array we can loop though to rebuild it making them on the fly

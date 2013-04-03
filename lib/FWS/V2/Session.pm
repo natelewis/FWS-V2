@@ -143,7 +143,7 @@ sub setFormValues {
     # grab the one from the cookie if we have it
     #
     my $cookieSession = $cgi->cookie( $self->{sessionCookieName} );
-    if ( $cookieSession && !$self->{form}{session} ) { $self->{form}{session} = $cookieSession }
+    if ( $cookieSession ) { $self->{form}{session} = $cookieSession }
 
     #
     # if fws_lang is not set, lets set it
