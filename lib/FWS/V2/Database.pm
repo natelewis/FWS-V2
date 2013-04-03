@@ -1938,6 +1938,15 @@ sub saveData {
     # now before we added something new we might need a new index, lets reset it for good measure
     #
     $self->setCacheIndex();
+	
+	#
+	# set default to ensure we don't explode with SQL errors from default defs
+	#
+	$paramHash{showMobile} 		||= 0;
+	$paramHash{showLogin} 		||= 0;
+	$paramHash{default_element} ||= 0;
+	$paramHash{disableTitle} 	||= 0;
+	$paramHash{disableEditMode} ||= 0;
 
     #
     # Save the data minus the extra fields
@@ -3544,11 +3553,16 @@ sub _getKeywordSQL {
 sub _saveXRef {
     my ( $self, $child, $layout, $ord, $parent, $siteGUID ) = @_;
 
+	#
+	# set defaults to ensure the insert dosen't fail
+	#
+	$ord ||= 0;
+	
     #
     # delete the old one if its there
     #
     $self->_deleteXRef( $child, $parent, $siteGUID );
-
+	
     #
     # add the new one
     #
