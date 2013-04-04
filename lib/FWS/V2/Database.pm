@@ -246,7 +246,7 @@ sub alterTable {
     #
     # if its the sessions table make it like this
     #
-    if ( $paramHash{table} eq 'fws_sessions' ) { $idField = ", id char(50) " . $primaryKey }
+    if ( $paramHash{table} eq 'fws_sessions' ) { $idField = ", id char(36) " . $primaryKey }
 
     #
     # compile the statement
@@ -277,7 +277,7 @@ sub alterTable {
     }
 
     #
-    # get the table deffinition hash
+    # get the table definition hash
     #
     my %tableFieldHash = $self->tableFieldHash( $paramHash{table} );
 
@@ -2858,9 +2858,8 @@ sub userHash {
             # so we can use it to get the profile;
             #
             my @profileExtArray     = @{$self->runSQL( SQL => "select profile.extra_value, profile.guid, 'pin', profile.pin, 'guid', profile.guid, 'googleId', profile.google_id, 'name', profile.name, 'FBId', fb_id, 'FBAccessToken', fb_access_token, 'email', profile.email, 'active', profile.active from profile where " . $lookupSQL )};
-            my $extraValue          = shift(@profileExtArray);
-            my $guid                = shift(@profileExtArray);
-
+            my $extraValue          = shift( @profileExtArray );
+            my $guid                = shift( @profileExtArray );
 
             #
             # convert it into the hash
@@ -2877,8 +2876,7 @@ sub userHash {
             #
             my @groups = @{$self->runSQL( SQL => "select profile_groups_xref.groups_guid from profile left join profile_groups_xref on profile_groups_xref.profile_guid = profile.guid where profile.guid = '" . $self->safeSQL( $guid ) . "'" )};
             while (@groups) {
-                my $groupId = shift(@groups);
-                $userHash{group}{$groupId} = 1;
+                $userHash{group}{ shift( @groups ) } = 1;
             }
 
             #
