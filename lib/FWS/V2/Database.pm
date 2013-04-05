@@ -415,7 +415,7 @@ sub connectDBH {
         #
         # send an error if we got one
         #
-        if ( DBI->errstr() ) { $self->FWSLog( 'DB Connection error: ' . DBI->errstr() ) }
+        if ( DBI->errstr() ) { $self->FWSLog( 'DB connection error: ' . DBI->errstr() ) }
     }
 
     #
@@ -1736,13 +1736,13 @@ sub runSQL {
     # returns without records are passed
     #
     if ( $sth->errstr ){
-        $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $sth->errstr );
+        $self->FWSLog( 'DB SQL error: ' . $paramHash{SQL} . ': ' . $sth->errstr );
 
         #
         # run update DB on an error to fix anything that was broke :(
         # if noUpdate is passed lets not do this, so we do recurse!
         #
-        if ( !$paramHash{noUpdate} ) { $self->FWSLog( 'UPDATED DB: ' . $self->updateDatabase() ) }
+        if ( !$paramHash{noUpdate} ) { $self->FWSLog( 'DB update ran: ' . $self->updateDatabase() ) }
     }
 
     #
@@ -2332,7 +2332,7 @@ sub schemaHash {
     eval $elementHash{schemaDevel};
     ## use critic
     my $errorCode = $@;
-    if ( $errorCode ) { $self->FWSLog( 'SCHEMA ERROR: ' . $guid . ' - ' . $errorCode ) }
+    if ( $errorCode ) { $self->FWSLog( 'DB schema error: ' . $guid . ' - ' . $errorCode ) }
 
     return %dataSchema;
 }
@@ -2376,7 +2376,7 @@ sub setCacheIndex {
     # update the extra table of what the cacheIndex is
     #
     if ( $self->siteValue( 'dataCacheIndex' ) ne $cacheValue ) {
-        $self->FWSLog( "Setting new site cache index: ".$cacheValue );
+        $self->FWSLog( "Adding data cache index: ".$cacheValue );
         $self->saveExtra( table => 'site', guid => $paramHash{siteGUID}, field => 'dataCacheIndex', value => $cacheValue );
     }
     return;
@@ -3616,7 +3616,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

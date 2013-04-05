@@ -2482,15 +2482,15 @@ sub _processAdminAction {
             #
             my $updated = 0;
         
-            $self->FWSLog("Backing Up FWS Core: ".$newAdminFile." - Backup File Is Now: ".$newAdminFile.".".$currentTime);
+            $self->FWSLog("Backing up FWS core: ".$newAdminFile." - Backup File Is Now: ".$newAdminFile.".".$currentTime);
             copy($newAdminFile,$newAdminFile.".".$currentTime);
 
             my ($updateString,$majorVer,$minorVer,$build) = $self->_versionData('live','core',"fws_installCore");    
             my $imageURL = $self->{FWSServer} . '/fws_' . $majorVer . '/current_frameworksitescom.pm';
             my $response = $browser->get( $imageURL );
             if (!$response->is_success ) { 
-                $self->FWSLog("A network error in connecting to the FWS Server: ".$response->status_line);
-                $self->formValue('coreStatusNote',"A network error in connecting to FWS Server:".$response->status_line);
+                $self->FWSLog( "FWS server connection error: ".$response->status_line );
+                $self->formValue( 'coreStatusNote', "A network error in connecting to FWS Server:" . $response->status_line );
             }
             else {
                 my $image = $response->content;
@@ -2498,14 +2498,14 @@ sub _processAdminAction {
                 open ( my $FILE, ">", $self->{fileSecurePath} . "/FWS/" . $distFile . ".pm" );
                 print $FILE "package " . $distName.";\n" . $image;
                 close $FILE;
-                $self->FWSLog("FWS Core Upgraded");
+                $self->FWSLog( "FWS core upgraded" );
                 $updated++;
 
                 #
                 # import the new core admin
                 #
                 my $importReturn = $self->_importAdmin( 'current_core' );
-                $self->FWSLog( "Core Admin Packages have been upgraded to current" );
+                $self->FWSLog( "Core admin packages updated to current" );
                 $self->formValue( 'coreStatusNote', 'Current FWS Core element and file packages has been updated' );
             }
         
@@ -3151,7 +3151,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
