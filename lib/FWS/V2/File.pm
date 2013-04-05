@@ -301,8 +301,8 @@ sub fileArray {
             my %fileHash;
             $fileHash{file}       = $dirFile;
             $fileHash{fullFile}   = $paramHash{directory} . '/' . $dirFile;
-            $fileHash{size}       = (stat $fileHash{fullFile})[7];
-            $fileHash{date}       = (stat $fileHash{fullFile})[9];
+            $fileHash{size}       = ( stat $fileHash{fullFile} )[7];
+            $fileHash{date}       = ( stat $fileHash{fullFile} )[9];
 
             #
             # push it to the array
