@@ -713,7 +713,7 @@ sub makeDir {
         #
         # create an array we can loop though to rebuild it making them on the fly
         #
-        my @directories = split( /(\/|\\)/, $paramHash{directory} );
+        my @directories = split( /\//, $paramHash{directory} );
 
         #
         # delete the $paramHash{directory} because we will rebuild it
@@ -728,6 +728,7 @@ sub makeDir {
             # make the dir and send a debug message
             #
             $paramHash{directory} .= $thisDir . '/';
+            $self->FWSLog( ' DIR: ' .$paramHash{directory} );
             mkdir( $paramHash{directory}, 0755 );
         }
     }
