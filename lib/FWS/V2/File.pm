@@ -728,7 +728,6 @@ sub makeDir {
             # make the dir and send a debug message
             #
             $paramHash{directory} .= $thisDir . '/';
-            $self->FWSLog( ' DIR: ' .$paramHash{directory} );
             mkdir( $paramHash{directory}, 0755 );
         }
     }
@@ -1280,11 +1279,13 @@ sub _installPlugin {
 
     my $script;
     my $change;
+    my $sql;
     my $files;
     my $fileReading;
     my $fileName;
-    my $scriptPulled = 0;
-    my $changePulled = 0;
+    my $scriptPulled    = 0;
+    my $SQLPulled       = 0;
+    my $changePulled    = 0;
 
     #
     # bring in web accessable files
@@ -1293,13 +1294,20 @@ sub _installPlugin {
     $self->makeDir( $webDir );
     while ( $responseRef->{content} =~ /(.*)\n?/g ){
         my $line = $1;
-
+        
         # if we have started the file, stop working on the scripts
-        if ( $line =~ /^FILE\|/ ) { $changePulled = 1; $scriptPulled = 1 }
-
+        if ( $line =~ /^FILE\|/ ) { $changePulled = $scriptPulled = $SQLPulled = 1 }
+        
         # still building the changelog
         if ( $line =~ /^CHANGELOG\|/ ) { $scriptPulled = 1 }
-        elsif ( $scriptPulled && !$changePulled ) { $change .= $line."\n" }
+        elsif ( $scriptPulled && !$changePulled ) { $change .= $line . "\n" }
+
+        # still building the SQL
+        if ( $line =~ /^FWSSQL\|/ ) { $changePulled = 1 }
+        elsif ( $scriptPulled && $changePulled && $line && !$SQLPulled ) { 
+            $self->FWSLog( 'SQL: '. $line );
+            $self->runSQL( SQL => $line );
+        }
 
         # still building the script
         if ( !$scriptPulled ) { $script .= $line . "\n" }
@@ -1309,7 +1317,7 @@ sub _installPlugin {
             #
             # save the file to that directory
             #
-            $self->FWSLog( "Plugin File: ".$webDir."/".$fileName );
+            $self->FWSLog( "Plugin File: " . $webDir . "/" . $fileName );
             $self->saveEncodedBinary( $webDir . "/" . $fileName, $fileReading );
 
             #
@@ -1332,7 +1340,6 @@ sub _installPlugin {
         #
         if ( $line =~ /^FILE\|/ ) { ( $fileName = $line ) =~ s/.*\///sg }
     }
-
 
     #
     # save the script

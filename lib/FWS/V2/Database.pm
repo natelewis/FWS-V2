@@ -1043,6 +1043,12 @@ sub elementArray {
     #
     if ( $paramHash{siteGUID} ) { $addToWhere .= " and site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "'" }
 
+    #
+    # match only with matching plugin
+    # all other search cretira is overwritten! 
+    #
+    if ( $paramHash{plugin} ) { $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "'" }
+
 
     if ( $paramHash{tags} ) {
         my @tagsArray = split( /,/, $paramHash{tags} );
@@ -1070,7 +1076,9 @@ sub elementArray {
     #
     # grab the array from the DB
     #
-    my (@elementArray) = $self->openRS("select ord,admin_group,root_element,site_guid,guid,type,parent,title,schema_devel,script_devel,checkedout from element where 1=1" . $addToWhere . " order by title");
+    my ( @elementArray ) = @{$self->runSQL( SQL => "select ord, plugin, admin_group, root_element, site_guid, guid, type, parent, title, schema_devel, script_devel, checkedout from element where 1=1" . $addToWhere . " order by title" )};
+    
+    $self->FWSLog ( "select ord, plugin, admin_group, root_element, site_guid, guid, type, parent, title, schema_devel, script_devel, checkedout from element where 1=1" . $addToWhere . " order by title" );
 
 
     #
@@ -1091,7 +1099,7 @@ sub elementArray {
                 if ( $checkTag && $self->{elementHash}{$guid}{tags} =~ /^$checkTag$/ ) { $addElement = 1 }
             }
 
-        if ( $addElement ) { push ( @elementArrayReturn,{%{$self->{elementHash}{$guid}}} ) }
+        if ( $addElement ) { push ( @elementArrayReturn, {%{$self->{elementHash}{$guid}}} ) }
         }
     }
 
@@ -1102,17 +1110,18 @@ sub elementArray {
     while (@elementArray) {
         my %elementHash;
         $alphaOrd++;
-        $elementHash{ord}         = shift(@elementArray);
-        $elementHash{adminGroup}  = shift(@elementArray);
-        $elementHash{rootElement} = shift(@elementArray);
-        $elementHash{siteGUID}    = shift(@elementArray);
-        $elementHash{guid}        = shift(@elementArray);
-        $elementHash{type}        = shift(@elementArray);
-        $elementHash{parent}      = shift(@elementArray);
-        $elementHash{title}       = shift(@elementArray);
-        $elementHash{schemaDevel} = shift(@elementArray);
-        $elementHash{scriptDevel} = shift(@elementArray);
-        $elementHash{checkedout}  = shift(@elementArray);
+        $elementHash{ord}         = shift( @elementArray );
+        $elementHash{plugin}      = shift( @elementArray );
+        $elementHash{adminGroup}  = shift( @elementArray );
+        $elementHash{rootElement} = shift( @elementArray );
+        $elementHash{siteGUID}    = shift( @elementArray );
+        $elementHash{guid}        = shift( @elementArray );
+        $elementHash{type}        = shift( @elementArray );
+        $elementHash{parent}      = shift( @elementArray );
+        $elementHash{title}       = shift( @elementArray );
+        $elementHash{schemaDevel} = shift( @elementArray );
+        $elementHash{scriptDevel} = shift( @elementArray );
+        $elementHash{checkedout}  = shift( @elementArray );
         $elementHash{alphaOrd}    = $alphaOrd;
         $elementHash{label}       = $elementHash{type} . ' - ' . $elementHash{title};
         if ( !$elementHash{type} ) { $elementHash{label} = 'element' . $elementHash{label} }
@@ -1144,7 +1153,7 @@ sub elementHash {
         #
         # get tha hash from the DB
         #
-        my (@scriptArray) = @{$self->runSQL( SQL => "select 'jsDevel',js_devel,'cssDevel',css_devel,'adminGroup',admin_group,'classPrefix',class_prefix,'siteGUID',site_guid,'guid',guid,'ord',ord,'tags',tags,'public',public,'rootElement',root_element,'type',type,'parent',parent,'title',title,'schemaDevel',schema_devel,'scriptDevel',script_devel,'checkedout',checkedout from element where " . $addToWhere . " order by ord limit 1" )};
+        my (@scriptArray) = @{$self->runSQL( SQL => "select 'plugin', plugin, 'jsDevel', js_devel, 'cssDevel', css_devel, 'adminGroup', admin_group, 'classPrefix', class_prefix, 'siteGUID', site_guid, 'guid', guid, 'ord', ord, 'tags', tags, 'public', public, 'rootElement', root_element, 'type', type, 'parent', parent, 'title', title, 'schemaDevel', schema_devel, 'scriptDevel', script_devel, 'checkedout', checkedout from element where " . $addToWhere . " order by ord limit 1" )};
 
         #
         # create the hash and return it
@@ -1159,7 +1168,7 @@ sub elementHash {
 
 Return a hash array in a csv format.
 
-    my $csv = $fws->exportCSV(dataArray=>[@someArray]);
+    my $csv = $fws->exportCSV( dataArray => [@someArray] );
 
 =cut
 
@@ -1173,9 +1182,7 @@ sub exportCSV {
     my %theKeys;
     for my $i (0 .. $#dataArray) {
         for my $key ( keys %{$dataArray[$i]}) {
-            if ( $key !~ /^(guid|killSession)$/ ) {
-                $theKeys{$key} =1;
-            }
+            if ( $key !~ /^(guid|killSession)$/ ) { $theKeys{$key} =1 }
         }
     }
 
@@ -1209,9 +1216,8 @@ sub exportCSV {
     # kill the trailing comma and return the string
     #
     $returnString =~ s/,$//sg;
-    return $returnString. "\n";
+    return $returnString . "\n";
 }
-
 
 
 =head2 flushSearchCache
@@ -3281,7 +3287,7 @@ sub _fullElementHash {
         #
         # get the elementArray
         #
-        my $elementArray = $self->runSQL( SQL => "select guid, type, class_prefix, css_devel, js_devel, title, tags, parent, ord, site_guid, root_element, public, checkedout from element" );
+        my $elementArray = $self->runSQL( SQL => "select guid, plugin, type, class_prefix, css_devel, js_devel, title, tags, parent, ord, site_guid, root_element, public, checkedout from element" );
 
 
         #
@@ -3293,6 +3299,7 @@ sub _fullElementHash {
         while (@$elementArray) {
             my $guid                                                = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{guid}           = $guid;
+            $self->{_fullElementHashCache}->{$guid}{plugin}         = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{type}           = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{classPrefix}    = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{cssDevel}       = shift( @$elementArray );
