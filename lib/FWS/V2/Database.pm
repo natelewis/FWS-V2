@@ -1078,9 +1078,6 @@ sub elementArray {
     #
     my ( @elementArray ) = @{$self->runSQL( SQL => "select ord, plugin, admin_group, root_element, site_guid, guid, type, parent, title, schema_devel, script_devel, checkedout from element where 1=1" . $addToWhere . " order by title" )};
     
-    $self->FWSLog ( "select ord, plugin, admin_group, root_element, site_guid, guid, type, parent, title, schema_devel, script_devel, checkedout from element where 1=1" . $addToWhere . " order by title" );
-
-
     #
     # look at element included in plugins
     #
@@ -2292,8 +2289,8 @@ sub saveUser {
     # loop though and update every one that is diffrent, but you can't touch for security reasons
     #
     for my $key ( keys %paramHash ) {
-        if ( $key !~ /^FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid$/ ) {
-            $self->saveExtra( table => 'profile', guid => $paramHash{guid}, field => $key,value=>$paramHash{$key} );
+        if ( $key !~ /^(FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid)$/ ) {
+            $self->saveExtra( table => 'profile', guid => $paramHash{guid}, field => $key, value => $paramHash{$key} );
         }
     }
 
@@ -3288,7 +3285,6 @@ sub _fullElementHash {
         # get the elementArray
         #
         my $elementArray = $self->runSQL( SQL => "select guid, plugin, type, class_prefix, css_devel, js_devel, title, tags, parent, ord, site_guid, root_element, public, checkedout from element" );
-
 
         #
         # Push the elementHash into the Cache
