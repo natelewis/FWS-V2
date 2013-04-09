@@ -1297,7 +1297,7 @@ sub startElement {
 
 =head2 stateDropDown
 
-Return a dropdown for all US States, passining it (current, class, id, style, topOption)  TopOption if passed will be the text that is displayed for the option, but the value will be blank.
+Return a dropdown for all US States, passining it (current, class, id, name, style, topOption)  TopOption if passed will be the text that is displayed for the option, but the value will be blank.
 
 =cut
 
@@ -1315,6 +1315,7 @@ sub stateDropDown {
     if ( $paramHash{class} )         { $paramHash{class}         = 'class="' . $paramHash{class} . '" ' }
     if ( $paramHash{style} )         { $paramHash{style}         = 'style="' . $paramHash{style} . '" ' }
     if ( $paramHash{id} )            { $paramHash{id}            = 'id="' . $paramHash{id} . '" ' }
+    if ( $paramHash{name} )          { $paramHash{name}          = 'name="' . $paramHash{id} . '" ' }
     if ( $paramHash{topOption} )     { $paramHash{topOption}     = '<option value="">' . $paramHash{topOption} . '</option>' }
 
     #
