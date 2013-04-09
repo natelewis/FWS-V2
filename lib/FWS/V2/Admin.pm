@@ -2444,15 +2444,15 @@ sub _processAdminAction {
         }
 
         if ($action eq "FWSRestore") {
-            $self->restoreFWS( id => $self->formValue('restoreName') );
-            $self->formValue('restoreStatusNote','Restore completed' );
+            $self->restoreFWS( id => $self->formValue( 'restoreName' ) );
+            $self->formValue( 'restoreStatusNote', 'Restore completed' );
         }
         if ($action eq "FWSBackup") {
 
             my $backupID = $self->backupFWS( 
-                                excludeSiteFiles     => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
-                                id             => $self->formValue('backupName'),
-                                excludeTables         => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
+                                excludeSiteFiles    => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
+                                id                  => $self->formValue('backupName'),
+                                excludeTables       => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
             );
 
             $self->formValue('backupStatusNote','Backup completed using backup name '.$backupID);
@@ -2578,10 +2578,10 @@ sub _processAdminAction {
         }
 
         if ($action eq "flushSessions") {
-            if ( $self->formValue('months') ) { 
-                $self->runSQL(SQL=>"delete from fws_sessions where created < '".$self->formatDate(format=>'SQL',monthMod=>-($self->formValue('months')))."'");
-                if ($self->DBType() =~ /^mysql$/i) { $self->runSQL(SQL=>"optimize table fws_sessions") }
-                $self->formValue("sessionStatusNote", "Your sessions table was optimized");
+            if ( $self->formValue( 'months' ) ne '' ) { 
+                $self->runSQL( SQL => "delete from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod => -( $self->formValue( 'months' ) ) ) . "'");
+                if ( $self->DBType() =~ /^mysql$/i ) { $self->runSQL( SQL => "optimize table fws_sessions" ) }
+                $self->formValue( "sessionStatusNote", "Your sessions table was optimized" );
             }
         }
 
