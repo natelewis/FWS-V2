@@ -45,6 +45,7 @@ Parameters:
     id: file name of files - the date string in numbers will be used if no id is passed
     excludeTables: Comma delimited list of tables you do not want to back up
     excludeFiles: Do not backup the FWS web accessable files
+    minMode: Only backup anything that HAS to be there, no core, no js and css backup files.
     excludeSiteFiles: Backup site files related to plugins and the fws instance, but not the once related to the site
     excludeSecureFiles: Do not backup the secure files
 
@@ -102,15 +103,15 @@ sub backupFWS {
 
     if ( !$paramHash{excludeFiles} ) {
         if ( !$paramHash{excludeSiteFiles} ) {
-                   $self->packDirectory( fileName => $backupFile . ".files", directory => $self->{filePath} );
+               $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . ".files", directory => $self->{filePath} );
         }
         else {
-                   $self->packDirectory( directoryList => '/fws,/plugins', fileName => $backupFile . ".files", directory => $self->{filePath} );
+               $self->packDirectory( minMode => $paramHash{minMode}, directoryList => '/fws,/plugins', fileName => $backupFile . ".files", directory => $self->{filePath} );
         }
     }
 
     if ( !$paramHash{excludeSecureFiles} ) {
-        $self->packDirectory( fileName => $backupFile . ".secureFiles", directory => $self->{fileSecurePath}, baseDirectory => $self->{fileSecurePath} );
+        $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . ".secureFiles", directory => $self->{fileSecurePath}, baseDirectory => $self->{fileSecurePath} );
     }
 
     return $paramHash{id};
@@ -121,21 +122,23 @@ sub backupFWS {
 
 Restore a backup created by backupFWS.  This will overwrite the files in place that are the same, and will replace all database tables with the one from the restore that are restored.   All tables, and files not part of the restore will be left untouched.
 
-    $fws->restoreFWS( id=> 'someID' );
+    $fws->restoreFWS( id => 'someID' );
 
 =cut
 
 sub restoreFWS {
     my ( $self, %paramHash ) = @_;
 
+    $self->FWSLog( 'Restore started: ' . $paramHash{id} );
     $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.files',       directory => $self->{filePath} );
     $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.secureFiles', directory => $self->{fileSecurePath} );
 
-    open ( my $SQLFILE, "<", $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.sql' );
+    my $sqlFile = $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.sql';
+    open ( my $SQLFILE, "<", $sqlFile )  || $self->FWSLog( 'Could not read file: ' . $sqlFile );
     my $statement;
     my $endTest;
     while ( <$SQLFILE> ) {
-        $statement      .= $_;
+        $statement  .= $_;
         $endTest    .= $_;
 
         #
@@ -149,7 +152,7 @@ sub restoreFWS {
         #
         if ( $endTest !~ /'/ && $endTest =~ /;$/ ) {
             $self->runSQL( SQL=> $statement );
-            $statement      = '';
+            $statement  = '';
             $endTest    = '';
         }
     }
@@ -587,25 +590,29 @@ sub packDirectory {
         #
         # move though the files
         #
-        if (-f $fullFileName && $file !~ /^\/(import_|backup|cache|fws\/cache)/i && $file !~ /(.log|\.pm\.\d+)$/i && ( $dirOK || $file =~ /^FWS/ ) ) {
+        if (-f $fullFileName 
+            && $file !~ /^\/(import_|backup|cache|fws\/cache)/i 
+            && $file !~ /(.log|\.pm\.\d+)$/i 
+            && ( ( $file !~ /^\/fws\//i && $file !~ /^\/plugin\// && $file !~ /FWSElement-/ ) || !$paramHash{minMode} )
+            && ( $dirOK || $file =~ /^FWS/ ) ) {
 
-                #
-                # get the file
-                #
-                my $rawFile;
-                open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not read file: " .  $! );
-                binmode $FILE;
-                while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
-                close $FILE;
+            #
+            # get the file
+            #
+            my $rawFile;
+            open ( my $FILE, '<', $fullFileName ) || $self->FWSLog( 'Can not read file: ' .  $! );
+            binmode $FILE;
+            while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
+            close $FILE;
 
-                #
-                # print the header - encode it - footer around the file
-                #
-                my $fileLine = "FILE|" . $file . "\n" . encode_base64( $rawFile ) . 'FILE_END|' . $file . "\n";
-                if ( $paramHash{fileName} ne '' ) { print $FILEFILE $fileLine }
-                else { $packFile .= $fileLine }
+            #
+            # print the header - encode it - footer around the file
+            #
+            my $fileLine = 'FILE|' . $file . "\n" . encode_base64( $rawFile ) . 'FILE_END|' . $file . "\n";
+            if ( $paramHash{fileName} ne '' ) { print $FILEFILE $fileLine }
+            else { $packFile .= $fileLine }
 
-                }
+            }
         }, $paramHash{directory} );
 
     if ( $paramHash{fileName} ) { close $FILEFILE }
@@ -1123,7 +1130,7 @@ sub FWSLog{
         close $FILE;
     }
 
-    return 1;
+    return $module;
 }
 
 
@@ -1154,10 +1161,9 @@ sub SQLLog{
 
 sub _saveElementFile {
     my ( $self, $guid, $siteGUID, $table, $ext, $content ) = @_;
+
     #
     # for security reasons lets make sure ext is safe
-    #
-    # just a nother note:  saving elements only save to devel\staging
     #
     if ( ( $ext eq 'css' || $ext eq 'js' ) && ( $table eq 'element' || $table eq 'templates' || $table eq 'site' || $table eq 'page' ) ) {
 
@@ -1214,6 +1220,11 @@ sub _saveElementFile {
             print $FILE $content;
             close $FILE;
         }
+
+        #
+        # Remove JS and CSS Cache
+        #
+        $self->flushWebCache();
     }
     return;
 }
