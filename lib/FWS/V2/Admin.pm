@@ -2505,7 +2505,7 @@ sub _processAdminAction {
                 # import the new core admin
                 #
                 my $importReturn = $self->_importAdmin( 'current_core' );
-                $self->FWSLog( "Core admin packages updated to current" );
+                $self->FWSLog( "FWS core admin packages updated" );
                 $self->formValue( 'coreStatusNote', 'Current FWS Core element and file packages has been updated' );
             }
         
@@ -2513,9 +2513,11 @@ sub _processAdminAction {
             #
             # delete cache directory
             #
-            my @fileArray = @{$self->fileArray( directory => $self->{filePath} . "/fws/cache" )};
-            for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{fullFile} }
-        
+            $self->flushWebCache();
+       
+            # 
+            # update version number 
+            # 
             if ( $updated > 1 ) { 
                 $self->_versionData( 'live', 'core', "fws_installCore", 1 );
             }
