@@ -166,7 +166,6 @@ sub editField {
 }
 
 
-
 =head2 tabs
 
 Return jQueryUI tab html.  The tab names, tab content, tinyMCE editing field name, and any javascript for the tab onclick is passed as arrays to the method.
