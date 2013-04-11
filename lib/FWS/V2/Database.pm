@@ -1379,17 +1379,14 @@ sub createFWSDatabase {
             $self->homeGUID( $siteGUID );
             $somethingNew++;
         }
-    
-        if ( $somethingNew ) { 
-            $self->printPage( head=> "<title>New Database Detected</title>",
-                content => "<body><h2>Setting up New Database Users</h2><br/>".
-                "<b>Admin User Account</b><hr/>".
-                "User Id: admin<br/>".
-                "Password: This was set in the " . $self->{scriptName} . " file<br/><br/>".
-                "Note: Once an admin level user is created on this installation, the admin account will be disabled for security reasons. ".
-                "Please do this before working on your new site for security!<br/><br/>".
-                "<br/><br/><a href=\"" . $self->{scriptName} . "\">Click here to continue to</a> -> " . $self->domain() . $self->{scriptName} . 
-                "</body>");
+   
+        #
+        # because there was something new, redirect to the script again now that
+        # things should be present
+        # 
+        if ( $somethingNew ) {
+            print "Status: 302 Found\n";
+            print "Location: " . $self->{scriptName} . "\n\n";
         }
     }    
     return $self->{createFWSDatabaseRan} = 1;
