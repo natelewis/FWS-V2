@@ -1315,13 +1315,13 @@ sub stateDropDown {
     if ( $paramHash{class} )         { $paramHash{class}         = 'class="' . $paramHash{class} . '" ' }
     if ( $paramHash{style} )         { $paramHash{style}         = 'style="' . $paramHash{style} . '" ' }
     if ( $paramHash{id} )            { $paramHash{id}            = 'id="' . $paramHash{id} . '" ' }
-    if ( $paramHash{name} )          { $paramHash{name}          = 'name="' . $paramHash{id} . '" ' }
+    if ( $paramHash{name} )          { $paramHash{name}          = 'name="' . $paramHash{name} . '" ' }
     if ( $paramHash{topOption} )     { $paramHash{topOption}     = '<option value="">' . $paramHash{topOption} . '</option>' }
 
     #
     # start off the select with the top opction if present
     #
-    my $returnHTML = '<select ' . $paramHash{id} . $paramHash{class} . $paramHash{style} . '>' . $paramHash{topOption};
+    my $returnHTML = '<select ' . $paramHash{name} . $paramHash{id} . $paramHash{class} . $paramHash{style} . '>' . $paramHash{topOption};
 
     #
     # loop though the array creating each one, with the selected if the current matches
