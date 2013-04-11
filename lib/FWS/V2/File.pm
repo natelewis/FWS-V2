@@ -82,20 +82,20 @@ sub backupFWS {
     #
     # Dump the database
     #
-    open ( my $SQLFILE, ">", $backupFile . ".sql" );
-    my $tables = $self->runSQL( SQL => "SHOW TABLES" );
+    open ( my $SQLFILE, '>', $backupFile . '.sql' );
+    my $tables = $self->runSQL( SQL => 'SHOW TABLES' );
     while ( @$tables ) {
         my $table = shift( @$tables );
         if ( $table !~ /session/ && $table !~ /^admin_/ && !$excludeTables{$table} ) {
-            print $SQLFILE "DROP TABLE IF EXISTS " . $self->safeSQL( $table ) . ";" . "\n";
-            print $SQLFILE $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->selectall_arrayref( "SHOW CREATE TABLE " . $self->safeSQL( $table ) )->[0][1] . ";" . "\n";
-            my $sth = $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->prepare("SELECT * FROM " . $table);
+            print $SQLFILE 'DROP TABLE IF EXISTS ' . $self->safeSQL( $table ) . ';' . "\n";
+            print $SQLFILE $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->selectall_arrayref( 'SHOW CREATE TABLE ' . $self->safeSQL( $table ) )->[0][1] . ';' . "\n";
+            my $sth = $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->prepare( 'SELECT * FROM ' . $table );
             $sth->execute();
             while ( my @data = $sth->fetchrow_array() ) {
                 map ( $_ = "'" . $self->safeSQL( $_ ) . "'", @data );
                 map ( $_ =~ s/\0/\\0/sg, @data );
                 map ( $_ =~ s/\n/\\n/sg, @data );
-                print $SQLFILE "INSERT INTO " . $table . " VALUES (" . join( ',', @data ) . ");" . "\n";
+                print $SQLFILE 'INSERT INTO ' . $table . ' VALUES (' . join( ',', @data ) . ');' . "\n";
             }
         }
     }
@@ -103,15 +103,15 @@ sub backupFWS {
 
     if ( !$paramHash{excludeFiles} ) {
         if ( !$paramHash{excludeSiteFiles} ) {
-               $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . ".files", directory => $self->{filePath} );
+               $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . '.files', directory => $self->{filePath} );
         }
         else {
-               $self->packDirectory( minMode => $paramHash{minMode}, directoryList => '/fws,/plugins', fileName => $backupFile . ".files", directory => $self->{filePath} );
+               $self->packDirectory( minMode => $paramHash{minMode}, directoryList => '/fws,/plugins', fileName => $backupFile . '.files', directory => $self->{filePath} );
         }
     }
 
-    if ( !$paramHash{excludeSecureFiles} ) {
-        $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . ".secureFiles", directory => $self->{fileSecurePath}, baseDirectory => $self->{fileSecurePath} );
+    if ( !$paramHash{excludeSecureFiles} && !$paramHash{minMode} ) {
+        $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . '.secureFiles', directory => $self->{fileSecurePath}, baseDirectory => $self->{fileSecurePath} );
     }
 
     return $paramHash{id};
@@ -130,11 +130,13 @@ sub restoreFWS {
     my ( $self, %paramHash ) = @_;
 
     $self->FWSLog( 'Restore started: ' . $paramHash{id} );
-    $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.files',       directory => $self->{filePath} );
-    $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.secureFiles', directory => $self->{fileSecurePath} );
+
+    my $restoreFile = $self->{fileSecurePath} . '/backups/' . $paramHash{id};
+    $self->unpackDirectory( fileName => $restoreFile . '.files',       directory => $self->{filePath} );
+    $self->unpackDirectory( fileName => $restoreFile . '.secureFiles', directory => $self->{fileSecurePath} );
 
     my $sqlFile = $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.sql';
-    open ( my $SQLFILE, "<", $sqlFile )  || $self->FWSLog( 'Could not read file: ' . $sqlFile );
+    open ( my $SQLFILE, '<', $sqlFile )  || $self->FWSLog( 'Could not read file: ' . $sqlFile );
     my $statement;
     my $endTest;
     while ( <$SQLFILE> ) {
@@ -424,6 +426,8 @@ The counterpart to packDirectory.   This will put the files under the directory 
 sub unpackDirectory {
     my ( $self, %paramHash ) = @_;
 
+    $self->FWSLog( 'Unpacking files: ' . $paramHash{fileName} . ' -> ' . $paramHash{directory} );
+
     #
     # for good mesure, make the directory in case this is super fresh
     #
@@ -438,7 +442,7 @@ sub unpackDirectory {
     #
     # open file
     #
-    open ( my $UNPACKFILE, "<", $paramHash{fileName} );
+    open ( my $UNPACKFILE, '<', $paramHash{fileName} );
     while ( <$UNPACKFILE> ) {
         my $line = $_;
 
@@ -451,7 +455,7 @@ sub unpackDirectory {
             #
             # save the file to that directory
             #
-            $self->saveEncodedBinary( $paramHash{directory} . "/" . $fileName, $fileReading );
+            $self->saveEncodedBinary( $paramHash{directory} . '/' . $fileName, $fileReading );
 
             #
             # reset so when we come around again we will no we are done.
@@ -464,7 +468,7 @@ sub unpackDirectory {
         # if we have a file name,  we are currenlty looking for a
         # file.  eat those lines up and stick them in a diffrent var
         #
-        elsif ( $fileName ne '' ) { $fileReading .= $line."\n" }
+        elsif ( $fileName ne '' ) { $fileReading .= $line . "\n" }
 
         #
         # if this is a start of a file, lets get it set up and
@@ -516,7 +520,7 @@ sub uploadFile {
     #
     # if we meet the restrictions write the file to the filesystem and create thumbnails and icons.
     #
-    open( my $SFILE, ">", $directory."/".$fileName ) || $self->FWSLog( "Could not write to file: " . $directory . "/" . $fileName );
+    open( my $SFILE, '>', $directory . '/' . $fileName ) || $self->FWSLog( "Could not write to file: " . $directory . "/" . $fileName );
     print $SFILE $fileHolder;
     close $SFILE;
 
