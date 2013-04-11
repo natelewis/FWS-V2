@@ -243,7 +243,7 @@ sub printPage {
         $self->formValue( 'FWS_showElementOnly', 1 );
 
         if ( $self->formValue( 'redirect' ) ) {
-            print "Status: 301 Moved Permanantly\n";
+            print "Status: 302 Found\n";
             print "Location: " . $self->urlDecode( $self->formValue( 'redirect' ) ) . "\n\n";
         }
         else { print $theHeader  . $paramHash{content} }
@@ -775,13 +775,19 @@ sub _FWSContent {
             }
 
             #
-            # check if this is the home page, with no stuff on it,  if so we need to do it up
+            # check if this is the home page, with no stuff on it,  if not we need to dump to login, or redirect to fws_systemInfo
             #
-    
-            if ( ( $elementTotal < 1 && $pageId eq $self->homeGUID() ) && !$somethingIsOnThePage && !$self->{adminLoginId} ) {
-                $self->displayAdminLogin();
+            if ( ( $elementTotal < 1 && $pageId eq $self->homeGUID() ) && !$somethingIsOnThePage ) {
+                if ( $self->{adminLoginId} ) {
+                    print "Status: 302 Found\n";
+                    print "Location: " . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo\n\n";
+                }
+                else {
+                    $self->displayAdminLogin();
+                }
             }
-    
+            
+
             if ( !$showElementOnly ) {
     
                 $pageHTML = $templateHash{template};
