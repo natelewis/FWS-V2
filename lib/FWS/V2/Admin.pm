@@ -2222,9 +2222,12 @@ sub GNFTree {
 
 
     if ( $paramHash{dateRange} ) {
-        my $fromId = $paramHash{dateRange} . "From";
-        my $toId = $paramHash{dateRange} . "To";
-        $treeHTML .= "<div style=\"float:right;margin-right:10px;\" class=\"FWSDateRange\">From: ";
+
+        $paramHash{fromLabel} ||= 'From: ';
+
+        my $fromId  = $paramHash{dateRange} . "From";
+        my $toId    = $paramHash{dateRange} . "To";
+        $treeHTML  .= "<div style=\"float:right;margin-right:10px;\" class=\"FWSDateRange\">" . $paramHash{fromLabel};
 
         #
         # set some smart starts and ends
@@ -2440,11 +2443,6 @@ sub _processAdminAction {
             #
             # We only want the end part of the package for the file name
             #
-            #my $distName = __PACKAGE__;
-            #my $distFile =  $distName;
-            #$distFile =~ s/.*:://sg;
-            
-            my $distName        = 'V2';
             my $distFile        = 'V2.pm';
             my $newV2File    = $self->{fileSecurePath} . "/FWS/" . $distFile;
         
@@ -2468,7 +2466,7 @@ sub _processAdminAction {
             #
             # get the core Script
             #
-            if ( $self->_pullDistFile( $imageBaseURL . '/current_frameworksitescom.pm', $self->{fileSecurePath} . '/FWS', $distFile, 'package ' . $distName.";\n" ) ) {
+            if ( $self->_pullDistFile( $imageBaseURL . '/current_frameworksitescom.pm', $self->{fileSecurePath} . '/FWS', $distFile, "package FWS::V2;\n" ) ) {
                 
                 #
                 # import the new core admin
