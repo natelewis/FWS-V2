@@ -381,7 +381,7 @@ sub cacheHead {
                     my $fullFileName = $self->{filePath} . "/" . $fileName . ".css";
 
                     # 
-                    # fail over to no version name if its not there
+                    # fail over to no version name if its not there on the next version of FWS this will just only use non versioned one
                     #
                     if ( !-e $fullFileName ) {
                         $fullFileName =~ s/-[0-9\.]+.*/\.css/sg;
@@ -407,7 +407,7 @@ sub cacheHead {
                     my $fullFileName = $self->{filePath} . "/" . $fileName . ".js";
                     
                     # 
-                    # fail over to no version name if its not there
+                    # fail over to no version name if its not there on the next version of FWS this will just only use non versioned one
                     #
                     if ( !-e $fullFileName ) {
                         $fullFileName =~ s/-[0-9\.]+.*/\.js/sg;
