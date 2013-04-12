@@ -45,6 +45,7 @@ Parameters:
     id: file name of files - the date string in numbers will be used if no id is passed
     excludeTables: Comma delimited list of tables you do not want to back up
     excludeFiles: Do not backup the FWS web accessable files
+    minMode: Only backup anything that HAS to be there, no core, no js and css backup files.
     excludeSiteFiles: Backup site files related to plugins and the fws instance, but not the once related to the site
     excludeSecureFiles: Do not backup the secure files
 
@@ -81,20 +82,20 @@ sub backupFWS {
     #
     # Dump the database
     #
-    open ( my $SQLFILE, ">", $backupFile . ".sql" );
-    my $tables = $self->runSQL( SQL => "SHOW TABLES" );
+    open ( my $SQLFILE, '>', $backupFile . '.sql' );
+    my $tables = $self->runSQL( SQL => 'SHOW TABLES' );
     while ( @$tables ) {
         my $table = shift( @$tables );
         if ( $table !~ /session/ && $table !~ /^admin_/ && !$excludeTables{$table} ) {
-            print $SQLFILE "DROP TABLE IF EXISTS " . $self->safeSQL( $table ) . ";" . "\n";
-            print $SQLFILE $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->selectall_arrayref( "SHOW CREATE TABLE " . $self->safeSQL( $table ) )->[0][1] . ";" . "\n";
-            my $sth = $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->prepare("SELECT * FROM " . $table);
+            print $SQLFILE 'DROP TABLE IF EXISTS ' . $self->safeSQL( $table ) . ';' . "\n";
+            print $SQLFILE $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->selectall_arrayref( 'SHOW CREATE TABLE ' . $self->safeSQL( $table ) )->[0][1] . ';' . "\n";
+            my $sth = $self->{'_DBH_' . $self->{DBName} . $self->{DBHost} }->prepare( 'SELECT * FROM ' . $table );
             $sth->execute();
             while ( my @data = $sth->fetchrow_array() ) {
                 map ( $_ = "'" . $self->safeSQL( $_ ) . "'", @data );
                 map ( $_ =~ s/\0/\\0/sg, @data );
                 map ( $_ =~ s/\n/\\n/sg, @data );
-                print $SQLFILE "INSERT INTO " . $table . " VALUES (" . join( ',', @data ) . ");" . "\n";
+                print $SQLFILE 'INSERT INTO ' . $table . ' VALUES (' . join( ',', @data ) . ');' . "\n";
             }
         }
     }
@@ -102,15 +103,15 @@ sub backupFWS {
 
     if ( !$paramHash{excludeFiles} ) {
         if ( !$paramHash{excludeSiteFiles} ) {
-                   $self->packDirectory( fileName => $backupFile . ".files", directory => $self->{filePath} );
+               $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . '.files', directory => $self->{filePath} );
         }
         else {
-                   $self->packDirectory( directoryList => '/fws,/plugins', fileName => $backupFile . ".files", directory => $self->{filePath} );
+               $self->packDirectory( minMode => $paramHash{minMode}, directoryList => '/fws,/plugins', fileName => $backupFile . '.files', directory => $self->{filePath} );
         }
     }
 
-    if ( !$paramHash{excludeSecureFiles} ) {
-        $self->packDirectory( fileName => $backupFile . ".secureFiles", directory => $self->{fileSecurePath}, baseDirectory => $self->{fileSecurePath} );
+    if ( !$paramHash{excludeSecureFiles} && !$paramHash{minMode} ) {
+        $self->packDirectory( minMode => $paramHash{minMode}, fileName => $backupFile . '.secureFiles', directory => $self->{fileSecurePath}, baseDirectory => $self->{fileSecurePath} );
     }
 
     return $paramHash{id};
@@ -121,21 +122,25 @@ sub backupFWS {
 
 Restore a backup created by backupFWS.  This will overwrite the files in place that are the same, and will replace all database tables with the one from the restore that are restored.   All tables, and files not part of the restore will be left untouched.
 
-    $fws->restoreFWS( id=> 'someID' );
+    $fws->restoreFWS( id => 'someID' );
 
 =cut
 
 sub restoreFWS {
     my ( $self, %paramHash ) = @_;
 
-    $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.files',       directory => $self->{filePath} );
-    $self->unpackDirectory( fileName => $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.secureFiles', directory => $self->{fileSecurePath} );
+    $self->FWSLog( 'Restore started: ' . $paramHash{id} );
 
-    open ( my $SQLFILE, "<", $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.sql' );
+    my $restoreFile = $self->{fileSecurePath} . '/backups/' . $paramHash{id};
+    $self->unpackDirectory( fileName => $restoreFile . '.files',       directory => $self->{filePath} );
+    $self->unpackDirectory( fileName => $restoreFile . '.secureFiles', directory => $self->{fileSecurePath} );
+
+    my $sqlFile = $self->{fileSecurePath} . '/backups/' . $paramHash{id} . '.sql';
+    open ( my $SQLFILE, '<', $sqlFile )  || $self->FWSLog( 'Could not read file: ' . $sqlFile );
     my $statement;
     my $endTest;
     while ( <$SQLFILE> ) {
-        $statement      .= $_;
+        $statement  .= $_;
         $endTest    .= $_;
 
         #
@@ -149,7 +154,7 @@ sub restoreFWS {
         #
         if ( $endTest !~ /'/ && $endTest =~ /;$/ ) {
             $self->runSQL( SQL=> $statement );
-            $statement      = '';
+            $statement  = '';
             $endTest    = '';
         }
     }
@@ -301,8 +306,8 @@ sub fileArray {
             my %fileHash;
             $fileHash{file}       = $dirFile;
             $fileHash{fullFile}   = $paramHash{directory} . '/' . $dirFile;
-            $fileHash{size}       = (stat $fileHash{fullFile})[7];
-            $fileHash{date}       = (stat $fileHash{fullFile})[9];
+            $fileHash{size}       = ( stat $fileHash{fullFile} )[7];
+            $fileHash{date}       = ( stat $fileHash{fullFile} )[9];
 
             #
             # push it to the array
@@ -421,6 +426,8 @@ The counterpart to packDirectory.   This will put the files under the directory 
 sub unpackDirectory {
     my ( $self, %paramHash ) = @_;
 
+    $self->FWSLog( 'Unpacking files: ' . $paramHash{fileName} . ' -> ' . $paramHash{directory} );
+
     #
     # for good mesure, make the directory in case this is super fresh
     #
@@ -435,7 +442,7 @@ sub unpackDirectory {
     #
     # open file
     #
-    open ( my $UNPACKFILE, "<", $paramHash{fileName} );
+    open ( my $UNPACKFILE, '<', $paramHash{fileName} );
     while ( <$UNPACKFILE> ) {
         my $line = $_;
 
@@ -448,7 +455,7 @@ sub unpackDirectory {
             #
             # save the file to that directory
             #
-            $self->saveEncodedBinary( $paramHash{directory} . "/" . $fileName, $fileReading );
+            $self->saveEncodedBinary( $paramHash{directory} . '/' . $fileName, $fileReading );
 
             #
             # reset so when we come around again we will no we are done.
@@ -461,7 +468,7 @@ sub unpackDirectory {
         # if we have a file name,  we are currenlty looking for a
         # file.  eat those lines up and stick them in a diffrent var
         #
-        elsif ( $fileName ne '' ) { $fileReading .= $line."\n" }
+        elsif ( $fileName ne '' ) { $fileReading .= $line . "\n" }
 
         #
         # if this is a start of a file, lets get it set up and
@@ -513,7 +520,7 @@ sub uploadFile {
     #
     # if we meet the restrictions write the file to the filesystem and create thumbnails and icons.
     #
-    open( my $SFILE, ">", $directory."/".$fileName ) || $self->FWSLog( "Could not write to file: " . $directory . "/" . $fileName );
+    open( my $SFILE, '>', $directory . '/' . $fileName ) || $self->FWSLog( "Could not write to file: " . $directory . "/" . $fileName );
     print $SFILE $fileHolder;
     close $SFILE;
 
@@ -587,25 +594,29 @@ sub packDirectory {
         #
         # move though the files
         #
-        if (-f $fullFileName && $file !~ /^\/(import_|backup|cache|fws\/cache)/i && $file !~ /(.log|\.pm\.\d+)$/i && ( $dirOK || $file =~ /^FWS/ ) ) {
+        if (-f $fullFileName 
+            && $file !~ /^\/(import_|backup|cache|fws\/cache)/i 
+            && $file !~ /(.log|\.pm\.\d+)$/i 
+            && ( ( $file !~ /^\/fws\//i && $file !~ /^\/plugin\// && $file !~ /FWSElement-/ ) || !$paramHash{minMode} )
+            && ( $dirOK || $file =~ /^FWS/ ) ) {
 
-                #
-                # get the file
-                #
-                my $rawFile;
-                open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not read file: " .  $! );
-                binmode $FILE;
-                while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
-                close $FILE;
+            #
+            # get the file
+            #
+            my $rawFile;
+            open ( my $FILE, '<', $fullFileName ) || $self->FWSLog( 'Can not read file: ' .  $! );
+            binmode $FILE;
+            while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
+            close $FILE;
 
-                #
-                # print the header - encode it - footer around the file
-                #
-                my $fileLine = "FILE|" . $file . "\n" . encode_base64( $rawFile ) . 'FILE_END|' . $file . "\n";
-                if ( $paramHash{fileName} ne '' ) { print $FILEFILE $fileLine }
-                else { $packFile .= $fileLine }
+            #
+            # print the header - encode it - footer around the file
+            #
+            my $fileLine = 'FILE|' . $file . "\n" . encode_base64( $rawFile ) . 'FILE_END|' . $file . "\n";
+            if ( $paramHash{fileName} ne '' ) { print $FILEFILE $fileLine }
+            else { $packFile .= $fileLine }
 
-                }
+            }
         }, $paramHash{directory} );
 
     if ( $paramHash{fileName} ) { close $FILEFILE }
@@ -713,7 +724,7 @@ sub makeDir {
         #
         # create an array we can loop though to rebuild it making them on the fly
         #
-        my @directories = split( /(\/|\\)/, $paramHash{directory} );
+        my @directories = split( /\//, $paramHash{directory} );
 
         #
         # delete the $paramHash{directory} because we will rebuild it
@@ -1123,7 +1134,7 @@ sub FWSLog{
         close $FILE;
     }
 
-    return 1;
+    return $module;
 }
 
 
@@ -1154,10 +1165,9 @@ sub SQLLog{
 
 sub _saveElementFile {
     my ( $self, $guid, $siteGUID, $table, $ext, $content ) = @_;
+
     #
     # for security reasons lets make sure ext is safe
-    #
-    # just a nother note:  saving elements only save to devel\staging
     #
     if ( ( $ext eq 'css' || $ext eq 'js' ) && ( $table eq 'element' || $table eq 'templates' || $table eq 'site' || $table eq 'page' ) ) {
 
@@ -1214,6 +1224,11 @@ sub _saveElementFile {
             print $FILE $content;
             close $FILE;
         }
+
+        #
+        # Remove JS and CSS Cache
+        #
+        $self->flushWebCache();
     }
     return;
 }
@@ -1279,11 +1294,13 @@ sub _installPlugin {
 
     my $script;
     my $change;
+    my $sql;
     my $files;
     my $fileReading;
     my $fileName;
-    my $scriptPulled = 0;
-    my $changePulled = 0;
+    my $scriptPulled    = 0;
+    my $SQLPulled       = 0;
+    my $changePulled    = 0;
 
     #
     # bring in web accessable files
@@ -1292,13 +1309,20 @@ sub _installPlugin {
     $self->makeDir( $webDir );
     while ( $responseRef->{content} =~ /(.*)\n?/g ){
         my $line = $1;
-
+        
         # if we have started the file, stop working on the scripts
-        if ( $line =~ /^FILE\|/ ) { $changePulled = 1; $scriptPulled = 1 }
-
+        if ( $line =~ /^FILE\|/ ) { $changePulled = $scriptPulled = $SQLPulled = 1 }
+        
         # still building the changelog
         if ( $line =~ /^CHANGELOG\|/ ) { $scriptPulled = 1 }
-        elsif ( $scriptPulled && !$changePulled ) { $change .= $line."\n" }
+        elsif ( $scriptPulled && !$changePulled ) { $change .= $line . "\n" }
+
+        # still building the SQL
+        if ( $line =~ /^FWSSQL\|/ ) { $changePulled = 1 }
+        elsif ( $scriptPulled && $changePulled && $line && !$SQLPulled ) { 
+            $self->FWSLog( 'SQL: '. $line );
+            $self->runSQL( SQL => $line );
+        }
 
         # still building the script
         if ( !$scriptPulled ) { $script .= $line . "\n" }
@@ -1308,7 +1332,7 @@ sub _installPlugin {
             #
             # save the file to that directory
             #
-            $self->FWSLog( "Plugin File: ".$webDir."/".$fileName );
+            $self->FWSLog( "Plugin File: " . $webDir . "/" . $fileName );
             $self->saveEncodedBinary( $webDir . "/" . $fileName, $fileReading );
 
             #
@@ -1331,7 +1355,6 @@ sub _installPlugin {
         #
         if ( $line =~ /^FILE\|/ ) { ( $fileName = $line ) =~ s/.*\///sg }
     }
-
 
     #
     # save the script
@@ -1432,7 +1455,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

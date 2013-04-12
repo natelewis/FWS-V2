@@ -1297,7 +1297,7 @@ sub startElement {
 
 =head2 stateDropDown
 
-Return a dropdown for all US States, passining it (current, class, id, style, topOption)  TopOption if passed will be the text that is displayed for the option, but the value will be blank.
+Return a dropdown for all US States, passining it (current, class, id, name, style, topOption)  TopOption if passed will be the text that is displayed for the option, but the value will be blank.
 
 =cut
 
@@ -1315,12 +1315,13 @@ sub stateDropDown {
     if ( $paramHash{class} )         { $paramHash{class}         = 'class="' . $paramHash{class} . '" ' }
     if ( $paramHash{style} )         { $paramHash{style}         = 'style="' . $paramHash{style} . '" ' }
     if ( $paramHash{id} )            { $paramHash{id}            = 'id="' . $paramHash{id} . '" ' }
+    if ( $paramHash{name} )          { $paramHash{name}          = 'name="' . $paramHash{name} . '" ' }
     if ( $paramHash{topOption} )     { $paramHash{topOption}     = '<option value="">' . $paramHash{topOption} . '</option>' }
 
     #
     # start off the select with the top opction if present
     #
-    my $returnHTML = '<select ' . $paramHash{id} . $paramHash{class} . $paramHash{style} . '>' . $paramHash{topOption};
+    my $returnHTML = '<select ' . $paramHash{name} . $paramHash{id} . $paramHash{class} . $paramHash{style} . '>' . $paramHash{topOption};
 
     #
     # loop though the array creating each one, with the selected if the current matches
@@ -1639,7 +1640,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

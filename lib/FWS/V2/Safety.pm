@@ -287,7 +287,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

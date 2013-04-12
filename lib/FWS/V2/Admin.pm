@@ -166,7 +166,6 @@ sub editField {
 }
 
 
-
 =head2 tabs
 
 Return jQueryUI tab html.  The tab names, tab content, tinyMCE editing field name, and any javascript for the tab onclick is passed as arrays to the method.
@@ -2222,9 +2221,12 @@ sub GNFTree {
 
 
     if ( $paramHash{dateRange} ) {
-        my $fromId = $paramHash{dateRange} . "From";
-        my $toId = $paramHash{dateRange} . "To";
-        $treeHTML .= "<div style=\"float:right;margin-right:10px;\" class=\"FWSDateRange\">From: ";
+
+        $paramHash{fromLabel} ||= 'From: ';
+
+        my $fromId  = $paramHash{dateRange} . "From";
+        my $toId    = $paramHash{dateRange} . "To";
+        $treeHTML  .= "<div style=\"float:right;margin-right:10px;\" class=\"FWSDateRange\">" . $paramHash{fromLabel};
 
         #
         # set some smart starts and ends
@@ -2387,28 +2389,6 @@ sub _processAdminAction {
     # showDeveloper: Developer Admin Controls
     #
     ##############################################################################################
-    
-    if ( $self->userValue('isAdmin') || $self->userValue('showDesign') && ($action eq "addTemplate" || $action eq "deleteTemplate" || $action eq "makeDefaultTemplate" ) ) {
-        if ( $action eq "deleteTemplate" ) {
-            $self->runSQL( SQL => "delete from templates where guid='" . $self->safeSQL( $guid ) . "'");
-            $self->runSQL( SQL => "update guid_xref set layout='0' where child='" . $self->safeSQL( $guid ) . "'");
-            }
-
-         if ($action eq "addTemplate") {
-            $self->_addTemplate( $self->{siteGUID}, $self->formValue( "template_title" ) );
-
-            #        
-            # cleanup so when it recycles its blank
-            #
-            $self->formValue( "template_title", "" );
-            }
-        if ($action eq "makeDefaultTemplate") {
-            $self->_makeDefaultTemplate( $self->{siteGUID}, $self->formValue( "guid" ) );
-            $self->flushCache();
-            }
-        }
-
-             
     if (($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) && ($action eq "flushWebSearch" || $action eq "flushSearchCache" || $action eq "publishPlugin" || $action eq "deleteArchived" || $action eq "addElement" || $action eq "deleteScriptElement" || $action eq "getLiveScript" || $action eq "getArchivedScript" || $action eq "makeLiveScript" || $action eq "FWSRestore" || $action eq "FWSBackup" || $action eq "installCore" || $action eq "installPlugin" || $action eq "updatePlugin" || $action eq "updateScript" || $action eq "updateDesign" || $action eq "updatePageDesign" || $action eq "updateTemplate")) {
                    
 
@@ -2444,98 +2424,104 @@ sub _processAdminAction {
         }
 
         if ($action eq "FWSRestore") {
-            $self->restoreFWS( id => $self->formValue('restoreName') );
-            $self->formValue('restoreStatusNote','Restore completed' );
+            $self->restoreFWS( id => $self->formValue( 'restoreName' ) );
+            $self->formValue( 'restoreStatusNote', 'Restore completed' );
         }
         if ($action eq "FWSBackup") {
 
             my $backupID = $self->backupFWS( 
-                                excludeSiteFiles     => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
-                                id             => $self->formValue('backupName'),
-                                excludeTables         => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
+                                excludeSiteFiles    => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
+                                id                  => $self->formValue('backupName'),
+                                excludeTables       => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
             );
 
             $self->formValue('backupStatusNote','Backup completed using backup name '.$backupID);
         }
         if ($action eq "installCore") {
-            require LWP::UserAgent;
-            my $browser = LWP::UserAgent->new();
-            my $distName = __PACKAGE__;
         
             #
             # We only want the end part of the package for the file name
             #
-            my $distFile =  $distName;
-            $distFile =~ s/.*:://sg;
-        
-            my $newAdminFile = $self->{fileSecurePath} . "/FWS/" . $distFile . ".pm";
+            my $distFile        = 'V2.pm';
+            my $newV2File    = $self->{fileSecurePath} . "/FWS/" . $distFile;
         
             #
             # get the stuff ready for the backup copy info
             #
             require File::Copy;
             File::Copy->import();
-            my $currentTime = $self->formatDate(format=>'number');
+            my $currentTime = $self->formatDate( format => 'number' );
         
-            #
-            # set a flag to make sure we update both before we increment vesion numbering
-            #
-            my $updated = 0;
-        
-            $self->FWSLog("Backing Up FWS Core: ".$newAdminFile." - Backup File Is Now: ".$newAdminFile.".".$currentTime);
-            copy($newAdminFile,$newAdminFile.".".$currentTime);
+            $self->FWSLog("Backing up FWS core: " . $newV2File . " - Backup File Is Now: " . $newV2File . "." . $currentTime);
+            copy( $newV2File, $newV2File . "." . $currentTime );
 
-            my ($updateString,$majorVer,$minorVer,$build) = $self->_versionData('live','core',"fws_installCore");    
-            my $imageURL = $self->{FWSServer} . '/fws_' . $majorVer . '/current_frameworksitescom.pm';
-            my $response = $browser->get( $imageURL );
-            if (!$response->is_success ) { 
-                $self->FWSLog("A network error in connecting to the FWS Server: ".$response->status_line);
-                $self->formValue('coreStatusNote',"A network error in connecting to FWS Server:".$response->status_line);
-            }
-            else {
-                my $image = $response->content;
-                $self->makeDir( $self->{fileSecurePath} . "/FWS" );
-                open ( my $FILE, ">", $self->{fileSecurePath} . "/FWS/" . $distFile . ".pm" );
-                print $FILE "package " . $distName.";\n" . $image;
-                close $FILE;
-                $self->FWSLog("FWS Core Upgraded");
-                $updated++;
+            my ( $updateString, $majorVer, $minorVer, $build ) = $self->_versionData( 'live', 'core', 'fws_installCore' );
 
+            #
+            # set the base URL for where the dist files are pulled from
+            #
+            my $imageBaseURL = $self->{FWSServer} . '/fws_' . $majorVer;
+
+            #
+            # get the core Script
+            #
+            if ( $self->_pullDistFile( $imageBaseURL . '/current_frameworksitescom.pm', $self->{fileSecurePath} . '/FWS', $distFile, "package FWS::V2;\n" ) ) {
+                
                 #
                 # import the new core admin
                 #
-                my $importReturn = $self->_importAdmin( 'current_core' );
-                $self->FWSLog( "Core Admin Packages have been upgraded to current" );
+                $self->_importAdmin( 'current_core' );
+                $self->FWSLog( 'FWS core element packages updated' );
                 $self->formValue( 'coreStatusNote', 'Current FWS Core element and file packages has been updated' );
-            }
-        
-        
-            #
-            # delete cache directory
-            #
-            my @fileArray = @{$self->fileArray( directory => $self->{filePath} . "/fws/cache" )};
-            for my $i (0 .. $#fileArray) { unlink $fileArray[$i]{fullFile} }
-        
-            if ( $updated > 1 ) { 
-                $self->_versionData( 'live', 'core', "fws_installCore", 1 );
+               
+                #
+                # flg our sucess swo we can save versionData
+                # 
+                $self->_versionData( 'live', 'core', 'fws_installCore', 1 );
+
+                #
+                # add the fwsdemo files if they are not there already
+                #
+                my $demoFile =  $self->{fileSecurePath} . '/backups/fwsdemo';
+                if ( !-e $demoFile . '.sql' ) {
+                    $self->_pullDistFile( $imageBaseURL . '/fwsdemo.sql', $self->{fileSecurePath} . '/backups', 'fwsdemo.sql', '' );
+                }
+                if ( !-e $demoFile . '.files' ) {
+                    $self->_pullDistFile( $imageBaseURL . '/fwsdemo.files', $self->{fileSecurePath} . '/backups', 'fwsdemo.files', '' );
+                }
+               
+                #
+                # delete cache directory
+                #
+                $self->flushWebCache();
+
+                #
+                # if there is no elements on the site yet lets install our demo site
+                #
+                if ( !@{$self->runSQL( SQL => "select 1 from data where site_guid not like 'f%' and guid not like 'h%'" )} ) {
+                    $self->restoreFWS( id => 'fwsdemo' );
+                    print "Status: 302 Found\n";
+                    print "Location: " .  $self->{scriptName} . "\n\n";
+
+                }
             }
         }
 
         #
         # install any plugin if called
         #
-        if ( $action eq "installPlugin" ) { $self->_installPlugin( plugin  => $self->safeFile( $self->formValue( "plugin" ) ) ) }
+        if ( $action eq 'installPlugin' ) { $self->_installPlugin( plugin  => $self->safeFile( $self->formValue( 'plugin' ) ) ) }
 
-        if ( $action eq "updateScript" ) {
+        if ( $action eq 'updateScript' ) {
             my %valueHash;
             my $fws = $self;
             ## no critic
-            eval $self->formValue("script");
+            eval $self->formValue( 'script' );
             ## use critic
             if ( $@ ) { $self->formValue( 'statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">'.$@.'</textarea><br/>' ) }
             else {
                 my $script = $self->safeSQL( $self->formValue( "script" ) );
-                my $schema = $self->safeSQL($self->formValue("schema"));
+                my $schema = $self->safeSQL( $self->formValue( "schema" ) );
                 my $checkedOut = $self->safeSQL($self->formValue("checkout"));
                 $self->runSQL(SQL=>"update element set schema_devel='".$schema."', script_devel='".$script."', checkedout='".$checkedOut."' where guid='".$guid."'");
                 $self->_saveElementFile($guid,$self->formValue('site_guid'),'element','css',$self->formValue("css"));
@@ -2552,14 +2538,6 @@ sub _processAdminAction {
             $self->_saveElementFile('assets',$self->{siteGUID},'site','css',$self->formValue("siteCSS"));
             $self->_saveElementFile('assets',$self->{siteGUID},'site','js',$self->formValue("siteJS"));
         }
-
-        if ($action eq "updateTemplate") {
-            my $template = $self->safeSQL($self->formValue("template"));
-            $self->runSQL(SQL=>"update templates set template_devel='".$template."' where guid='".$guid."'");
-            $self->_saveElementFile($guid,$self->formValue('site_guid'),'templates','css',$self->formValue("templateCSS"));
-            $self->_saveElementFile($guid,$self->formValue('site_guid'),'templates','js',$self->formValue("templateJS"));
-        }
-        
     }
         
 
@@ -2578,10 +2556,10 @@ sub _processAdminAction {
         }
 
         if ($action eq "flushSessions") {
-            if ( $self->formValue('months') ) { 
-                $self->runSQL(SQL=>"delete from fws_sessions where created < '".$self->formatDate(format=>'SQL',monthMod=>-($self->formValue('months')))."'");
-                if ($self->DBType() =~ /^mysql$/i) { $self->runSQL(SQL=>"optimize table fws_sessions") }
-                $self->formValue("sessionStatusNote", "Your sessions table was optimized");
+            if ( $self->formValue( 'months' ) ne '' ) { 
+                $self->runSQL( SQL => "delete from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod => -( $self->formValue( 'months' ) ) ) . "'");
+                if ( $self->DBType() =~ /^mysql$/i ) { $self->runSQL( SQL => "optimize table fws_sessions" ) }
+                $self->formValue( "sessionStatusNote", "Your sessions table was optimized" );
             }
         }
 
@@ -2629,25 +2607,26 @@ sub _processAdminAction {
             # default profile_active to on, if its not specified
             #
             if ($profile_active eq "") { $profile_active = "1" }
-    
             
-            if (length($profile_name) < 4)        { $self->formValue("statusNote","Your full name must be longer than 3 characters"); return; }
-            if (!$profile_name)            { $self->formValue("statusNote","Your full name is required"); return; }
-            if ($profile_email !~ /^\w+[\w|\.|-]*\w+@(\w+[\w|\.|-]*\w+\.[a-z]{2,4}|(\d{1,3}\.){3}\d{1,3})$/i) { $self->formValue("statusNote","Your eMail address must have a valid format."); return; }
-            if (!$profile_password)            { $self->formValue("statusNote","Password is required"); return; }
-            if (length($profile_password) < 6)    { $self->formValue("statusNote","Passwords must be 6 characters long"); return; }
+            if (length($profile_name) < 4)          { $self->formValue("statusNote","Your full name must be longer than 3 characters"); return; }
+            if (!$profile_name)                     { $self->formValue("statusNote","Your full name is required"); return; }
+            if ($profile_email !~ /^\w+[\w|\.|-]*\w+@(\w+[\w|\.|-]*\w+\.[a-z]{2,4}|(\d{1,3}\.){3}\d{1,3})$/i) 
+                                                    { $self->formValue("statusNote","Your eMail address must have a valid format."); return; }
+            if (!$profile_password)                 { $self->formValue("statusNote","Password is required"); return; }
+            if (length($profile_password) < 6)      { $self->formValue("statusNote","Passwords must be 6 characters long"); return; }
             
             #check to see if this profile is unique within the site were currently on
-            if ($self->openRS("select 1 from profile where email like '".$profile_email."' LIMIT 1")) {
+            if ( @{$self->runSQL( SQL=>"select 1 from profile where email like '" . $self->safeSQL( $profile_email ) . "' LIMIT 1" )} ) {
                 my $emailBody  = "User profile [".$profile_email."] could not be created\n\nUser profile already exists\n";
                 $self->formValue("statusNote",$emailBody);
                 return;
             }
                     
-            $self->saveUser( name    => $profile_name,
-                    password    => $profile_password,
-                    email        => $profile_email,
-                    active        => $profile_active);
+            $self->saveUser( 
+                    name            => $profile_name,
+                    password        => $profile_password,
+                    email           => $profile_email,
+                    active          => $profile_active);
         }    
     
         if ($action eq "groupAdd") {
@@ -2680,11 +2659,27 @@ sub _processAdminAction {
     return 1;    
 }
 
-sub _makeDefaultTemplate {
-    my ( $self, $siteGUID, $guid ) = @_;
-    $self->runSQL(SQL=>"update templates set default_template = '0' where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
-    $self->runSQL(SQL=>"update templates set default_template = '1' where guid='" . $self->safeSQL($guid) . "' and site_guid='" . $self->safeSQL( $siteGUID ) . "'");
+sub _pullDistFile {
+    my ( $self, $imageURL, $directory, $distFile, $preContent ) = @_;
 
+    require LWP::UserAgent;
+    my $browser = LWP::UserAgent->new();
+    my $response = $browser->get( $imageURL );
+    if (!$response->is_success ) {
+        $self->FWSLog( "FWS server connection error: " . $response->status_line );
+        $self->formValue( 'coreStatusNote', "A network error in connecting to FWS Server:" . $response->status_line );
+        return 0;
+    }
+
+    #
+    # we got it! lets save it
+    #
+    $self->makeDir( $directory );
+    open ( my $FILE, ">", $directory . '/' . $distFile );
+    print $FILE $preContent . $response->content;
+    close $FILE;
+        
+    $self->FWSLog( "FWS secure distributed file saved: " . $directory . '/' . $distFile );
     return 1;
 }
 
@@ -2697,6 +2692,12 @@ sub _addTemplate {
     #
     $title = $self->safeSQL( $title );
     my $guid = $self->createGUID( 't' );
+	
+	#
+	# set defaults
+	#
+	$default_template ||= 0;
+	
     $self->runSQL( SQL => "insert into templates (guid,site_guid,title,template_devel,default_template) values ('" . $guid . "','" . $self->safeSQL($siteGUID) . "','" . $title . "','" . $self->safeSQL($templateDevel) . "','" . $self->safeSQL($default_template) . "')" );
 
     #
@@ -3144,7 +3145,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

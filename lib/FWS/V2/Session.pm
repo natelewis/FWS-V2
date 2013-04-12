@@ -143,7 +143,7 @@ sub setFormValues {
     # grab the one from the cookie if we have it
     #
     my $cookieSession = $cgi->cookie( $self->{sessionCookieName} );
-    if ( $cookieSession ) { $self->{form}{session} = $cookieSession }
+    if ( $cookieSession  && !$self->{form}{session} ) { $self->{form}{session} = $cookieSession }
 
     #
     # if fws_lang is not set, lets set it
@@ -171,7 +171,7 @@ sub setSession {
     #
     # kill session was set,  lets make sure the session wasn't passed
     #
-    if ( $self->formValue( 'killSession' ) eq '1' ) {
+    if ( $self->formValue( 'killSession' ) ) {
         #
         # run the SQL to delete the session and then ditch the session id
         #
@@ -192,7 +192,7 @@ sub setSession {
     #
     # if the session isn't in there, or the session is blank
     #
-    if ( !$id || $ENV{REMOTE_ADDR} ne $s_ip ) {
+    if ( !$id || $ENV{REMOTE_ADDR} ne $s_ip || length( $self->formValue( 'session' ) ) != 33 ) {
         $s_b = $s_bs = $s_ip  = $s_e = $s_a = $s_s = $extra = '';
         $a_exp = '0';
         $self->adminLogOut();
@@ -212,7 +212,7 @@ sub setSession {
         #
         # for security reasons lets make sure we aren't touching the major ones
         #
-        if ( $fieldName !~ /^(p|b|s|bs|e|l|a|a2|fws_lang)$/ ) {
+        if ( $fieldName !~ /^(p|b|s|bs|e|l|a|a2|fws_lang|id)$/ ) {
             #
             # only grab the one from the session, if we have not passed it to the script to change it
             #
@@ -1062,7 +1062,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
