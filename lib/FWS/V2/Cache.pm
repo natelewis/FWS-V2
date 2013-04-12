@@ -370,16 +370,22 @@ sub cacheHead {
             #
             if ( !$paramHash{jqueryOnly} ) {
                 #
-                # load css from elements and pages
+                # load css from elements, pages and templates
                 #
                 my %cssHash = %{$self->{_cssHash}};
                 foreach my $fileName ( sort {$cssHash{$a} <=> $cssHash{$b} } keys %cssHash ) {
+                    
                     #
-                    # for older versions of FWS this trims the file names so they will be correct when they were not dated
+                    # If the full file is there, thats our favorite!
                     #
-                    $fileName =~ s/-1$//sg;
-
                     my $fullFileName = $self->{filePath} . "/" . $fileName . ".css";
+
+                    # 
+                    # fail over to no version name if its not there on the next version of FWS this will just only use non versioned one
+                    #
+                    if ( !-e $fullFileName ) {
+                        $fullFileName =~ s/-[0-9\.]+.*/\.css/sg;
+                    }
 
                     if (-e $fullFileName) {
                         open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not open file:" .  $fullFileName );
@@ -394,12 +400,19 @@ sub cacheHead {
                 #
                 my %jsHash = %{$self->{_jsHash}};
                 foreach my $fileName ( sort {$jsHash{$a} <=> $jsHash{$b} } keys %jsHash ) {
+                    
                     #
-                    # for older versions of FWS this trims the file names so they will be correct when they were not dated
+                    # full versioned file is our favorite, lets try that first
                     #
-                    $fileName =~ s/-1$//sg;
-
                     my $fullFileName = $self->{filePath} . "/" . $fileName . ".js";
+                    
+                    # 
+                    # fail over to no version name if its not there on the next version of FWS this will just only use non versioned one
+                    #
+                    if ( !-e $fullFileName ) {
+                        $fullFileName =~ s/-[0-9\.]+.*/\.js/sg;
+                    }
+
                     if (-e $fullFileName) {
                         open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not open file:" .  $fullFileName );
                         print $JS "\n\n// " . $fileName . ".js\n\n";
@@ -477,7 +490,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

@@ -246,7 +246,7 @@ sub alterTable {
     #
     # if its the sessions table make it like this
     #
-    if ( $paramHash{table} eq 'fws_sessions' ) { $idField = ", id char(50) " . $primaryKey }
+    if ( $paramHash{table} eq 'fws_sessions' ) { $idField = ", id char(36) " . $primaryKey }
 
     #
     # compile the statement
@@ -277,7 +277,7 @@ sub alterTable {
     }
 
     #
-    # get the table deffinition hash
+    # get the table definition hash
     #
     my %tableFieldHash = $self->tableFieldHash( $paramHash{table} );
 
@@ -415,7 +415,7 @@ sub connectDBH {
         #
         # send an error if we got one
         #
-        if ( DBI->errstr() ) { $self->FWSLog( 'DB Connection error: ' . DBI->errstr() ) }
+        if ( DBI->errstr() ) { $self->FWSLog( 'DB connection error: ' . DBI->errstr() ) }
     }
 
     #
@@ -1043,6 +1043,12 @@ sub elementArray {
     #
     if ( $paramHash{siteGUID} ) { $addToWhere .= " and site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "'" }
 
+    #
+    # match only with matching plugin
+    # all other search cretira is overwritten! 
+    #
+    if ( $paramHash{plugin} ) { $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "'" }
+
 
     if ( $paramHash{tags} ) {
         my @tagsArray = split( /,/, $paramHash{tags} );
@@ -1070,9 +1076,8 @@ sub elementArray {
     #
     # grab the array from the DB
     #
-    my (@elementArray) = $self->openRS("select ord,admin_group,root_element,site_guid,guid,type,parent,title,schema_devel,script_devel,checkedout from element where 1=1" . $addToWhere . " order by title");
-
-
+    my ( @elementArray ) = @{$self->runSQL( SQL => "select ord, plugin, admin_group, root_element, site_guid, guid, type, parent, title, schema_devel, script_devel, checkedout from element where 1=1" . $addToWhere . " order by title" )};
+    
     #
     # look at element included in plugins
     #
@@ -1091,7 +1096,7 @@ sub elementArray {
                 if ( $checkTag && $self->{elementHash}{$guid}{tags} =~ /^$checkTag$/ ) { $addElement = 1 }
             }
 
-        if ( $addElement ) { push ( @elementArrayReturn,{%{$self->{elementHash}{$guid}}} ) }
+        if ( $addElement ) { push ( @elementArrayReturn, {%{$self->{elementHash}{$guid}}} ) }
         }
     }
 
@@ -1102,17 +1107,18 @@ sub elementArray {
     while (@elementArray) {
         my %elementHash;
         $alphaOrd++;
-        $elementHash{ord}         = shift(@elementArray);
-        $elementHash{adminGroup}  = shift(@elementArray);
-        $elementHash{rootElement} = shift(@elementArray);
-        $elementHash{siteGUID}    = shift(@elementArray);
-        $elementHash{guid}        = shift(@elementArray);
-        $elementHash{type}        = shift(@elementArray);
-        $elementHash{parent}      = shift(@elementArray);
-        $elementHash{title}       = shift(@elementArray);
-        $elementHash{schemaDevel} = shift(@elementArray);
-        $elementHash{scriptDevel} = shift(@elementArray);
-        $elementHash{checkedout}  = shift(@elementArray);
+        $elementHash{ord}         = shift( @elementArray );
+        $elementHash{plugin}      = shift( @elementArray );
+        $elementHash{adminGroup}  = shift( @elementArray );
+        $elementHash{rootElement} = shift( @elementArray );
+        $elementHash{siteGUID}    = shift( @elementArray );
+        $elementHash{guid}        = shift( @elementArray );
+        $elementHash{type}        = shift( @elementArray );
+        $elementHash{parent}      = shift( @elementArray );
+        $elementHash{title}       = shift( @elementArray );
+        $elementHash{schemaDevel} = shift( @elementArray );
+        $elementHash{scriptDevel} = shift( @elementArray );
+        $elementHash{checkedout}  = shift( @elementArray );
         $elementHash{alphaOrd}    = $alphaOrd;
         $elementHash{label}       = $elementHash{type} . ' - ' . $elementHash{title};
         if ( !$elementHash{type} ) { $elementHash{label} = 'element' . $elementHash{label} }
@@ -1144,7 +1150,7 @@ sub elementHash {
         #
         # get tha hash from the DB
         #
-        my (@scriptArray) = @{$self->runSQL( SQL => "select 'jsDevel',js_devel,'cssDevel',css_devel,'adminGroup',admin_group,'classPrefix',class_prefix,'siteGUID',site_guid,'guid',guid,'ord',ord,'tags',tags,'public',public,'rootElement',root_element,'type',type,'parent',parent,'title',title,'schemaDevel',schema_devel,'scriptDevel',script_devel,'checkedout',checkedout from element where " . $addToWhere . " order by ord limit 1" )};
+        my (@scriptArray) = @{$self->runSQL( SQL => "select 'plugin', plugin, 'jsDevel', js_devel, 'cssDevel', css_devel, 'adminGroup', admin_group, 'classPrefix', class_prefix, 'siteGUID', site_guid, 'guid', guid, 'ord', ord, 'tags', tags, 'public', public, 'rootElement', root_element, 'type', type, 'parent', parent, 'title', title, 'schemaDevel', schema_devel, 'scriptDevel', script_devel, 'checkedout', checkedout from element where " . $addToWhere . " order by ord limit 1" )};
 
         #
         # create the hash and return it
@@ -1159,7 +1165,7 @@ sub elementHash {
 
 Return a hash array in a csv format.
 
-    my $csv = $fws->exportCSV(dataArray=>[@someArray]);
+    my $csv = $fws->exportCSV( dataArray => [@someArray] );
 
 =cut
 
@@ -1173,9 +1179,7 @@ sub exportCSV {
     my %theKeys;
     for my $i (0 .. $#dataArray) {
         for my $key ( keys %{$dataArray[$i]}) {
-            if ( $key !~ /^(guid|killSession)$/ ) {
-                $theKeys{$key} =1;
-            }
+            if ( $key !~ /^(guid|killSession)$/ ) { $theKeys{$key} =1 }
         }
     }
 
@@ -1209,9 +1213,8 @@ sub exportCSV {
     # kill the trailing comma and return the string
     #
     $returnString =~ s/,$//sg;
-    return $returnString. "\n";
+    return $returnString . "\n";
 }
-
 
 
 =head2 flushSearchCache
@@ -1376,17 +1379,14 @@ sub createFWSDatabase {
             $self->homeGUID( $siteGUID );
             $somethingNew++;
         }
-    
-        if ( $somethingNew ) { 
-            $self->printPage( head=> "<title>New Database Detected</title>",
-                content => "<body><h2>Setting up New Database Users</h2><br/>".
-                "<b>Admin User Account</b><hr/>".
-                "User Id: admin<br/>".
-                "Password: This was set in the " . $self->{scriptName} . " file<br/><br/>".
-                "Note: Once an admin level user is created on this installation, the admin account will be disabled for security reasons. ".
-                "Please do this before working on your new site for security!<br/><br/>".
-                "<br/><br/><a href=\"" . $self->{scriptName} . "\">Click here to continue to</a> -> " . $self->domain() . $self->{scriptName} . 
-                "</body>");
+   
+        #
+        # because there was something new, redirect to the script again now that
+        # things should be present
+        # 
+        if ( $somethingNew ) {
+            print "Status: 302 Found\n";
+            print "Location: " . $self->{scriptName} . "\n\n";
         }
     }    
     return $self->{createFWSDatabaseRan} = 1;
@@ -1736,13 +1736,13 @@ sub runSQL {
     # returns without records are passed
     #
     if ( $sth->errstr ){
-        $self->FWSLog( 'SQL ERROR: ' . $paramHash{SQL} . ': ' . $sth->errstr );
+        $self->FWSLog( 'DB SQL error: ' . $paramHash{SQL} . ': ' . $sth->errstr );
 
         #
         # run update DB on an error to fix anything that was broke :(
         # if noUpdate is passed lets not do this, so we do recurse!
         #
-        if ( !$paramHash{noUpdate} ) { $self->FWSLog( 'UPDATED DB: ' . $self->updateDatabase() ) }
+        if ( !$paramHash{noUpdate} ) { $self->FWSLog( 'DB update ran: ' . $self->updateDatabase() ) }
     }
 
     #
@@ -1938,6 +1938,15 @@ sub saveData {
     # now before we added something new we might need a new index, lets reset it for good measure
     #
     $self->setCacheIndex();
+	
+	#
+	# set default to ensure we don't explode with SQL errors from default defs
+	#
+	$paramHash{showMobile} 		||= 0;
+	$paramHash{showLogin} 		||= 0;
+	$paramHash{default_element} ||= 0;
+	$paramHash{disableTitle} 	||= 0;
+	$paramHash{disableEditMode} ||= 0;
 
     #
     # Save the data minus the extra fields
@@ -2277,8 +2286,8 @@ sub saveUser {
     # loop though and update every one that is diffrent, but you can't touch for security reasons
     #
     for my $key ( keys %paramHash ) {
-        if ( $key !~ /^FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid$/ ) {
-            $self->saveExtra( table => 'profile', guid => $paramHash{guid}, field => $key,value=>$paramHash{$key} );
+        if ( $key !~ /^(FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid)$/ ) {
+            $self->saveExtra( table => 'profile', guid => $paramHash{guid}, field => $key, value => $paramHash{$key} );
         }
     }
 
@@ -2323,7 +2332,7 @@ sub schemaHash {
     eval $elementHash{schemaDevel};
     ## use critic
     my $errorCode = $@;
-    if ( $errorCode ) { $self->FWSLog( 'SCHEMA ERROR: ' . $guid . ' - ' . $errorCode ) }
+    if ( $errorCode ) { $self->FWSLog( 'DB schema error: ' . $guid . ' - ' . $errorCode ) }
 
     return %dataSchema;
 }
@@ -2367,7 +2376,7 @@ sub setCacheIndex {
     # update the extra table of what the cacheIndex is
     #
     if ( $self->siteValue( 'dataCacheIndex' ) ne $cacheValue ) {
-        $self->FWSLog( "Setting new site cache index: ".$cacheValue );
+        $self->FWSLog( "Adding data cache index: ".$cacheValue );
         $self->saveExtra( table => 'site', guid => $paramHash{siteGUID}, field => 'dataCacheIndex', value => $cacheValue );
     }
     return;
@@ -2849,9 +2858,8 @@ sub userHash {
             # so we can use it to get the profile;
             #
             my @profileExtArray     = @{$self->runSQL( SQL => "select profile.extra_value, profile.guid, 'pin', profile.pin, 'guid', profile.guid, 'googleId', profile.google_id, 'name', profile.name, 'FBId', fb_id, 'FBAccessToken', fb_access_token, 'email', profile.email, 'active', profile.active from profile where " . $lookupSQL )};
-            my $extraValue          = shift(@profileExtArray);
-            my $guid                = shift(@profileExtArray);
-
+            my $extraValue          = shift( @profileExtArray );
+            my $guid                = shift( @profileExtArray );
 
             #
             # convert it into the hash
@@ -2868,8 +2876,7 @@ sub userHash {
             #
             my @groups = @{$self->runSQL( SQL => "select profile_groups_xref.groups_guid from profile left join profile_groups_xref on profile_groups_xref.profile_guid = profile.guid where profile.guid = '" . $self->safeSQL( $guid ) . "'" )};
             while (@groups) {
-                my $groupId = shift(@groups);
-                $userHash{group}{$groupId} = 1;
+                $userHash{group}{ shift( @groups ) } = 1;
             }
 
             #
@@ -3274,8 +3281,7 @@ sub _fullElementHash {
         #
         # get the elementArray
         #
-        my $elementArray = $self->runSQL( SQL => "select guid, type, class_prefix, css_devel, js_devel, title, tags, parent, ord, site_guid, root_element, public, checkedout from element" );
-
+        my $elementArray = $self->runSQL( SQL => "select guid, plugin, type, class_prefix, css_devel, js_devel, title, tags, parent, ord, site_guid, root_element, public, checkedout from element" );
 
         #
         # Push the elementHash into the Cache
@@ -3286,6 +3292,7 @@ sub _fullElementHash {
         while (@$elementArray) {
             my $guid                                                = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{guid}           = $guid;
+            $self->{_fullElementHashCache}->{$guid}{plugin}         = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{type}           = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{classPrefix}    = shift( @$elementArray );
             $self->{_fullElementHashCache}->{$guid}{cssDevel}       = shift( @$elementArray );
@@ -3544,11 +3551,16 @@ sub _getKeywordSQL {
 sub _saveXRef {
     my ( $self, $child, $layout, $ord, $parent, $siteGUID ) = @_;
 
+	#
+	# set defaults to ensure the insert dosen't fail
+	#
+	$ord ||= 0;
+	
     #
     # delete the old one if its there
     #
     $self->_deleteXRef( $child, $parent, $siteGUID );
-
+	
     #
     # add the new one
     #
@@ -3604,7 +3616,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2012 Nate Lewis.
+Copyright 2013 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
