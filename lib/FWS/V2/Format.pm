@@ -74,7 +74,9 @@ sub createGUID {
     # Version 2 guids are always prefixed with a character, if you don't pass one
     # lets make it 'd'
     #
-    if ( !$guid ) { $guid = 'd' }
+    if ( !$guid ) { 
+        $guid = 'd';
+    }
 
     use Digest::SHA1 qw(sha1);
     return $guid . join( '', unpack( 'H8 H4 H4 H4 H12', sha1( shift() . shift() . time() . rand() . $< . $$ ) ) );
@@ -94,31 +96,33 @@ sub activeToggleIcon {
 
     if ( !$paramHash{active} ) {
         return $self->FWSIcon(
-                      icon    => "lightbulb_off_16.png",
-                      onClick => "var currentState = 1; if (this.src.substr(this.src.length-9,2) == 'on')" .
-                                 "{this.src='" . $self->{fileFWSPath} .
-                                 "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='".$self->{fileFWSPath} .
-                                 "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
-                                 "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
-                                 "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
-                      title   => "Active Toggle",
-                      alt     => "Active Toggle",
-                      style   => $paramHash{style},
-                      width   => "16");
+              icon    => "lightbulb_off_16.png",
+              onClick => "var currentState = 1; if (this.src.substr(this.src.length-9,2) == 'on')" .
+                         "{this.src='" . $self->{fileFWSPath} .
+                         "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='".$self->{fileFWSPath} .
+                         "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
+                         "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
+                         "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
+              title   => "Active Toggle",
+              alt     => "Active Toggle",
+              style   => $paramHash{style},
+              width   => "16",
+        );
     }
     else {
         return $self->FWSIcon(    
-                      icon    => "lightbulb_on_16.png",
-                      onClick => "var currentState = 1; if (this.src.substr(this.src.length-9,2) == 'on')" .
-                                 "{this.src='" . $self->{fileFWSPath} .
-                                 "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='" . $self->{fileFWSPath} .
-                                 "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
-                                 "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
-                                 "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
-                      style   => $paramHash{style},
-                      title   => "Active Toggle",
-                      alt     => "Active Toggle",
-                      width   => "16");
+              icon    => "lightbulb_on_16.png",
+              onClick => "var currentState = 1; if (this.src.substr(this.src.length-9,2) == 'on')" .
+                         "{this.src='" . $self->{fileFWSPath} .
+                         "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='" . $self->{fileFWSPath} .
+                         "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
+                         "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
+                         "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
+              style   => $paramHash{style},
+              title   => "Active Toggle",
+              alt     => "Active Toggle",
+              width   => "16",
+        );
     }
 }
 
@@ -151,8 +155,12 @@ sub applyLanguage {
         #
         # if it doesn't eend with a language notation, then run the field
         #
-        if ( $key !~ /_\w\w$/ && $key !~ /_id/i ) { $returnHash{$key} = $self->field( $key, %langHash ) }
-        else  { $returnHash{$key} = $langHash{$key} }
+        if ( $key !~ /_\w\w$/ && $key !~ /_id/i ) {
+            $returnHash{$key} = $self->field( $key, %langHash );
+        }
+        else {
+            $returnHash{$key} = $langHash{$key};
+        }
     }
     #
     # return our hash we created
@@ -230,10 +238,12 @@ sub createPin {
         $newPin = $self->createPassword( composition => '23456789QWERTYUPASDFGHJKLZXCVBNM', lowLength => 6, highLength => 6 );
         my ( $foundItUser )           = @{$self->runSQL( SQL => "select 1 from profile where pin='" . $self->safeSQL( $newPin ) . "'" )};
         my ( $foundItDirectory )      = @{$self->runSQL( SQL => "select 1 from directory where pin='" . $self->safeSQL ( $newPin ) . "'" )};
-        if ( $foundItDirectory || $foundItUser ) { $newPin = '' }
+        if ( $foundItDirectory || $foundItUser ) { 
+            $newPin = '';
         }
-    return $newPin;
     }
+    return $newPin;
+}
 
 =head2 createPassword
 
@@ -268,7 +278,9 @@ sub createPassword {
 
     my @pass = split( //, $paramHash{composition} );
     my $length = int( rand( $paramHash{highLength} - $paramHash{lowLength} + 1 ) ) + $paramHash{lowLength};
-    for( 1 .. $length ) { $returnString .= $pass[int( rand( $#pass ) )] }
+    for( 1 .. $length ) { 
+        $returnString .= $pass[int( rand( $#pass ) )];
+    }
     return $returnString;
 }
 
@@ -349,7 +361,9 @@ sub dialogWindow {
     # return the ajax against he modal wrapper if we are just refreshing with new content
     #
 
-    if ( $paramHash{subModal} ) { $returnHTML .= "\$('.simplemodal-data').html( '".$paramHash{loadingContent} ."' );\$('.simplemodal-data').".$ajaxLoad }
+    if ( $paramHash{subModal} ) {
+        $returnHTML .= "\$('.simplemodal-data').html( '".$paramHash{loadingContent} ."' );\$('.simplemodal-data')." . $ajaxLoad;
+    }
     
     #
     # this is not a subModal do the whole gig
@@ -371,7 +385,6 @@ sub dialogWindow {
         #
         # create the oncloase to clean up any mce thingies
         #
-        #$returnHTML .= "onClose: function(dialog) {if(typeof(tinyMCE) != 'undefined') {for (id in tinyMCE.editors) { if (id.match(/(0|_v_)/)) {tinyMCE.execCommand('mceRemoveControl', false, id); }}}\$.modal.close();},";
         $returnHTML .= "onClose: function(dialog) { FWSCloseMCE(); \$.modal.close(); },";
         $returnHTML .= "minWidth:" . $paramHash{width};
         $returnHTML .= "}); ";
@@ -380,8 +393,9 @@ sub dialogWindow {
     #
     # return the link wrapperd onclick or just the onclick
     #
-    if ( $paramHash{linkHTML} ) { return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>" }
-
+    if ( $paramHash{linkHTML} ) { 
+        return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
+    }
     return $returnHTML;
 }
 
@@ -782,9 +796,9 @@ sub formatDate {
         # 
         my $numberCap = 'th';
         $monthDay =~ s/^0//sg;
-        if ( $monthDay =~ /2$/ && $monthDay ne '12' ) { $numberCap = "nd" }
-        if ( $monthDay =~ /3$/ && $monthDay ne '13' ) { $numberCap = "rd" }
-        if ( $monthDay =~ /1$/i && $monthDay ne '11' ) { $numberCap = "st" }
+        if ( $monthDay =~ /2$/ && $monthDay ne '12' ) {     $numberCap = "nd" }
+        if ( $monthDay =~ /3$/ && $monthDay ne '13' ) {     $numberCap = "rd" }
+        if ( $monthDay =~ /1$/i && $monthDay ne '11' ) {    $numberCap = "st" }
 
         #
         # English date format
@@ -1143,7 +1157,7 @@ sub logoutOnClick {
     #
     # if we are running facebook, we need to run logout();
     #
-    if ( $self->siteValue( "facebookAppId" ) ) {
+    if ( $self->siteValue( 'facebookAppId' ) ) {
         $logoutHTML = "FB.getLoginStatus( function(response) {  if (response.authResponse) {FB.logout(function(response) {" . $logoutHTML . "});} else { " . $logoutHTML . "}});return false;";
     }
 
@@ -1178,7 +1192,9 @@ sub navigationLink {
     #
     # we only want the href, reguardless of antying.  give and get out
     #
-    if ( $hrefHash{hrefOnly} ) { return $href };
+    if ( $hrefHash{hrefOnly} ) {
+        return $href;
+    };
 
     #
     # URL
@@ -1188,14 +1204,18 @@ sub navigationLink {
     #
     # finish grooming the href if its for a page.
     #
-    if ( $hrefHash{type} eq 'page' ) { $href = "<a href=\"" .  $href . "\"" }
+    if ( $hrefHash{type} eq 'page' ) {
+        $href = "<a href=\"" .  $href . "\""
+    }
 
     if ( $hrefHash{type} eq "page" || $hrefHash{type} eq "url") {
 
         #
         # if we are on the page we are printing add "currentPage"
         #
-        if ( $hrefHash{guid} eq $self->formValue( "FWS_pageId" ) ) { $href .= " class=\"currentPage\"" }
+        if ( $hrefHash{guid} eq $self->formValue( 'FWS_pageId' ) ) {
+            $href .= ' class="currentPage"';
+        }
 
         #
         # End the href part of the anchor
@@ -1237,8 +1257,10 @@ NOTE: This should only be used in the context of the FWS Administration, and is 
 sub popupWindow {
     my ( $self, %paramHash ) = @_;
     my $returnHTML = "window.open('" . $self->{scriptName} . $self->{queryHead} . $paramHash{queryString} . "','_blank');";
-    if ( $paramHash{linkHTML} ) { return "<span class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>" }
-    else { return $returnHTML }
+    if ( $paramHash{linkHTML} ) {
+        return "<span class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
+    }
+    return $returnHTML;
 }
 
 =head2 removeHTML
@@ -1354,8 +1376,12 @@ sub SQLDate {
     #TODO Depricate SQLDate this and make it part of formatDate
     my ( $self, $date ) = @_;
     my @dateSplit = split(/\D/,$date);
-    if ( length( $dateSplit[2]) == 4 ) { $date = $dateSplit[2] . '-' . $dateSplit[0] . '-' . $dateSplit[1] }
-    else { $date = $dateSplit[0] . '-' . $dateSplit[1] . '-'.$dateSplit[2] }
+    if ( length( $dateSplit[2]) == 4 ) {
+        $date = $dateSplit[2] . '-' . $dateSplit[0] . '-' . $dateSplit[1];
+    }
+    else {
+        $date = $dateSplit[0] . '-' . $dateSplit[1] . '-'.$dateSplit[2];
+    }
     return $self->safeSQL( $date );
 }
 
@@ -1403,7 +1429,9 @@ sub truncateContent {
     #
     # if there is no friendly spaces, just chop at the maxLength
     #
-    if ( $newString eq '' ) { $newString = substr( $paramHash{content}, 0, $paramHash{length} ) }
+    if ( $newString eq '' ) {
+        $newString = substr( $paramHash{content}, 0, $paramHash{length} );
+    }
 
     #
     # eat the post space if there is any.
@@ -1492,10 +1520,6 @@ sub hex2chr {
 }
 
 
-############################################################################################
-# HELPER: organize JS scripts to be used
-############################################################################################
-
 sub _jsEnable {
     my ( $self, $jsEnable, $modifier ) = @_;
 
@@ -1526,10 +1550,6 @@ sub _jsEnable {
     return %jsHash;
 }
 
-
-############################################################################################
-# HELPER: organize CSS files to be used
-############################################################################################
 
 sub _cssEnable {
     my ( $self, $cssEnable, $modifier ) = @_;
