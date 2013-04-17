@@ -598,6 +598,7 @@ sub packDirectory {
             && $file !~ /^\/(import_|backup|cache|fws\/cache)/i 
             && $file !~ /(.log|\.pm\.\d+)$/i 
             && ( ( $file !~ /^\/fws\//i && $file !~ /^\/plugin\// && $file !~ /FWSElement-/ ) || !$paramHash{minMode} )
+            && ( $file !~ /FWSElement-/ || !$paramHash{noFWSBackups} )
             && ( $dirOK || $file =~ /^FWS/ ) ) {
 
             #
@@ -1191,7 +1192,7 @@ sub _saveElementFile {
         # for security lets get rid of anything dangerous
         #
         my $name        = $self->safeDir( $directory . "/FWSElement." . $ext );
-        my $cacheName   = $self->safeDir( $directory . "/FWSElement-" . $timeStamp . "." . $ext );
+        my $backupName  = $self->safeDir( $directory . "/FWSElement-" . $timeStamp . "." . $ext );
 
         #
         # save the file to the FS
@@ -1218,9 +1219,9 @@ sub _saveElementFile {
             else { $self->runSQL( SQL => "update " . $self->safeSQL( $table ) . " set " . $self->safeSQL( $ext ) . "_devel=" . $self->safeSQL( $timeStamp ) . " where guid='" . $self->safeSQL( $guid ) . "'" ) }
 
             #
-            # save the cacheable one
+            # save the backupName one
             #
-            open ( my $FILE, ">", $cacheName ) || $self->FWSLog( "Could not write to file: " . $cacheName );
+            open ( my $FILE, ">", $backupName ) || $self->FWSLog( "Could not write to file: " . $backupName );
             print $FILE $content;
             close $FILE;
         }
@@ -1305,8 +1306,8 @@ sub _installPlugin {
     #
     # bring in web accessable files
     #
-    my $webDir = $self->{filePath} . '/plugins/' . $plugin;
-    $self->makeDir( $webDir );
+    #my $webDir = $self->{filePath} . '/plugins/' . $plugin;
+    #$self->makeDir( $webDir );
     while ( $responseRef->{content} =~ /(.*)\n?/g ){
         my $line = $1;
         
@@ -1332,8 +1333,8 @@ sub _installPlugin {
             #
             # save the file to that directory
             #
-            $self->FWSLog( "Plugin File: " . $webDir . "/" . $fileName );
-            $self->saveEncodedBinary( $webDir . "/" . $fileName, $fileReading );
+            $self->FWSLog( "Plugin File: " .  $self->{filePath} . '/' . $fileName );
+            $self->saveEncodedBinary(  $self->{filePath} . '/' . $fileName, $fileReading );
 
             #
             # reset so when we come around again we will no we are done.
@@ -1353,7 +1354,11 @@ sub _installPlugin {
         # define the file name, the next time we go around we
         # will be looking at the base 64
         #
-        if ( $line =~ /^FILE\|/ ) { ( $fileName = $line ) =~ s/.*\///sg }
+        if ( $line =~ /^FILE\|/ ) {
+            ( $fileName = $line ) =~ s/.*?\|\/*(.*)\n*/$1/sg;
+            ( my $directory = $self->{filePath} . '/' . $paramHash{directory} . '/' . $fileName ) =~ s/^(.*)\/.*/$1/sg;
+            $self->makeDir( $directory );
+        }
     }
 
     #
@@ -1398,6 +1403,7 @@ sub _getElementEditText {
     #
     my $fileText;
     if ( $ext eq 'js' || $ext eq 'css' ) {
+        $self->FWSLog( "Opening Element File: " . $self->{filePath} . '/' . $siteGUID . '/' . $guid . '/FWSElement.' . $ext );
         my $file = $self->safeDir( $self->{filePath} . '/' . $siteGUID . '/' . $guid . '/FWSElement.' . $ext);
         if ( -e $file ) {
             open ( my $FILE, "<", $file );
