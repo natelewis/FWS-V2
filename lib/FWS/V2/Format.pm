@@ -766,13 +766,13 @@ sub formatDate {
     }
 
     if ( $paramHash{format} =~ /^shortDate$/i ) {
-        my @monthName = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-        $showDateTime = $monthName[$mon-1].' '.$monthDay.' '.$year;
+        my @monthName = qw( Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec );
+        $showDateTime = $monthName[$mon-1] . ' ' . $monthDay . ' ' . $year;
     }
 
     if ( $paramHash{format} =~ /^cookie$/i ) {
-        my @dayName     = qw(Sun Mon Tue Wed Thu Fri Sat);
-        my @monthName   = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+        my @dayName     = qw( Sun Mon Tue Wed Thu Fri Sat );
+        my @monthName   = qw( Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec );
         $showDateTime   = $dayName[$wday] . ', ' . $monthDay . $paramHash{dateSeparator} . $monthName[$mon-1] . $paramHash{dateSeparator} . $year . ' ' . $hour . ':' . $minute . ':' . $sec . ' GMT';
     }
 
@@ -782,14 +782,14 @@ sub formatDate {
 
 
     if ( $paramHash{format} =~ /^fancyDate$/i ) {
-        my @dayName     = qw(Sunday Monday Tueday Wednesday Thursday Friday Saturday);
-        my @monthName   = qw(January Febuary March April May June July August September October November December);
+        my @dayName     = qw( Sunday Monday Tuesday Wednesday Thursday Friday Saturday );
+        my @monthName   = qw( January Febuary March April May June July August September October November December );
 
         #
         # date names in french
         #
-        if ( $self->language() =~ /fr/i ) { @dayName     = qw(Dimanche Lundi Mardi Vendredi Jeudi Vendredi Samedi) }
-        if ( $self->language() =~ /fr/i ) { @monthName   = qw(janvier fevrier mars avril mai juin juillet a^out septembre octobre novembre decembre) }
+        if ( $self->language() =~ /fr/i ) { @dayName     = qw( Dimanche Lundi Mardi Vendredi Jeudi Vendredi Samedi ) }
+        if ( $self->language() =~ /fr/i ) { @monthName   = qw( janvier fevrier mars avril mai juin juillet a^out septembre octobre novembre decembre ) }
 
         # 
         # English th/nd/st rules 
@@ -812,8 +812,8 @@ sub formatDate {
     }
 
     if ( $paramHash{format} =~ /^apache$/i ) {
-        my @monthName = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-        my @dayName = qw(Sun Mon Tue Wed Thu Fri Sat);
+        my @monthName = qw( Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec );
+        my @dayName = qw( Sun Mon Tue Wed Thu Fri Sat );
         my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = localtime( $paramHash{epochTime} );
         $year = $year + 1900;
         $showDateTime = $dayName[$wday] . ', ' . $mday . ' ' . $monthName[$mon] . ' ' . $year . ' ' . $hour . ':' . $minute . ':' . $sec . ' GMT';
@@ -1234,10 +1234,11 @@ sub navigationLink {
         #
         $hrefHash{navigationName} = $self->field( 'navigationName', %hrefHash );
 
+        #
         # add the text for the name, and close the anchor
         #
-        if ( !$hrefHash{navigationName} ) { $href .= $hrefHash{name} }
-        else { $href .= $hrefHash{navigationName} }
+        $href .= ( $hrefHash{navigationName} ) ? $hrefHash{navigationName} : $hrefHash{name};
+        
         $href .= "</a>";
     }
     return $href;
