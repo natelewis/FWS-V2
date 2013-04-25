@@ -1320,30 +1320,30 @@ sub systemInfo {
     #
     # run Module Checks
     #
-    $errorReturn = "";
-    $systemInfo .= "<b>Perl Module Check:</b><br/>";
-    $errorReturn .= $self->_checkIfModuleInstalled( "Captcha::reCAPTCHA" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "MIME::Base64" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "CGI::Carp" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "File::Copy" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "File::Find" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "Time::Local" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "File::Path" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "Google::SAML::Response" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "LWP::UserAgent" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "Crypt::SSLeay" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "Crypt::Blowfish" );
-    $errorReturn .= $self->_checkIfModuleInstalled( "GD" );
-    if ( !$errorReturn ) { $systemInfo .= "<ul><li>All required Perl Modules are present.</li></ul>" }    
-    else { $systemInfo .= $errorReturn . "<br/>" }
+    $errorReturn = '';
+    $systemInfo .= '<b>Perl Module Check:</b><br/>';
+    $errorReturn .= $self->_checkIfModuleInstalled( 'Captcha::reCAPTCHA' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'MIME::Base64' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'CGI::Carp' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'File::Copy' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'File::Find' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'Time::Local' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'File::Path' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'Google::SAML::Response' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'LWP::UserAgent' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'Crypt::SSLeay' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'Crypt::Blowfish' );
+    $errorReturn .= $self->_checkIfModuleInstalled( 'GD' );
+    if ( !$errorReturn ) { $systemInfo .= '<ul><li>All required Perl Modules are present.</li></ul>' }    
+    else { $systemInfo .= $errorReturn . '<br/>' }
     
     #
     # Database Checks
     #
-    $systemInfo .= "<b>Database Table And Index Check:</b><br/>";
+    $systemInfo .= '<b>Database Table And Index Check:</b><br/>';
     $errorReturn = $self->updateDatabase();
-    if ( !$errorReturn ) { $systemInfo .= "<ul><li>All tables and indexes are correct.</li></ul>" }    
-    else {$systemInfo .= $errorReturn . "<br/>" }
+    if ( !$errorReturn ) { $systemInfo .= '<ul><li>All tables and indexes are correct.</li></ul>' }    
+    else {$systemInfo .= $errorReturn . '<br/>' }
 
     return $systemInfo;
 }
@@ -1365,15 +1365,16 @@ sub aceTextArea {
     #
     # load the JS for for ace... but only ONCE!
     #    
-    if ( !$self->formValue( "FWSAceJSLoaded" ) ) {
+    if ( !$self->formValue( 'FWSAceJSLoaded' ) ) {
         $self->addToHead(    
-                    "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/ace.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-                    "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/theme-" . $self->{aceTheme} . ".js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-                    "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-javascript.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-                    "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-html.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-                    "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-                    "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n");
-        $self->formValue( "FWSAceJSLoaded", '1' );
+            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/ace.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/theme-" . $self->{aceTheme} . ".js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-javascript.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-html.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n"
+        );
+        $self->formValue( 'FWSAceJSLoaded', '1' );
     }
 
 
@@ -1427,7 +1428,7 @@ Return an on off lightbulb.
 
 sub onOffLight {
     my ( $self, $status, $guid, $style ) = @_;
-    return $self->activeToggleIcon(guid=>$guid,style=>$style,active=>$status);
+    return $self->activeToggleIcon( guid => $guid, style => $style, active => $status );
 }
 
 
@@ -1641,7 +1642,6 @@ sub FWSMenu {
         }
     }
 
-
     if ( $self->formValue( "p" ) =~ /^fws_/ ) {
         $FWSMenu .= $self->_selfWindow( "", "View Site" );
         $FWSMenu .= $linkSpacer;
@@ -1650,7 +1650,7 @@ sub FWSMenu {
     #    
     # ALWAYS ON
     #
-    if ( $self->userValue( 'isAdmin' ) || $self->userValue( "showDesign" ) || $self->userValue( "showContent" ) || $self->userValue( "showDeveloper" ) )  {
+    if ( $self->userValue( 'isAdmin' ) || $self->userValue( 'showDesign' ) || $self->userValue( 'showContent' ) || $self->userValue( 'showDeveloper' ) )  {
         $FWSMenu .= $self->_editModeLink( '', $linkSpacer );
     }
 
@@ -2119,26 +2119,27 @@ sub GNFTree {
         $treeHTML .= "<div class=\"FWSActionButton\">";
         if ( $paramHash{deleteTool} ) {
             $treeHTML .= $self->FWSIcon(     
-                            icon    => "delete_16.png",
-                            onClick => "if (confirm('Are you sure you want to delete this item and all of its related sub items? (Non-reversable)'" .
-                                       ")){FWSAjax('" . $self->{scriptName} . 
-                                       "','" . $self->{queryHead} . 
-                                       "p=fws_dataEdit&pageAction=deleteElement&parent=" . $paramHash{parentId} . 
-                                       "&guid=" . $paramHash{id} . "');" . 
-                                       "\$('#block_" . $paramHash{id} . "').hide('slow');}return false;",
-                            alt     => "Delete",
-                            width   => "16");
+                icon    => "delete_16.png",
+                onClick => "if (confirm('Are you sure you want to delete this item and all of its related sub items? (Non-reversable)'" .
+                           ")){FWSAjax('" . $self->{scriptName} . "','" . $self->{queryHead} . 
+                           "p=fws_dataEdit&pageAction=deleteElement&parent=" . $paramHash{parentId} . 
+                           "&guid=" . $paramHash{id} . "');" . 
+                           "\$('#block_" . $paramHash{id} . "').hide('slow');}return false;",
+                alt     => "Delete",
+                width   => "16",
+            );
         }
         elsif ( $paramHash{emailDeleteTool} ) {
-            $treeHTML .= $self->FWSIcon(    icon    =>"delete_16.png",
-                            onClick => "if (confirm('Are you sure you want to delete this message? (Non-reversable)'" . 
-                                          ")){FWSAjax('" . $self->{scriptName} .
-                                          "','" . $self->{queryHead} .
-                                          "&pageAction=deleteMessage" .
-                                          "&guid=" . $paramHash{id} . "');" . 
-                                          "\$('#block_" . $paramHash{id} . "').hide('slow');}return false;",
-                            alt     => "Delete",
-                            width   => "16");
+            $treeHTML .= $self->FWSIcon(    
+                icon    =>"delete_16.png",
+                onClick => "if (confirm('Are you sure you want to delete this message? (Non-reversable)'" . 
+                           ")){FWSAjax('" . $self->{scriptName} . "','" . $self->{queryHead} .
+                           "&pageAction=deleteMessage" .
+                           "&guid=" . $paramHash{id} . "');" . 
+                           "\$('#block_" . $paramHash{id} . "').hide('slow');}return false;",
+                alt     => "Delete",
+                width   => "16",
+            );
         }
         else { $treeHTML .= "&nbsp;" };
         $treeHTML .= "</div>";
@@ -2150,30 +2151,38 @@ sub GNFTree {
         $treeHTML .= "<div class=\"FWSActionButton\">";
         if ( $paramHash{emailEditTool} ) {
             $treeHTML .= $self->FWSIcon(    
-                            icon    => "properties_16.png",
-                            onClick => $self->dialogWindow( queryString => "p=fws_messageEdit&guid=" . $paramHash{id} ),
-                            alt     => "Edit",
-                            width   => "16");
+                icon    => "properties_16.png",
+                onClick => $self->dialogWindow( queryString => "p=fws_messageEdit&guid=" . $paramHash{id} ),
+                alt     => "Edit",
+                width   => "16",
+            );
         }    
         if ( $paramHash{pageTool} ) {
-                   $treeHTML .= $self->FWSIcon(
-                            icon    => "properties_16.png",
-                            onClick => $self->popupWindow( queryString => "p=fws_pageEdit&FWS_pageId=" . $paramHash{guid} . "&FWS_showElementOnly=0" ),
-                            alt     => "Edit",
-                            width   => "16",
-                            id      => "edit_".$paramHash{id} );
+            $treeHTML .= $self->FWSIcon(
+                icon    => "properties_16.png",
+                onClick => $self->popupWindow( queryString => "p=fws_pageEdit&FWS_pageId=" . $paramHash{guid} . "&FWS_showElementOnly=0" ),
+                alt     => "Edit",
+                width   => "16",
+                id      => "edit_".$paramHash{id}, 
+            );
         }    
-        else { $treeHTML .= "&nbsp;" };
+        else { 
+            $treeHTML .= "&nbsp;" 
+        }
+        
         $treeHTML .= "</div>";
-
-
 
         #
         # on off tool
         #
         $treeHTML .= "<div class=\"FWSActionButton\">";
-        if ( $paramHash{activeTool} ) { $treeHTML .= $self->onOffLight( $paramHash{active}, $paramHash{guid} ) } 
-        else { $treeHTML .= "&nbsp;" };
+        if ( $paramHash{activeTool} ) { 
+            $treeHTML .= $self->onOffLight( $paramHash{active}, $paramHash{guid} );
+        } 
+        else { 
+            $treeHTML .= "&nbsp;";
+        }
+        
         $treeHTML .= "</div>";
             
         #
@@ -2207,9 +2216,13 @@ sub GNFTree {
                 ajaxUpdateTable     => 'guid_xref',
                 ajaxUpdateParentId  => $paramHash{parentId},
                 ajaxUpdateGUID      => $paramHash{guid}
-                )."</div>"; 
+            );
+
+            $treeHTML .= "</div>"; 
             $treeHTML .= "<div style=\"float:right;\">";
-            if ( !$paramHash{id} ) { $treeHTML .= "Home Page " }
+            if ( !$paramHash{id} ) { 
+                $treeHTML .= "Home Page ";
+            }
             $treeHTML .= "Template:";
             $treeHTML .= "</div>";
                   
@@ -2233,30 +2246,31 @@ sub GNFTree {
         #
         my $fromDate    = $self->formatDate( format => 'SQL', monthMod => -1 );
         my $toDate      = $self->formatDate( format => 'SQL' );
-        if ( $paramHash{dateRange} eq 'onlyLate' ) { $fromDate     = '0000-00-00' }
+        if ( $paramHash{dateRange} eq 'onlyLate' ) { 
+            $fromDate     = '0000-00-00';
+        }
         if ( $paramHash{dateRange} eq 'check' ) { 
             $toDate     = $self->formatDate( format => 'SQL', monthMod => 1 );
             $fromDate   = $self->formatDate( format => 'SQL' );
         }
             
         $treeHTML .= $self->adminField(
-                fieldType     => 'date',
-                fieldValue    => $fromDate,
-                fieldName     => $fromId,
-                id            => $fromId,
-                style         => 'width:70px;',
-                );
-
+            fieldType     => 'date',
+            fieldValue    => $fromDate,
+            fieldName     => $fromId,
+            id            => $fromId,
+            style         => 'width:70px;',
+        );
 
         $treeHTML .= "&nbsp;To: ";
 
         $treeHTML .= $self->adminField(
-                fieldType     => 'date',
-                fieldValue    => $toDate,
-                fieldName     => $toId,
-                id            => $toId,
-                style         => 'width:70px;',
-                );
+            fieldType     => 'date',
+            fieldValue    => $toDate,
+            fieldName     => $toId,
+            id            => $toId,
+            style         => 'width:70px;',
+        );
         $treeHTML .= "</div>";
     
     }
@@ -2271,7 +2285,7 @@ sub GNFTree {
 
 sub _selfWindow {
     my ( $self, $queryString, $linkHTML, $extraJava ) = @_;
-        return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"location.href='" . $self->{scriptName} . $self->{queryHead} . $queryString . "';" . $extraJava . "\">" . $linkHTML . "</span>";
+    return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"location.href='" . $self->{scriptName} . $self->{queryHead} . $queryString . "';" . $extraJava . "\">" . $linkHTML . "</span>";
 }
 
 sub _isSiteUsed {
@@ -2391,9 +2405,6 @@ sub _processAdminAction {
     ##############################################################################################
     if (($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) && ($action eq "flushWebSearch" || $action eq "flushSearchCache" || $action eq "publishPlugin" || $action eq "deleteArchived" || $action eq "addElement" || $action eq "deleteScriptElement" || $action eq "getLiveScript" || $action eq "getArchivedScript" || $action eq "makeLiveScript" || $action eq "FWSRestore" || $action eq "FWSBackup" || $action eq "installCore" || $action eq "installPlugin" || $action eq "updatePlugin" || $action eq "updateScript" || $action eq "updateDesign" || $action eq "updatePageDesign" || $action eq "updateTemplate")) {
                    
-
-                    
- 
          if ($action eq "addElement") {
             my $title = $self->safeSQL($self->formValue('element_title'));
             my $type = $self->safeSQL($self->formValue('element_type'));
@@ -2597,42 +2608,10 @@ sub _processAdminAction {
 
     if ($self->userValue('isAdmin') || $self->userValue("showSiteUsers")) {
 
-        if ($action eq "siteAddProfile") {
-            my $profile_name = $self->safeSQL($self->formValue("profile_name"));
-            my $profile_email = $self->safeSQL($self->formValue("profile_email"));
-            my $profile_password = $self->safeSQL($self->formValue("profile_password"));
-            my $profile_active = $self->safeSQL($self->formValue("profile_active"));
-    
-            #
-            # default profile_active to on, if its not specified
-            #
-            if ($profile_active eq "") { $profile_active = "1" }
-            
-            if (length($profile_name) < 4)          { $self->formValue("statusNote","Your full name must be longer than 3 characters"); return; }
-            if (!$profile_name)                     { $self->formValue("statusNote","Your full name is required"); return; }
-            if ($profile_email !~ /^\w+[\w|\.|-]*\w+@(\w+[\w|\.|-]*\w+\.[a-z]{2,4}|(\d{1,3}\.){3}\d{1,3})$/i) 
-                                                    { $self->formValue("statusNote","Your eMail address must have a valid format."); return; }
-            if (!$profile_password)                 { $self->formValue("statusNote","Password is required"); return; }
-            if (length($profile_password) < 6)      { $self->formValue("statusNote","Passwords must be 6 characters long"); return; }
-            
-            #check to see if this profile is unique within the site were currently on
-            if ( @{$self->runSQL( SQL=>"select 1 from profile where email like '" . $self->safeSQL( $profile_email ) . "' LIMIT 1" )} ) {
-                my $emailBody  = "User profile [".$profile_email."] could not be created\n\nUser profile already exists\n";
-                $self->formValue("statusNote",$emailBody);
-                return;
-            }
-                    
-            $self->saveUser( 
-                    name            => $profile_name,
-                    password        => $profile_password,
-                    email           => $profile_email,
-                    active          => $profile_active);
-        }    
-    
         if ($action eq "groupAdd") {
             my $group_name = $self->safeSQL($self->formValue("group_name"));
             my $guid = $self->createGUID( 'g' );
-            $self->runSQL(SQL=>"insert into groups (guid,name) values ('".$guid."','".$group_name."')");
+            $self->runSQL( SQL => "insert into groups (guid,name) values ('" . $guid . "','" . $group_name . "')" );
         }
     
         if ($action eq "profileGroupsXRefAdd") {
@@ -2647,9 +2626,6 @@ sub _processAdminAction {
             $self->runSQL(SQL=>"delete from profile_groups_xref where profile_guid='" . $profile_guid . "' and groups_guid='" . $groups_guid . "'");
         }
     
-        if ($action eq "profileDelete") {
-            $self->deleteUser(guid=>$self->formValue("guid"));
-        }
         if ($action eq "groupDelete") {
             $self->runSQL(SQL=>"delete from groups where guid='" . $guid . "'");
        }
@@ -2837,7 +2813,7 @@ sub _checkIfModuleInstalled {
         $errorReturn .= "<ul><li>" . $moduleName . " Perl module missing.  Your site may not run correctly without it. " . $bump . "<br/><br/><ul><li>To install it if you have shell access you can do the following:<br/>server prompt> cpan<br/>CPAN> install " . $moduleName . "<br/><i>Note: You must be logged in as root to use cpan, if you are unfamiliar with using cpan it might be best to have a system adminstrator do this for you.</i></li><li>To install it from CPanel do the following:<br/>Perl Modules -> Install a Perl Module: " . $moduleName . "</li><li>If these methods are unavailable you may need your server administrator to install it for you.</li></ul></li></ul><br/>" }
 
     return $errorReturn;
-    }
+}
 
 sub _systemInfoCheckDir {
     my ( $self, $newDir ) = @_;
@@ -2908,12 +2884,12 @@ sub _importAdmin {
         $keepAlive  = 0;
     }
     return $self->importSiteImage( 
-                newSID      => "fws",
-                imageURL    => "http://www.frameworksites.com/downloads/fws_" . $self->{FWSVersion} . "/" . $adminFile . ".fws",
-                removeCore  => $removeCore,
-                parentSID   => "admin",
-                keepAlive   => $keepAlive
-                );
+        newSID      => "fws",
+        imageURL    => "http://www.frameworksites.com/downloads/fws_" . $self->{FWSVersion} . "/" . $adminFile . ".fws",
+        removeCore  => $removeCore,
+        parentSID   => "admin",
+        keepAlive   => $keepAlive,
+    );
 }
 
 
