@@ -38,19 +38,21 @@ FWS version 2 core network methods
 Post HTTP or HTTPS and return the result to a hash reference containing the results plus the parameters provided.
 
     my $responseRef = $fws->HTTPRequest(    
-                        url     => 'http://www.cpan.org'# only required parameter
-                        type    => 'get'                # default is get [get|post]
-                        user    => 'theUser'            # if needed for auth
-                        password=> 'thePass'            # if needed for auth 
-                        timeout => '30'                 # fail if 30 seconds go by
-                        expire  =>  30                  # cache this for 30 minutes 
-                                                        # and return cache till it expires
-                        ip    =>'1.2.3.4');             # show that I am from this ip
+        url         => 'http://www.cpan.org'# only required parameter
+        type        => 'get'                # default is get [get|post]
+        user        => 'theUser'            # if needed for auth
+        password    => 'thePass'            # if needed for auth 
+        noRedirect  =>  1                   # do not follow redirects (defaults to 0)
+        timeout     => '30'                 # fail if 30 seconds go by
+        expire      =>  30                  # cache this for 30 minutes 
+                                            # and return cache till it expires
+        ip    =>'1.2.3.4'                   # show that I am from this ip
+    );
 
-    print $responseRef->{url} . "\n";                   # what was passed to HTTPRequest
-    print $responseRef->{success} . "\n";               # will be a 1 or a 0
-    print $responseRef->{content} . "\n";               # the content returned
-    print $responseRef->{status}."\n";                # the status returned
+    print $responseRef->{url} . "\n";                       # what was passed to HTTPRequest
+    print $responseRef->{success} . "\n";                   # will be a 1 or a 0
+    print $responseRef->{content} . "\n";                   # the content returned
+    print $responseRef->{status} . "\n";                    # the status returned
 
 =cut
 
@@ -79,6 +81,11 @@ sub HTTPRequest {
     #
     require LWP::UserAgent;
     my $ua = LWP::UserAgent->new();
+
+    #
+    # disable redirect if passed
+    #
+    if ( $paramHash{noRedirect} )  { $ua->requests_redirectable( [] ) }
 
     #
     # set the agent if we need to
@@ -128,7 +135,9 @@ sub HTTPRequest {
         }
 
     }
-    else { $paramHash{success} = 0 }
+    else {
+        $paramHash{success} = 0;
+    }
 
     #
     # return the reference
@@ -148,8 +157,9 @@ sub send {
     my ( $self, %paramHash ) = @_;
 
     my @digitalAssets;
-    if ( $paramHash{digitalAssets} ) { @digitalAssets = split( /\|/, $paramHash{digitalAssets} ) }
-
+    if ( $paramHash{digitalAssets} ) {
+        @digitalAssets = split( /\|/, $paramHash{digitalAssets} );
+    }
 
     #
     # set the stuff if its not specified
@@ -174,24 +184,15 @@ sub send {
         #
         # Switch anything that could have been URIed and changed to html tags that will need to be put back to regular chars.
         #
-        $paramHash{from} =~ s/&#160;/ /sg;
-        $paramHash{from} =~ s/;/ /sg;
-        $paramHash{from} =~ s/\t/ /sg;
-        $paramHash{from} =~ s/\n/ /sg;
-        $paramHash{from} =~ s/,/ /sg;
-
-        $paramHash{to} =~ s/&#160;/ /sg;
-        $paramHash{to} =~ s/;/ /sg;
-        $paramHash{to} =~ s/\t/ /sg;
-        $paramHash{to} =~ s/\n/ /sg;
-        $paramHash{to} =~ s/,/ /sg;
+        $paramHash{from}        =~ s/(&#160;|;|\t|\n|,)/ /sg;
+        $paramHash{to}          =~ s/(&#160;|;|\t|\n|,)/ /sg;
 
         #
         # only use the first one if there is more than one in a list.
         #
-        my @mailFromSplit   = split( ' ', $paramHash{from} );
-        $paramHash{from}    = $mailFromSplit[0];
-        $paramHash{fromName} ||= $paramHash{from};
+        my @mailFromSplit       = split( ' ', $paramHash{from} );
+        $paramHash{from}        = $mailFromSplit[0];
+        $paramHash{fromName}  ||= $paramHash{from};
 
         my $evalEmail;
 
@@ -205,22 +206,16 @@ sub send {
             #
             # if this didn't come into the queue, lets just put it in the history now so we know this went down
             #
-            $self->saveQueueHistory(%paramHash);
+            $self->saveQueueHistory( %paramHash );
 
             $paramHash{to} = shift @emailAccounts;
-
 
             #
             # For security reasons lets get rid of all the stuff that could potentialy be dangerous
             #
-            $paramHash{to} =~ s/\>//sg;
-            $paramHash{to} =~ s/\<//sg;
-            $paramHash{to} =~ s/\`//sg;
-            $paramHash{to} =~ s/\///sg;
-
+            $paramHash{to} =~ s/(\>|\<|\`|\/)//sg;
 
             if ( $self->{sendMethod} eq '' || $self->{sendMethod} eq 'sendmail' ) {
-
 
                 my $boundary = "_-------------" . $self->createPassword(composition=>'1234567890',lowLength=>16,highLength=>16);
 
