@@ -882,12 +882,20 @@ sub field {
     # the datafields have a couple of issues with core field names that do not match its language field
     # here are the conversions
     #
-    $fieldName =~ s/navigationName/nav_name/sg;
+    $fieldName =~ s/^navigationName/nav_name/s;
 
     #
     # check to see if a language specific one exists
     #
-    if ( $dataHash{$fieldName . '_' . $self->language()} ) { $dataHash{$fieldName} = $dataHash{$fieldName . '_' . $self->language() } }
+    if ( $dataHash{$fieldName . '_' . $self->language()} ) {
+        $dataHash{$fieldName} = $dataHash{$fieldName . '_' . $self->language() }
+    }
+    else {
+        #
+        # put the navigationName back if we didn't have to switch
+        #
+        $fieldName =~ s/^nav_name/navigationName/s;
+    }
 
     #
     # return either the default, or the language specific one
