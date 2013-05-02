@@ -5,19 +5,19 @@ Framework Sites Version 2
 
 OVERVIEW
 
-FWS::V2 is a web based content management development platform provided at www.frameworksites.com.  This open source platform is in use by content managed blogs, web sites, eCommerce sites, web services and many more applications for business and personal sites world wide.   Many built in features make this platform easy to use, and its years of development and support are proven and stable.  Once installed developers, designers, and site owners can collaborate using embeded tools, and extended features provided by 3rd parties.   For more information, news, documentation and installation instructions visit www.frameworksites.com. 
+FWS::V2 is a web-based content management development platform provided at www.frameworksites.com. This open source platform is currently the foundation of websites, blogs, ecommerce sites, and many more web apps, both business and personal, world wide. The software is packed with features for designers, developers and end-users and its years of development and support have proven it to be mature and stable. Once installed, developers, designers, and end users can collaborate using embedded tools and extended features provided by 3rd parties. For more information, news, documentation and installation instructions visit www.frameworksites.com. 
 
 
 COMPATABILITY
 
-FWS::V2 is currently used at most major ISPs platforms for a veriety of applications and web sites.   A compressed version of this software is available with an automated upgrade and installation available at www.frameworksites.com.  It is recommended to use the compressed version for maximum compatablity and live updates that are available with one click upgrades for administration elements and the FWS core.
+FWS::V2 is currently used at most major ISPs platforms to power a variety of websites and apps. A compressed version of the software is available with an automated upgrade and installation available at www.frameworksites.com. It is recommended to use the compressed version for maximum compatibility. Live core and element updates are available through the developer administration's easy to use one-click upgrade interface.
 
 
 PACKAGE DEPENDENCE
 
-Wait a second... why does FWS::V2 seem to have its own home grown methods that are already in popular well established packages????
+Wait a second... why does FWS::V2 seem to have its own home grown methods that are already in popular, well established packages?
 
-One of the main goals of FWS is to have a bundled, autonomous version of the FWS that can be picked up and sat on almost any major ISP or Linux hosting environment without any care for what is present on the server.   Packages the FWS does use have been carefully picked and validated to be supported on most all major ISPs.  
+One of the main goals of FWS is to have a bundled, autonomous version of the FWS that can be picked up and installed on almost any major ISP or Linux hosting environment without any care for what is present on the server. The packages used by the FWS have been carefully picked and validated to be supported on most all major ISPs.  
 
 
 INSTALLATION
