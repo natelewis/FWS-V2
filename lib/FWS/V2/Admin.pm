@@ -1314,9 +1314,13 @@ sub systemInfo {
     #
     if ( !$errorReturn ) { $errorReturn .= $self->_systemInfoCheckDir( $self->{filePath} . "/fws") }
     if ( !$errorReturn ) { $errorReturn .= $self->_systemInfoCheckDir( $self->{filePath} . "/fws/jquery") }
-    if ( !$errorReturn ) { $errorReturn = "<li>All directories are present with suitable permissions.</li>"; $adminInstalled = 1 }    
+    if ( !$errorReturn ) {
+        $errorReturn = "<li>All directories are present with suitable permissions.</li>"; 
+        $adminInstalled = 1;
+    }
+
     $systemInfo .= $errorReturn . "</ul>";
-            
+        
     #
     # run Module Checks
     #
@@ -1345,6 +1349,10 @@ sub systemInfo {
     if ( !$errorReturn ) { $systemInfo .= '<ul><li>All tables and indexes are correct.</li></ul>' }    
     else {$systemInfo .= $errorReturn . '<br/>' }
 
+    if ( $adminInstalled )  {
+        $systemInfo .= "<input style=\"width:300px;\" type=\"button\" onclick=\"location.href='" . $self->{scriptName} . "?s=site';\" value=\"View Site\"/>";
+    }
+            
     return $systemInfo;
 }
 
@@ -2426,6 +2434,11 @@ sub _processAdminAction {
                 # delete cache directory
                 #
                 $self->flushWebCache();
+
+                #
+                # get rid of any orphaned data from the install process
+                #
+                $self->_deleteOrphanedData( "data", "guid", "guid_xref", "child");
 
                 #
                 # if there is no elements on the site yet lets install our demo site
