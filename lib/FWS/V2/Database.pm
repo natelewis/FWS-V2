@@ -1044,11 +1044,13 @@ sub elementArray {
     if ( $paramHash{siteGUID} ) { $addToWhere .= " and site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "'" }
 
     #
-    # match only with matching plugin
-    # all other search cretira is overwritten! 
+    # match only with matching plugin, all other search cretira is overwritten! 
+    # And these plugins are only alowed to be shows if they are the root of a site
     #
-    if ( $paramHash{plugin} ) { $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "'" }
-
+    if ( $paramHash{plugin} ) {
+        # TODO update to not use s%, have it actually xref the site table for parents in case later we descide they won't all start with s
+        $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "' and parent like 's%'"
+    }
 
     if ( $paramHash{tags} ) {
         my @tagsArray = split( /,/, $paramHash{tags} );
