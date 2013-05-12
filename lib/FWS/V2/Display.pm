@@ -786,8 +786,9 @@ sub _FWSContent {
 
             #
             # check if this is the home page, with no stuff on it,  if not we need to dump to login, or redirect to fws_systemInfo
+            # only do this for the site though, if your making blank other sites for other reasons lets just let that happen
             #
-            if ( ( $elementTotal < 1 && $pageId eq $self->homeGUID() ) && !$somethingIsOnThePage ) {
+            if ( $elementTotal < 1 && $pageId eq $self->homeGUID() && !$somethingIsOnThePage && $self->formValue( 's' ) eq 'site' ) {
                 if ( $self->{adminLoginId} ) {
                     print "Status: 302 Found\n";
                     print "Location: " . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo\n\n";
