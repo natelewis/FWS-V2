@@ -148,7 +148,9 @@ sub setFormValues {
     #
     # if fws_lang is not set, lets set it
     #
-    if ( $self->{form}{fws_lang} ) { $self->language( uc( $self->{form}{fws_lang} ) ) }
+    if ( $self->{form}{fws_lang} ) {
+        $self->language( uc( $self->{form}{fws_lang} ) )
+    }
 
     return;
 }
@@ -458,7 +460,7 @@ Set the languages the site will use.  The first one in the list will be consider
 sub languageArray {
     my ( $self, @languageArray ) = @_;
     if ( defined $languageArray[0] ) { $self->{_languageArray} = uc( join( '|', @languageArray ) ) }
-    if ( $self->{_languageArray} eq '' ) { return }
+    if ( !$self->{_languageArray} ) { return }
     return ( split( /\|/, $self->{_languageArray} ) );
 }
 
@@ -766,7 +768,6 @@ sub _localLogin {
             #
             $self->userValue( 'isAdmin', 1 );
 
-
             #
             # Restrict the login if they came in on the adminSafePassword
             #
@@ -851,7 +852,6 @@ Set default values derived from the site settings for a site.  This will also se
 
 =cut
 
-
 sub setSiteValues {
     my ( $self, $siteId ) = @_;
 
@@ -904,7 +904,7 @@ sub setSiteValues {
         # xref that does not have a parent it will be flipped to 'page' 
         #
         $self->saveData( type => 'home', parent => '', newGUID => $homeGUID );
-        }
+    }
 
     #
     # check to see if there is no level... if so then we need create a new admin account
@@ -997,9 +997,6 @@ sub userValue {
     return $self->{user}{$field};
 }
 
-############################################################################################
-# HELPER: organize and combine what formValues that will be saved with the session
-############################################################################################
 
 sub _saveWithSessionHash {
     my ( $self, %saveWithSessionHash ) = @_;
