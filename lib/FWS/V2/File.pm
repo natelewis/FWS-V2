@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 0.006
+Version 1.13052223
 
 =cut
 
-our $VERSION = '0.006';
+our $VERSION = '1.13052223';
 
 
 =head1 SYNOPSIS
@@ -652,40 +652,66 @@ sub saveEncodedBinary {
 }
 
 
-=head2 getPluginVersion
+=head2 pluginInfo
 
-Extract the version from a FWS plugin.  If no version is labeled or exists it will return 0.0000.
+Extract the version and description from a FWS plugin.  If no version is labeled or exists it will return 0.0000 and the description will be blank.
 
     #
-    # The version line in FWS plugins will look like this:
-    # our $VERSION = '0.0001';
+    # get the info from the plugin
     #
-    my $version = $fws->getPluginVersion( $somePluginFile );
+    my %pluginInfo = $fws->pluginInfo( $somePluginFile );
+    print "Description: " . $pluginInfo{description} . "\n";
+    print "Version: " . $pluginInfo{version} . "\n";
+    print "Author: " . $pluginInfo{author} . "\n";
+    print "Author Email: " . $pluginInfo{authorEmail} . "\n";
 
 =cut
 
-sub getPluginVersion {
+sub pluginInfo {
     my ( $self, $pluginFile ) = @_;
 
     #
-    # set the default
+    # the return we will build
     #
-    my $version = '0.0000';
+    my %returnHash;
 
     #
-    # open the file and extract it
+    # pull the file into a string so we can parse it
     #
-    open ( my $FILE, '<', $self->safeDir( $pluginFile ) );
-    while ( <$FILE> ) {
-        my $line = $_ ;
-        $line =~ /\$VERSION\s*=\s*'(.*?)'/;
-        my $verCheck = $1;
-        if ( $verCheck ) { $version = $verCheck }
+    my $scriptContent;
+    if ( -e $pluginFile ) {
+        open ( my $SCRIPTFILE, "<", $pluginFile );
+        while ( <$SCRIPTFILE> ) { $scriptContent .= $_ }
+        close $SCRIPTFILE;
     }
-    close $FILE;
-    return $version
-}
+    
+    #
+    # strip the version and header data out and create the commit button
+    #
+    $scriptContent             =~ s/our\s\$VERSION\s*=\s*\'([\d\.]+).*?\n//s;
+    $returnHash{version}       = $1;
+   
+    #
+    # make the version cool if its not in there
+    # 
+    $returnHash{version}        =~ s/[^\d\.]//g;
+    $returnHash{version}       ||= '0.0000';
 
+    #   
+    # get description
+    #
+    $scriptContent              =~  s/.head1\sNAME[\n].*\s-\s(.*?)\n//sg;
+    $returnHash{description}    = $1;
+    
+    #
+    # Pull out the author
+    #
+    $scriptContent              =~ s/.head1 AUTHOR[\n]*(.*?),\sC\<\<\s\<\s*(.*?)\s*\>\s\>\>.*//sg;
+    $returnHash{authorName}     = $1;
+    ( $returnHash{authorEmail}  = $2 ) =~ s/ at /\@/g;
+    
+    return %returnHash; 
+}
 
 
 =head2 makeDir
@@ -1282,118 +1308,6 @@ sub _versionData {
 
     return ( $returnString, $majorVer, $build );
 }
-
-sub _installPlugin {
-    my ( $self, %paramHash ) = @_;
-
-    #
-    # pull the files from FWS
-    #
-    my $plugin = $self->safeFile( $paramHash{plugin} );
-    ( my $cleanDomain = $self->{domain} ) =~ s/.*\/\///sg;
-    my $responseRef = $self->HTTPRequest( type =>'get', url=> $self->{FWSPluginServer} . '/cgi-bin/go.pl?p=publishPlugin&install=1&plugin=' . $plugin . '&FWSKey=' . $self->{FWSKey} . '&domain=' . $cleanDomain);
-
-    my $script;
-    my $change;
-    my $sql;
-    my $files;
-    my $fileReading;
-    my $fileName;
-    my $scriptPulled    = 0;
-    my $SQLPulled       = 0;
-    my $changePulled    = 0;
-
-    #
-    # bring in web accessable files
-    #
-    #my $webDir = $self->{filePath} . '/plugins/' . $plugin;
-    #$self->makeDir( $webDir );
-    while ( $responseRef->{content} =~ /(.*)\n?/g ){
-        my $line = $1;
-        
-        # if we have started the file, stop working on the scripts
-        if ( $line =~ /^FILE\|/ ) { $changePulled = $scriptPulled = $SQLPulled = 1 }
-        
-        # still building the changelog
-        if ( $line =~ /^CHANGELOG\|/ ) { $scriptPulled = 1 }
-        elsif ( $scriptPulled && !$changePulled ) { $change .= $line . "\n" }
-
-        # still building the SQL
-        if ( $line =~ /^FWSSQL\|/ ) { $changePulled = 1 }
-        elsif ( $scriptPulled && $changePulled && $line && !$SQLPulled ) { 
-            $self->FWSLog( 'SQL: '. $line );
-            $self->runSQL( SQL => $line );
-        }
-
-        # still building the script
-        if ( !$scriptPulled ) { $script .= $line . "\n" }
-
-        # if there is a FILE END we are done, lets process
-        if ( $line =~ /^FILE_END\|/ ) {
-            #
-            # save the file to that directory
-            #
-            $self->FWSLog( "Plugin File: " .  $self->{filePath} . '/' . $fileName );
-            $self->saveEncodedBinary(  $self->{filePath} . '/' . $fileName, $fileReading );
-
-            #
-            # reset so when we come around again we will no we are done.
-            #
-            $fileName     = '';
-            $fileReading  = '';
-        }
-
-        #
-        # if we have a file name,  we are currenlty looking for a
-        # file.  eat those lines up and stick them in a diffrent var
-        #
-        elsif ( $fileName ) { $fileReading .= $line . "\n" }
-
-        #
-        # if this is a start of a file, lets get it set up and
-        # define the file name, the next time we go around we
-        # will be looking at the base 64
-        #
-        if ( $line =~ /^FILE\|/ ) {
-            ( $fileName = $line ) =~ s/.*?\|\/*(.*)\n*/$1/sg;
-            ( my $directory = $self->{filePath} . '/' . $paramHash{directory} . '/' . $fileName ) =~ s/^(.*)\/.*/$1/sg;
-            $self->makeDir( $directory );
-        }
-    }
-
-    #
-    # save the script
-    #
-    $self->makeDir( $self->{fileSecurePath} . '/plugins' );
-    my $fileName = $self->{fileSecurePath} . '/plugins/' . $plugin . '.pm';
-    my $changeFileName = $self->{fileSecurePath} . '/plugins/' . $plugin . '.log';
-
-    #
-    # make backup if its there and write the new one
-    #
-    my $backupNumber =  $self->formatDate( format => 'number');
-
-    #
-    # backup the script and save it
-    #
-    if ( -e $fileName ) { rename( $fileName, $fileName . '.' . $backupNumber ) }
-    open ( my $FILE, ">", $fileName ) || $self->FWSLog( "Could not write to file: " . $fileName );
-    print $FILE $script;
-    close $FILE;
-
-    #
-    # backup the change log and save it
-    #
-    if ( -e $changeFileName ) { rename( $changeFileName, $changeFileName . '.' . $backupNumber ) }
-    open ( my $FILE, ">", $changeFileName ) || $self->FWSLog( "Could not write to file: " . $changeFileName );
-    print $FILE $change;
-    close $FILE;
-
-    my $message = 'Install Plugin ' . $plugin . ' version ' . $self->getPluginVersion( $fileName ) . ' complete';
-    $self->FWSLog( $message );
-    return $message;
-}
-
 
 sub _getElementEditText {
     my ( $self, $siteGUID, $guid, $ext )= @_;
