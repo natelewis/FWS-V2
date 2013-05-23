@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2
 
 =head1 VERSION
 
-Version 0.0010
+Version 1.13052223
 
 =cut
 
-our $VERSION = '0.0010';
+our $VERSION = '1.13052223';
 
 
 =head1 SYNOPSIS
@@ -204,7 +204,7 @@ Set how verbose logging is for SQL statements ran.  Logging will be appended: $f
 
 =head1 DERIVED VARIABLES AND METHODS
 
-=head2 Accessable after getFormValues() is called
+=head2 Accessable after setFormValues() is called
 
 =over 4
 
@@ -311,9 +311,14 @@ To use the web based rendering you can use this module, or the current web optim
     );
     
     #
+    # add any plugins we have installed
+    #
+    $fws->registerPlugins();
+    
+    #
     # Get the form values
     #
-    $fws->getFormValues();
+    $fws->setFormValues();
     
     #
     # Connect to the DB
@@ -789,6 +794,7 @@ sub new {
         js_devel              => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         css_devel             => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         default_site          => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
+        site_plugins          => { type => 'text'     ,key => ''            ,default => ''                  },
         extra_value           => { type => 'text'     ,key => ''            ,default => ''                  ,AJAXGroup => 'showSiteSettings'},
     };
 
@@ -798,9 +804,48 @@ sub new {
 
 =head1 FWS PLUGINS
 
+=head2 registerPlugins
+
+Any plugin that is actived via the plugin list in developer menu will attempt to be loaded.
+
+    #
+    # register all plugins applied to this instance
+    #
+    $fws->registerPlugins();
+
+=cut
+
+sub registerPlugins {
+    my ( $self, $site ) = @_;
+
+    #
+    # pull the list from the db
+    #
+    ( $self->{sitePlugins} ) = @{$self->runSQL( SQL => "SELECT site_plugins FROM site WHERE sid = 'admin'" )}; 
+
+    $self->FWSLog( 'PLUG: ' . $self->{sitePlugins} );
+
+    #
+    # move trough the list registering each one 
+    #
+    my @pluginArray = split /\|/, $self->{sitePlugins};
+
+    while ( @pluginArray )  {
+        $self->registerPlugin( shift @pluginArray );
+    }
+    
+    #
+    # this if for the systemInfo sanity checking.  I happened!
+    #
+    $self->{FWSScriptCheck}->{registerPlugins} = 1;
+
+    return;
+}
+
+
 =head2 registerPlugin
 
-If server wide plugins are being added for this instance they will be under the FWS::V2 Namespace, if not they can be added just as the plugin name.
+Apply a plugin to an installation without using the GUI, to force an always on state for the plugin.  If server wide plugins are being added for this instance they will be under the FWS::V2 Namespace, if not they can be added just as the plugin name.
 
     #
     # register plugins that are available server wide 
@@ -824,7 +869,7 @@ Additionally if you want to check if a plugin is active inside of element or scr
 =cut
 
 sub registerPlugin {
-    my ($self, $plugin) = @_;
+    my ( $self, $plugin ) = @_;
 
     ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
     eval 'use lib "' . $self->{fileSecurePath} . '/plugins";';
