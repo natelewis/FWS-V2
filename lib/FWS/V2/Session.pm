@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 0.007
+Version 1.13052223
 
 =cut
 
-our $VERSION = '0.007';
+our $VERSION = '1.13052223';
 
 
 =head1 SYNOPSIS
@@ -393,6 +393,11 @@ sub setSiteFriendly {
                     #
                     $self->formValue( 'id', $p );
                     ( $p ) = @{$self->runSQL( SQL => "select data.guid from data left join site on site.guid=data.site_guid where site.sid='" . $self->safeSQL( $sid ) . "' and friendly_url='" . $self->safeSQL( $pageFriendlyURL ) . "'" )};
+
+                    #
+                    # If its blank from the query, then we are talking about the guid from the post
+                    #
+                    if ( !$p ) { $p = $pageFriendlyURL }
                 }
                 if ( $p ne '' ) {
 
