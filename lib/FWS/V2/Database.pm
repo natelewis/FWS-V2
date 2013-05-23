@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 0.005
+Version 1.13052223
 
 =cut
 
-our $VERSION = '0.005';
+our $VERSION = '1.13052223';
 
 
 =head1 SYNOPSIS
@@ -1843,6 +1843,11 @@ sub saveData {
     my ( $self, %paramHash ) = @_;
 
     #
+    # run any pre scripts and return what we were passed
+    #
+    %paramHash = $self->runScript('preSaveData',%paramHash);
+
+    #
     # if siteGUID is blank, lets set it to the site we are looking at
     #
     $paramHash{siteGUID} ||= $self->{siteGUID};
@@ -1999,6 +2004,11 @@ sub saveData {
     # update the cache data directly
     #
     $self->updateDataCache(%paramHash);
+
+    #
+    # run any post scripts 
+    #
+    %paramHash = $self->runScript('postSaveData',%paramHash);
 
     #
     # return anything created in the paramHash that was changed and already present
@@ -3325,7 +3335,7 @@ sub _fullElementHash {
         # Do alpha sorting and add parent refernces if needed
         #
         my $alphaOrd = 0;
-         for my $guid ( sort { $self->{_fullElementHashCache}->{$a}{title} cmp $self->{_fullElementHashCache}->{$b}{title} } keys %{$self->{_fullElementHashCache}}) {
+        for my $guid ( sort { $self->{_fullElementHashCache}->{$a}{title} cmp $self->{_fullElementHashCache}->{$b}{title} } keys %{$self->{_fullElementHashCache}}) {
             $alphaOrd++;
             $self->{_fullElementHashCache}->{$guid}{alphaOrd} = $alphaOrd;
             my $type = $self->{_fullElementHashCache}->{$guid}{type};
