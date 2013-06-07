@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 0.001
+Version 1.13060708
 
 =cut
 
-our $VERSION = '0.001';
+our $VERSION = '1.13060708';
 
 
 =head1 SYNOPSIS
@@ -769,10 +769,7 @@ sub _FWSContent {
                         $columnContent{$valueHash{layout}} .= "<div" . $editBox . " class=\"" . $valueHash{layout} . "_element element_" . $valueHash{guid} . "\" id=\"" . $valueHash{layout} . "_element_" . $columnCount{$valueHash{layout}} . "\">";
 
                         if ( ( $self->{adminLoginId} && $valueHash{siteGUID} eq $self->{siteGUID} && !$self->formValue( 'FWS_showElementOnly' ) && !$showElementOnly && !$valueHash{disableEditMode} && $self->formValue( 'editMode' ) ) )  {
-                            $columnContent{$valueHash{layout}} .= "<div id=\"editModeAJAX_" . $valueHash{guid} . "\" style=\"border: solid 1px #FF0000;border-top: 0;\">";
-                            $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash );
-                            $columnContent{$valueHash{layout}} .= $html;
-                            $columnContent{$valueHash{layout}} .= "</div>";
+                            $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash, AJAXDivStyle => 'border: solid 1px #FF0000;border-top: 0;', editBoxContent => $html );
                         }
                         else {
                             $columnContent{$valueHash{layout}} .= $html;
