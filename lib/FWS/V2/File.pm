@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 1.13052223
+Version 1.13060708
 
 =cut
 
-our $VERSION = '1.13052223';
+our $VERSION = '1.13060708';
 
 
 =head1 SYNOPSIS
@@ -357,7 +357,7 @@ sub formMapToHashArray {
     my @formArray;
     for my $line ( split ( /\n/, $obj ) ) {
 
-        my @optionArray;;
+        my @optionArray;
         my @items = split ( /\|/, $line );
 
         my %item;
@@ -365,7 +365,6 @@ sub formMapToHashArray {
         ( $item{name}, %itemExt ) = split( /~/, shift( @items ) );
         %item = ( %itemExt, %item );
 
-        my @optionArray;
         while ( @items ) {
             my %option;
             my %optionExt;
@@ -700,7 +699,7 @@ sub pluginInfo {
     #   
     # get description
     #
-    $scriptContent              =~  s/.head1\sNAME[\n].*\s-\s(.*?)\n//sg;
+    $scriptContent              =~  s/.head1\sNAME\n\n[a-zA-Z0-9]+\s-\s(.*?)\n//sg;
     $returnHash{description}    = $1;
     
     #
@@ -771,7 +770,7 @@ sub makeDir {
     }
 
     else {
-        $self->FWSLog( 'makeDir() in authorized directory: ' . $paramHash{directory} );
+        $self->FWSLog( 'makeDir() in unauthorized directory: ' . $paramHash{directory} );
         return;
     }
     return $paramHash{directory}; 
