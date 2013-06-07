@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.13052223
+Version 1.13060708
 
 =cut
 
-our $VERSION = '1.13052223';
+our $VERSION = '1.13060708';
 
 
 =head1 SYNOPSIS
@@ -1437,7 +1437,8 @@ sub editBox {
     my ( $self, %editHash ) = @_;
 
     my $editHTML;
-    my $ajaxID = '#editModeAJAX_' . $self->formValue( 'FWS_elementId' );
+    #my $ajaxID = '#editModeAJAX_' . $self->formValue( 'FWS_elementId' );
+    my $ajaxID = '#editModeAJAX_' . $editHash{guid};
 
     #
     # default always show to off if its not passed
@@ -1471,6 +1472,7 @@ sub editBox {
                 my $bgColor     = $self->_getHighlightColor( $editHash{editBoxColor} );
                 my $divStyle    = "color:" . $editHash{editBoxColor} . ";background-color:".$bgColor.";border:dotted 1px " . $editHash{editBoxColor} . ";border-bottom:dotted 1px " . $editHash{editBoxColor} . ";text-align:right;";
     
+                $editHTML .=  "<div style=\"" . $editHash{AJAXDivStyle} . "\" id=\"editModeAJAX_" . $editHash{guid} . "\">";
                 $editHTML .=  "<div style=\"" . $divStyle . "\" class=\"FWSEditBoxControls\">";
                 $editHTML .=  $editHash{name} . " ";
             }
@@ -1521,7 +1523,7 @@ sub editBox {
                 # set up som vars for the post,  we want to do this differntly if we are talking about
                 # a base element, or a sub element
                 #
-                my $baseClear = "\$('#delete_" . $editHash{guid} . "').parent().parent().parent().hide();";
+                #my $baseClear = "\$('#delete_" . $editHash{guid} . "').parent().parent().parent().parent().parent().hide();";
         
                 #
                 # If the parent isn't a page, that means we are talking about a sub element of an element.
@@ -1529,8 +1531,10 @@ sub editBox {
                 #
                 # if it is a sub elemenet of an element, we also need to disable the "display none" it dosn't look goofy
                 #
-                if ( $self->formValue( "FWS_pageId" ) eq $editHash{parent} && !$self->formValue( "FWS_editModeUpdate" ) ) { $ajaxID = '<div></div>' }
-                else { $baseClear = "" }
+                #if ( $self->formValue( "FWS_pageId" ) eq $editHash{parent} && !$self->formValue( "FWS_editModeUpdate" ) ) { 
+                #    $ajaxID = '<div></div>';
+                #}
+                #else { $baseClear = "" }
         
                 $editHTML .= $self->FWSIcon(
                     icon    => "delete_16.png",
@@ -1565,6 +1569,11 @@ sub editBox {
     
             $editHTML .= $editHash{editBoxContent};   
             $editHTML .= $editHash{editBox};
+        
+            #
+            # close the delete ajax container
+            #    
+            if ( !$editHash{editBoxJustButtons} ) { $editHTML .= '</div>' }
         }
     }
 
