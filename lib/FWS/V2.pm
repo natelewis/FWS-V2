@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2
 
 =head1 VERSION
 
-Version 1.13052223
+Version 1.13061121
 
 =cut
 
-our $VERSION = '1.13052223';
+our $VERSION = '1.13061121';
 
 
 =head1 SYNOPSIS
@@ -440,14 +440,14 @@ sub new {
     # Major version parse
     #
     my @loadVerSplit = split /\./msx, $self->{FWSVersion};
-    $self->{FWSMajorVersion} = $loadVerSplit[0] . q{.} . $loadVerSplit[1];
+    $self->{FWSMajorVersion} = $loadVerSplit[0] . '.' . $loadVerSplit[1];
 
     #
     # fake common ENV vars if we don't have them
     #
     $ENV{REMOTE_ADDR} ||= 'localhost';
     $ENV{SERVER_NAME} ||= 'localhost';
-    $ENV{REQUEST_URI} ||= q{};
+    $ENV{REQUEST_URI} ||= '';
 
     #
     # set the default security hash
@@ -545,8 +545,8 @@ sub new {
     %{$self->{_siteScriptCache}}          = ();
     %{$self->{_subscriberCache}}          = ();
 
-    $self->{_language}                    = q{};
-    $self->{_languageArray}               = q{};
+    $self->{_language}                    = '';
+    $self->{_languageArray}               = '';
 
     @{$self->{pluginCSSArray}}            = ();
     @{$self->{pluginJSArray}}             = ();
@@ -823,8 +823,6 @@ sub registerPlugins {
     #
     ( $self->{sitePlugins} ) = @{$self->runSQL( SQL => "SELECT site_plugins FROM site WHERE sid = 'admin'" )}; 
 
-    $self->FWSLog( 'PLUG: ' . $self->{sitePlugins} );
-
     #
     # move trough the list registering each one 
     #
@@ -885,7 +883,7 @@ sub registerPlugin {
     # add the plugin and register the init for it
     #
     ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
-    eval 'use ' . $plugin . q{;};
+    eval 'use ' . $plugin . ';';
     ## use critic
 
     if( $@ ){ $self->FWSLog( $plugin . " could not be loaded\n" . $@ ) }
