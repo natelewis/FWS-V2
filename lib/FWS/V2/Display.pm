@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.13060708
+Version 1.13061121
 
 =cut
 
-our $VERSION = '1.13060708';
+our $VERSION = '1.13061121';
 
 
 =head1 SYNOPSIS
@@ -616,11 +616,12 @@ sub _FWSContent {
                                $valueHash{type} = '';
                             }
 
+
                             #
-                            # if this is set to 0 then negate the login because it must have been set that way
-                            # from the loginMod
+                            # if this is set to 0 then negative the login because it must have been set that way
+                            # from the loginMod,  This is a string and can contain guids, so we can't use math here
                             #
-                            if ( $userHash{userGroup} > 0 ) {
+                            if ( $userHash{userGroup} !~ /^-/ || $userHash{userGroup} eq '0') {
 
                                 #
                                 # If group ID is "1" then all I need to be is just logged in
@@ -632,15 +633,20 @@ sub _FWSContent {
                                 #
                                 # If we have a spacific group, figure it out and do it
                                 #
-                                elsif ( $userHash{userGroup} > 1 && ( $userHash{group}{$userHash{userGroup}} ) &&  $userHash{active} ) {
+                                elsif ( $userHash{group}{$userHash{userGroup}} && $userHash{active} ) {
                                     #Nice! we are gtg, don't do anything
                                 }
+
                                 #
                                 # Set elementType  your not set to see, set login or blank the element
                                 #
                                 else {
-                                    if ( $userHash{show_login} ) { $valueHash{type} = 'FWSLogin' }
-                                    else { $valueHash{type} = '' }
+                                    if ( $userHash{show_login} ) { 
+                                        $valueHash{type} = 'FWSLogin';
+                                    }
+                                    else {
+                                        $valueHash{type} = '';
+                                    }
                                 }
                             }
                         }
