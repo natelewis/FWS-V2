@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.13052223
+Version 1.13061319
 
 =cut
 
-our $VERSION = '1.13052223';
+our $VERSION = '1.13061319';
 
 
 =head1 SYNOPSIS
@@ -1990,7 +1990,7 @@ sub saveData {
     # loop though and update every one that is diffrent
     #
     for my $key ( keys %paramHash ) {
-        if ( $key !~ /^ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid$/ ) {
+        if ( $key !~ /^ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|default_element|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid$/ ) {
             $self->saveExtra( table => 'data', siteGUID => $paramHash{siteGUID}, guid => $paramHash{guid}, field => $key, value => $paramHash{$key} );
         }
     }
