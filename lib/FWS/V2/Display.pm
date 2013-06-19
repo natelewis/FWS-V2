@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.13061121
+Version 1.13061805
 
 =cut
 
-our $VERSION = '1.13061121';
+our $VERSION = '1.13061805';
 
 
 =head1 SYNOPSIS
@@ -1050,7 +1050,7 @@ sub _replaceContentColumn {
     $editHash{orderTool}           = 1;
     $editHash{name}               = '| ' . $editHash{layout} . ' |';
     my $changeFrom                = '#' . $editHash{contentType} . '-' . $editHash{layout} . '#';
-    my $changeTo                  = '<div id="' . $editHash{layout} . '">';
+    my $changeTo                  = '<div class="FWSLanguage-' . uc( $self->language() ) . '" id="' . $editHash{layout} . '">';
 
     if ( $editHash{siteGUID} ne $self->fwsGUID() || $self->{showFWSInSiteList} ) {
         if ( $self->formValue( 'editMode' ) && $editHash{contentType} ne 'FWSShowNoHeader' && $editHash{pageType} eq 'page' && !$self->{hideEditModeHeaders} ) {
