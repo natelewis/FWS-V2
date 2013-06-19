@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.13060708
+Version 1.13061805
 
 =cut
 
-our $VERSION = '1.13060708';
+our $VERSION = '1.13061805';
 
 
 =head1 SYNOPSIS
@@ -2319,65 +2319,45 @@ sub _isValidSID {
 sub _processAdminAction {
     my ( $self ) = @_;
 
-    my $action = $self->formValue('pageAction');
-    my $guid   = $self->safeSQL( $self->formValue( "guid" ) );
+    my $guid   = $self->safeSQL( $self->formValue( 'guid' ) );
 
-    ##############################################################################################
     #
-    # showDeveloper: Developer Admin Controls
+    # To prevent recursive saves we have to update elements insdie the core
     #
-    ##############################################################################################
-    if (($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) && ($action eq "flushWebSearch" || $action eq "flushSearchCache" || $action eq "publishPlugin" || $action eq "deleteArchived" || $action eq "addElement" || $action eq "deleteScriptElement" || $action eq "getLiveScript" || $action eq "getArchivedScript" || $action eq "makeLiveScript" || $action eq "FWSRestore" || $action eq "FWSBackup" || $action eq "installCore" || $action eq "installPlugin" || $action eq "updatePlugin" || $action eq "updateScript" || $action eq "updateDesign" || $action eq "updatePageDesign" || $action eq "updateTemplate")) {
-                   
-         if ($action eq "addElement") {
-            my $title = $self->safeSQL($self->formValue('element_title'));
-            my $type = $self->safeSQL($self->formValue('element_type'));
-            my $parent = $self->safeSQL($self->formValue('guid'));
-            my $siteGUID = $self->safeSQL($self->formValue('site_guid'));
-    
-            #
-            # if the siteGUID if fws, then lets make a special one so fws element ALWAYS are unique no matter what
-            #
-            my $guid= $self->createGUID('e');
-            if ($self->formValue('site_guid') eq $self->fwsGUID()) { $guid= $self->createGUID('f'); }
-    
-            $self->runSQL(SQL=>"insert into element (guid,site_guid,title,type,parent) values ('".$guid."','".$siteGUID."','".$title."','".$type."','".$parent."')");
-            #
-            # cleanup
-            #
-            $self->formValue("element_type","");
-            $self->formValue("element_Title","");
+    if ($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) {
+        if ( $self->formValue( 'pageAction' )  eq 'updateScript' ) {
+            my %valueHash;
+            my $fws = $self;
+            ## no critic
+            eval $self->formValue( 'script' );
+            ## use critic
+            if ( $@ ) { $self->formValue( 'statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">'.$@.'</textarea><br/>' ) }
+            else {
+                my $script = $self->safeSQL( $self->formValue( "script" ) );
+                my $schema = $self->safeSQL( $self->formValue( "schema" ) );
+                my $checkedOut = $self->safeSQL($self->formValue("checkout"));
+                $self->runSQL(SQL=>"update element set schema_devel='".$schema."',  script_devel='".$script."', checkedout='".$checkedOut."' where guid='" . $self->safeSQL( $self->formValue( 'guid' ) )  . "'");
+                $self->_saveElementFile( $self->formValue( 'guid' ), $self->formValue('site_guid'), 'element', 'css', $self->formValue("css") );
+                $self->_saveElementFile( $self->formValue( 'guid' ), $self->formValue('site_guid'), 'element', 'js', $self->formValue("javaScript") );
+                $self->formValue( 'statusNote', '' );
+            }
         }
-
-
-        #
-        # get the id that will be used for most procedrues, and do an extra security check
-        #
-        if ($action eq "deleteScriptElement") {
-            $self->runSQL(SQL=>"delete from element where guid='".$guid."'");
-            $self->runSQL(SQL=>"delete from element where element.guid in (select guid from (select t1.guid from element as t1 left join element as t2 on t1.parent = t2.guid where t2.guid is null and t1.parent <> t1.site_guid) as delete_items)");
-        }
-
-        if ($action eq "FWSRestore") {
+        
+        if ( $self->formValue( 'pageAction' ) eq "FWSRestore") {
             $self->restoreFWS( id => $self->formValue( 'restoreName' ) );
             $self->formValue( 'restoreStatusNote', 'Restore completed' );
         }
-        if ($action eq "FWSBackup") {
 
-            my $backupID = $self->backupFWS( 
-                excludeSiteFiles    => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
-                id                  => $self->formValue('backupName'),
-                excludeTables       => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
-            );
-
-            $self->formValue('backupStatusNote','Backup completed using backup name '.$backupID);
-        }
-        if ($action eq "installCore") {
+    
+    }
+    if ($self->userValue( 'isAdmin') || $self->userValue('showDeveloper') || $self->userValue('showDesigner') ) {
+        
+        if ( $self->formValue( 'pageAction' ) eq "installCore") {
         
             #
             # We only want the end part of the package for the file name
             #
-            my $distFile        = 'V2.pm';
+            my $distFile     = 'V2.pm';
             my $newV2File    = $self->{fileSecurePath} . "/FWS/" . $distFile;
         
             #
@@ -2433,7 +2413,7 @@ sub _processAdminAction {
                 #
                 # get rid of any orphaned data from the install process
                 #
-                $self->_deleteOrphanedData( "data", "guid", "guid_xref", "child");
+                $self->_deleteOrphanedData( "data", 'guid', "guid_xref", "child");
 
                 #
                 # if there is no elements on the site yet lets install our demo site
@@ -2447,54 +2427,24 @@ sub _processAdminAction {
             }
         }
 
-        #
-        # install any plugin if called
-        #
 
-        if ( $action eq 'updateScript' ) {
-            my %valueHash;
-            my $fws = $self;
-            ## no critic
-            eval $self->formValue( 'script' );
-            ## use critic
-            if ( $@ ) { $self->formValue( 'statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">'.$@.'</textarea><br/>' ) }
-            else {
-                my $script = $self->safeSQL( $self->formValue( "script" ) );
-                my $schema = $self->safeSQL( $self->formValue( "schema" ) );
-                my $checkedOut = $self->safeSQL($self->formValue("checkout"));
-                $self->runSQL(SQL=>"update element set schema_devel='".$schema."', script_devel='".$script."', checkedout='".$checkedOut."' where guid='".$guid."'");
-                $self->_saveElementFile($guid,$self->formValue('site_guid'),'element','css',$self->formValue("css"));
-                $self->_saveElementFile($guid,$self->formValue('site_guid'),'element','js',$self->formValue("javaScript"));
-                $self->formValue('statusNote','');
-            }
+        if ( $self->formValue( 'pageAction' ) eq "FWSBackup") {
+
+            my $backupID = $self->backupFWS( 
+                excludeSiteFiles    => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
+                id                  => $self->formValue('backupName'),
+                excludeTables       => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
+            );
+
+            $self->formValue('backupStatusNote','Backup completed using backup name '.$backupID);
         }
-        
-        if ($action eq "updatePageDesign") {
-            $self->_saveElementFile($guid,$self->formValue('site_guid'),'page','css',$self->formValue("pageCSS"));
-            $self->_saveElementFile($guid,$self->formValue('site_guid'),'page','js',$self->formValue("pageJS"));
-        }
-        if ($action eq "updateDesign") {
-            $self->_saveElementFile('assets',$self->{siteGUID},'site','css',$self->formValue("siteCSS"));
-            $self->_saveElementFile('assets',$self->{siteGUID},'site','js',$self->formValue("siteJS"));
-        }
-    }
-        
 
-    ##############################################################################################
-    #
-    # udpating content
-    #
-    ##############################################################################################
-
-    if ($self->userValue('isAdmin') || $self->userValue('showDeveloper')  || $self->userValue('showContent') || $self->userValue('showDesign')) {
-        
-
-        if ($action eq "clearFWSLog") {
+        if ( $self->formValue( 'pageAction' ) eq "clearFWSLog") {
             unlink $self->{fileSecurePath} . '/FWS.log';
             $self->formValue("logStatusNote", "The FWS.log file was cleared");
         }
 
-        if ($action eq "flushSessions") {
+        if ( $self->formValue( 'pageAction' ) eq "flushSessions") {
             if ( $self->formValue( 'months' ) ne '' ) { 
                 $self->runSQL( SQL => "delete from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod => -( $self->formValue( 'months' ) ) ) . "'");
                 if ( $self->DBType() =~ /^mysql$/i ) { $self->runSQL( SQL => "optimize table fws_sessions" ) }
@@ -2502,64 +2452,19 @@ sub _processAdminAction {
             }
         }
 
-        if ($action eq "flushSearchCache") { 
+        if ( $self->formValue( 'pageAction' ) eq "flushSearchCache") { 
             my ( $dataUnits ) = $self->flushSearchCache( $self->{siteGUID} ) ;
             $self->formValue( "statusNote", "Your search cache was rebuilt using a total of " . $dataUnits . " records.");
         }
     
-        if ($action eq "flushWebCache") { 
+        if ( $self->formValue( 'pageAction' ) eq "flushWebCache") { 
             $self->flushWebCache();
             $self->formValue( "statusNote", "Your web search cache was emptied" );
         }
     
     }        
 
-    ##############################################################################################
-    #
-    # showAdminUsers : Admin Users admin
-    #
-    ##############################################################################################
-
-    if ($self->userValue('isAdmin') || $self->userValue('showAdminUsers')) {
-        if ($action eq "deleteMessage") {
-            $self->runSQL(SQL=>"delete from email_queue where guid='".$guid."'");
-        }
-        
-    }
-
-    ##############################################################################################
-    #
-    # showSiteUsers : Profile Users admin
-    #
-    ##############################################################################################
-
-    if ($self->userValue('isAdmin') || $self->userValue("showSiteUsers")) {
-
-        if ($action eq "groupAdd") {
-            my $group_name = $self->safeSQL($self->formValue("group_name"));
-            my $guid = $self->createGUID( 'g' );
-            $self->runSQL( SQL => "insert into groups (guid,name) values ('" . $guid . "','" . $group_name . "')" );
-        }
-    
-        if ($action eq "profileGroupsXRefAdd") {
-            my $profile_guid       = $self->safeSQL($self->formValue("profile_guid"));
-            my $groups_guid    = $self->safeSQL($self->formValue("groups_guid"));
-            $self->runSQL(SQL=>"insert into profile_groups_xref (profile_guid,groups_guid) values ('".$profile_guid."','".$groups_guid."')");
-        }
-    
-        if ($action eq "profileGroupsXRefDelete") {
-            my $profile_guid       = $self->safeSQL($self->formValue("profile_guid"));
-            my $groups_guid    = $self->safeSQL($self->formValue("groups_guid"));
-            $self->runSQL(SQL=>"delete from profile_groups_xref where profile_guid='" . $profile_guid . "' and groups_guid='" . $groups_guid . "'");
-        }
-    
-        if ($action eq "groupDelete") {
-            $self->runSQL(SQL=>"delete from groups where guid='" . $guid . "'");
-       }
-
-    }
-
-    return 1;    
+    return;    
 }
 
 sub _pullDistFile {
@@ -2883,7 +2788,8 @@ sub _installCountry {
 
 sub _installHeader {
     my ( $self, $name ) = @_;
-    return "Content-Type: text/html; charset=UTF-8\n\n<html><head><title>Installing New " . $name . " Package</title></head>".
+    return "Content-Type: text/html; charset=UTF-8\n\n<html><head><title>Installing New " . $name . " Package</title>" . 
+    "</head>".
     "<body><h2>Installing New " . $name . " Package</h2><br/>".
     "<b>" . $name . " Package</b><hr/>".
     "Doing pre install cleanup";
