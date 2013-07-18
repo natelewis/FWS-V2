@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.13061805
+Version 1.13071816
 
 =cut
 
-our $VERSION = '1.13061805';
+our $VERSION = '1.13071816';
 
 
 =head1 SYNOPSIS
@@ -1083,6 +1083,7 @@ sub adminField {
         $paramHash{fieldOptions} =~ s/\n//sg;
         my @optionSplit = split( /\|/, $paramHash{fieldOptions} );
         my $matchFound = 0;
+        $fieldHTML .= "<div class=\"FWSRadioButtonGroup\">";
         while (@optionSplit) {
             my $optionValue = shift @optionSplit;
             my $optionName  = shift @optionSplit;
@@ -1099,6 +1100,7 @@ sub adminField {
             $fieldHTML .= "/> ";
             $fieldHTML .= "<span class=\"FWSRadioButtonTitle\">" . $optionName . " &nbsp; </span>";
         }
+        $fieldHTML .= "</div>";
     }
     #
     #
@@ -1246,7 +1248,7 @@ sub adminField {
             }
         }
 
-        if ( $paramHash{note} ) { $html .= "<div class=\"FWSFieldValueNote\">" . $paramHash{note} . "</div>" }
+        if ( $paramHash{note} ) { $html .= "<div class=\"FWSFieldValueNote help-block\">" . $paramHash{note} . "</div>" }
         $html .= "</div>";
 
         $html .= "<div style=\"clear:both;\"></div>";
@@ -1360,16 +1362,16 @@ sub aceTextArea {
     #
     # load the JS for for ace... but only ONCE!
     #    
-    if ( !$self->formValue( 'FWSAceJSLoaded' ) ) {
-        $self->addToHead(    
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/ace.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/theme-" . $self->{aceTheme} . ".js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-javascript.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-html.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n"
+    if ( !$self->{FWSAceJSLoaded} ) {
+        $self->addToFoot(    
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/ace.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/theme-" . $self->{aceTheme} . ".js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-javascript.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-html.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n"
         );
-        $self->formValue( 'FWSAceJSLoaded', '1' );
+        $self->{FWSAceJSLoaded}++;
     }
 
 
@@ -1390,14 +1392,12 @@ sub aceTextArea {
         $modeScript = "var CSSScriptMode = require(\"ace/mode/css\").Mode;" . $paramHash{name} . ".getSession().setMode(new CSSScriptMode());";
     }
 
-    $self->addToHead( "<script type=\"text/javascript\">" .
+    $self->addToFoot( "<script type=\"text/javascript\">" .
                     "\$(document).ready(function() {" .
-                    "\$(\".FWSScriptEditContainer\").hide();" .
                     "window." . $paramHash{name} . " = ace.edit(\"" . $paramHash{name} . "\");" .
                     $paramHash{name} . ".setTheme(\"ace/theme/" . $self->{aceTheme} . "\");" .
                     $paramHash{name} . ".getSession().setUseWrapMode(true);" .
-                    $paramHash{name} . ".setShowPrintMargin(false);" .
-                    $modeScript.    
+                    $paramHash{name} . ".setShowPrintMargin(false);" . $modeScript .
                     $paramHash{name} . ".getSession().on('change', function () {document.getElementById('" . $statusContainer . "').innerHTML='[Not Saved]';});" .
                     "});" .
                     "</script>\n");
@@ -1411,7 +1411,7 @@ sub aceTextArea {
     #
     # create the line that will actually be rendered to the screen
     #
-    return "<pre id=\"" . $paramHash{name} . "\" class=\"FWSScriptEditContainer ui-widget ui-state-default ui-corner-bottom\">" . $paramHash{value} . "</pre>";
+    return "<pre style=\"position: absolute; padding: 0; right: 0; bottom: 0; left: 0;display:none;\" id=\"" . $paramHash{name} . "\" class=\"FWSScriptEditContainer ui-widget ui-state-default ui-corner-bottom\">" . $paramHash{value} . "</pre>";
 }
 
 
@@ -1729,7 +1729,7 @@ sub displayAdminPage {
     my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
         
     if ( $self->isAdminLoggedIn() ) {
-        $self->jqueryEnable( 'simplemodal-1.4.1' );
+        $self->jqueryEnable( 'simplemodal-1.4.4' );
         $self->jqueryEnable( 'ui.core-1.8.9' );
         $self->jqueryEnable( 'ui.widget-1.8.9' );
         $self->jqueryEnable( 'ui.tabs-1.8.9' );
@@ -1784,12 +1784,21 @@ sub displayAdminPage {
                         # now put it back
                         #
                         $self = $fws;
+   
+                        #
+                        # set head and foot from cache so we can use it for our admin page
+                        #
+                        $self->{tinyMCEEnable} = 1;
+                        $self->{bootstrapEnable} = 1;
+                        $self->setPageCache();
     
                         #
                         # just in case we havn't rendered yet, here we go!  if we have already rendered  (like we should have
                         # than this just gets passed by
                         #
-                        $self->printPage( content => $valueHash{html}, head => $self->FWSHead() );
+                        #$self->printPage( content => $valueHash{html} . $fws->{ 'pageFoot' } , head => $self->FWSHead() );
+                    #    $self->printPage( content => $valueHash{html} . $fws->{ 'pageFoot' } , head => $self->{pageHead} );
+                        $self->printPage( content => $valueHash{html}, head => $self->FWSHead(), foot => $self->siteValue( 'pageFoot' )  );
                     }
                 }
             }
@@ -1960,7 +1969,7 @@ sub GNFTree {
     # create the table the line item will sit in
     #
     my $treeHTML = "<div id=\"block_" . $paramHash{id} . "\">";
-    $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"row_" . $paramHash{id} . "\">";
+    $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRow " . $paramHash{class} . " FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"row_" . $paramHash{id} . "\">";
     
     #my $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"block_" . $paramHash{id} . "\">";
 
