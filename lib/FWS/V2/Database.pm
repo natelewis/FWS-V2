@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.13061319
+Version 1.13071816
 
 =cut
 
-our $VERSION = '1.13061319';
+our $VERSION = '1.13071816';
 
 
 =head1 SYNOPSIS
@@ -3368,20 +3368,28 @@ sub _recordInit {
         $paramHash{_guidLeader} ||= 'r';
         $paramHash{siteGUID}    = $self->safeSQL( $paramHash{siteGUID} );
         $paramHash{guid}        = $self->createGUID( $paramHash{_guidLeader} );
+
+        #
+        # if newGUID is set, lets use that as the guid
+        #
+        if ( $paramHash{newGUID} ) {
+            $paramHash{guid} = $paramHash{newGUID};
+        }
+
         $self->runSQL( DBH => $paramHash{DBH}, SQL => "insert into " . $self->safeSQL( $paramHash{_table} ) . " (guid,site_guid,created_date) values ('" . $self->safeSQL( $paramHash{guid} ) . "','" . $self->safeSQL( $paramHash{siteGUID} ) . "','" . $self->formatDate( format => 'SQL' ) . "')" );
-    }
 
-
-    #
-    # TODO: this shouldn't be here.  They need to be exported out to the plugins that need them
-    #
-    if (( $paramHash{_table} eq 'directory' || $paramHash{_table} eq 'profile') && !$paramHash{pin} ) {
 
         #
-        # set the dirived stuff so nobody gets sneeky and tries to pass it to the procedure
+        # Global pin support, if you have a pin field, but its not populated, populate it.
         #
-        $paramHash{pin} = $self->createPin();
-        $self->runSQL( DBH => $paramHash{DBH}, SQL => "update " . $self->safeSQL( $paramHash{_table} ) . " set pin='" . $self->safeSQL( $paramHash{pin} ) . "' where guid='" . $self->safeSQL( $paramHash{guid} ) . "'" );
+        if ( !$paramHash{pin} && $self->{dataSchema}{$paramHash{_table}}{pin}{type} ) {
+    
+            #
+            # set the dirived stuff so nobody gets sneeky and tries to pass it to the procedure
+            #
+            $paramHash{pin} = $self->createPin();
+            $self->runSQL( DBH => $paramHash{DBH}, SQL => "update " . $self->safeSQL( $paramHash{_table} ) . " set pin='" . $self->safeSQL( $paramHash{pin} ) . "' where guid='" . $self->safeSQL( $paramHash{guid} ) . "'" );
+        }
     }
     return %paramHash;
 }
