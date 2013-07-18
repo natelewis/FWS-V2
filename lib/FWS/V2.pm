@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2
 
 =head1 VERSION
 
-Version 1.13061121
+Version 1.13071816
 
 =cut
 
-our $VERSION = '1.13061121';
+our $VERSION = '1.13071816';
 
 
 =head1 SYNOPSIS
@@ -157,6 +157,10 @@ For google apps support for standard login modules this is required
 =item * hideEditModeHeaders
 
 Turn off all blue bar column headers for a site.  (Suppress the adding of elements to pages on a UI standpoint)
+
+=item * loadJQueryInHead
+
+Load jquery in the head instead of lazy loading.
 
 =item * scriptTextSize
 
@@ -639,7 +643,7 @@ sub new {
         zipCode               => { type => 'char(7)'  ,key => 'MUL'         ,default => ''                  },
         zipType               => { type => 'char(1)'  ,key => ''            ,default => ''                  },
         stateAbbr             => { type => 'char(2)'  ,key => ''            ,default => ''                  },
-        city                  => { type => 'char(255)',key => 'FULLTEXT'    ,default => ''                  },
+        city                  => { type => 'char(255)',key => 'MUL'         ,default => ''                  },
         areaCode              => { type => 'char(3)'  ,key => ''            ,default => ''                  },
         timeZone              => { type => 'char(12)' ,key => ''            ,default => ''                  },
         UTC                   => { type => 'int(10)'  ,key => ''            ,default => '0'                 },
@@ -668,9 +672,9 @@ sub new {
     $self->{dataSchema}{data_cache} = {
         site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => ''                  },
         guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => ''                  },
-        name                  => { type => 'char(255)',key => 'FULLTEXT'    ,default => ''                  },
-        title                 => { type => 'char(255)',key => 'FULLTEXT'    ,default => ''                  },
-        pageIdOfElement       => { type => 'char(36)' ,key => ''            ,default => ''                  },
+        name                  => { type => 'char(255)',key => 'MUL'         ,default => ''                  },
+        title                 => { type => 'char(255)',key => 'MUL'         ,default => ''                  },
+        pageIdOfElement       => { type => 'char(36)' ,key => 'MUL'         ,default => ''                  },
         pageDescription       => { type => 'text'     ,key => 'FULLTEXT'    ,default => ''                  },
     };
 
