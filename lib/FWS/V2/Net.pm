@@ -11,11 +11,11 @@ FWS::V2::Net - Framework Sites version 2 network access methods
 
 =head1 VERSION
 
-Version 0.003
+Version 1.13081221
 
 =cut
 
-our $VERSION = '0.003';
+our $VERSION = '1.13081221';
 
 
 =head1 SYNOPSIS
@@ -195,6 +195,14 @@ sub send {
         $paramHash{fromName}  ||= $paramHash{from};
 
         my $evalEmail;
+                    
+        #
+        # convert the subject to utf-8 if it is
+        #
+        if ( $paramHash{characterSet} eq lc( 'utf-8' ) ) {
+            $paramHash{subject} = '=?utf-8?B?' . encode_base64( $paramHash{subject}, '' ).'?=';
+        }
+ 
 
         #
         # Split the emailTo's space delmited and process them one by one.
@@ -233,8 +241,8 @@ sub send {
                     print $SENDMAIL "MIME-Version: 1.0\n";
                     print $SENDMAIL "To: " . $paramHash{to} . "\n";
                     print $SENDMAIL "Subject: " . $paramHash{subject} . "\n";
-                    print $SENDMAIL "Content-Type: multipart/mixed;";
-                    print $SENDMAIL "\n\tboundary=\"" . $boundary . "\"\n";
+                    print $SENDMAIL "Content-Type: multipart/mixed;\n";
+                    print $SENDMAIL "\tboundary=\"" . $boundary . "\"\n";
                     print $SENDMAIL "\nThis is a multi-part message in MIME format.\n";
                     print $SENDMAIL "\n--" . $boundary . "\n";
                     print $SENDMAIL "Content-Type: " . $paramHash{mimeType} . "; charset=" . $paramHash{characterSet} . "\n";
