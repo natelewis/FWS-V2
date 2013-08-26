@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 1.13060708
+Version 1.13081521
 
 =cut
 
-our $VERSION = '1.13060708';
+our $VERSION = '1.13081521';
 
 
 =head1 SYNOPSIS
@@ -733,11 +733,16 @@ sub makeDir {
     my %paramHash;
     if ( $#paramArray ) { %paramHash = @paramArray }
     else { $paramHash{directory} = $paramArray[0] }
-        
+       
     #
     # kill double ..'s so noobdy tries to leave our tight environment of security
     #
     $paramHash{directory} = $self->safeDir( $paramHash{directory} );
+    
+    #
+    # gently bail if we didn't get a directory
+    #
+    return if $paramHash{directory} eq '';
 
     #
     # to make sure nothing fishiy is going on, you should only be making dirs under this area
