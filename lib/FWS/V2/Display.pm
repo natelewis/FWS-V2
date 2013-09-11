@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 0.001
+Version 1.13072120
 
 =cut
 
-our $VERSION = '0.001';
+our $VERSION = '1.13072120';
 
 
 =head1 SYNOPSIS
@@ -84,9 +84,100 @@ sub FWSHead {
     if ( $self->siteValue( 'pageKeywords' ) )     { $html .= '<meta name="keywords" content="' . $self->siteValue( 'pageKeywords' ) . "\"/>\n" }
     if ( $self->siteValue( 'pageDescription' ) )  { $html .= '<meta name="description" content="' . $self->siteValue( 'pageDescription' ) . "\"/>\n" }
 
-    return $html . $self->cacheHead() . $self->siteValue( 'pageHead' ) . $self->siteValue( 'templateHead' );
+
+    #
+    # Load jquery in head if it is flagged to, if not it will be lazy loaded
+    #
+    my %jqueryHash = %{$self->{_jqueryHash}};
+    if ( keys %jqueryHash && $self->{loadJQueryInHead} ) {
+        $html .= "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n";
+    }
+
+
+    return $html . $self->siteValue( 'pageHead' ) . $self->siteValue( 'templateHead' );
 }
 
+sub FWSJava { 
+    my ( $self ) = @_;
+     
+    #
+    # add tinyMCE if needed fixes a FF bug if we lazy load it.
+    #
+    my $pageJava;
+    if ( $self->siteValue( 'urchinId' ) && !$self->formValue( 'editMode' ) ) {
+        $pageJava .= "<script type=\"text/javascript\">\n";
+        $pageJava .= "var gaJsHost = ((\"https:\" == document.location.protocol) ? \"https://ssl.\" : \"http://www.\");\n";
+        $pageJava .= "document.write(unescape(\"%3Cscript src='\" + gaJsHost + \"google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E\"));\n";
+        $pageJava .= "</script>\n";
+        $pageJava .= "<script type=\"text/javascript\">\n";
+        $pageJava .= "var pageTracker = _gat._getTracker(\"" . $self->siteValue( 'urchinId' ) . "\");\n";
+        $pageJava .= "pageTracker._initData();\n";
+        $pageJava .= "pageTracker._trackPageview();\n";
+        $pageJava .= "</script>\n";
+    }
+   
+  
+    #
+    # at some point landingId should be settable in site settings
+    #
+    if ( $self->siteValue( 'facebookAppId' ) ) {
+    
+        my $landingId = $self->safeQuery( $self->formValue( 'p' ) );
+        if ( $self->formValue( 'id' ) ) { $landingId .= '&id=' . $self->safeQuery( $self->formValue( 'id' ) ) }
+
+        $pageJava .= '<div id="fb-root"></div><script>';
+
+        #
+        # tell FB we are french if we are
+        #
+        my $FBLang = 'en_US';
+        if ( $self->language() =~ /fr/i ) { $FBLang = 'fr_CA' }
+
+        #
+        # leave this split up goofy for now.  The code compressor freaks out a bit on
+        # on this when it is formated better, so it is this way on pupose.  I need to update
+        # the compressor first before we can pretty this up
+        #
+        $pageJava .= 
+            'window.fbAsyncInit = function () {' .
+                "FB.init({ appId: '" . $self->siteValue( 'facebookAppId' ) . "', oauth: true, cookie: true, status: true, xfbml: true" . '}); ' .
+                'FB.getLoginStatus(function (response) {' .
+                    "if (response.session) {\$('#loginFBLoginBox').hide(); } " .
+                    "else {\$('#loginFBLoginBox').show(); } " .
+                '}); ';
+
+        #
+        # prevent recursive FB Redirects
+        #
+        if ( !$self->isUserLoggedIn() ) {
+            $pageJava .=
+                "FB.Event.subscribe('auth.login', function () {" .
+                    "window.location = '" . $self->{scriptName} . '?s=' . $self->{siteId} . '&p=' . $landingId . "&FBRedirect=1'; " .
+                '}); ';
+        }
+
+        $pageJava .=
+            '}; ' .
+            '(function () {' .
+                "var e = document.createElement('script'); e.async = true; " .
+                'e.src = document.location.protocol + ' .
+                "'//connect.facebook.net/" . $FBLang . "/all.js'; " .
+                "document.getElementById('fb-root').appendChild(e); " .
+            ' }());' ;
+    
+            if ( $self->formValue( 'FBRedirect' ) ) {
+                $pageJava .= "window.location = '" . $self->{scriptName} . '?s=' . $self->{siteId} . '&p=' . $landingId ."'; ";
+            }
+            $pageJava .= '</script>';
+    }
+   
+
+    $pageJava .= $self->siteValue( 'pageFoot' );
+    return $pageJava;
+}
+
+
+ 
 
 =head2 displayContent
 
@@ -96,6 +187,7 @@ Return the full web rendering for a FWS Page.   This includes the Content-Type H
 
 sub displayContent {
     my ( $self ) = @_;
+#$self->setPageCache();
 
     $self->runScript( 'preContent' );
 
@@ -116,7 +208,9 @@ sub displayContent {
         #
         # all is good and lets just make sure this flag wasn't set by a element and print the page
         #
-        if ( $self->formValue( 'returnAndDoNothing' ) ne '1') {  $self->printPage(content=>$self->_FWSContent() ) }
+        if ( $self->formValue( 'returnAndDoNothing' ) ne '1') {  
+            $self->printPage( content => $self->_FWSContent() );
+        }
     }
     return;
 }
@@ -135,6 +229,7 @@ sub printPage {
     # default stop processing to off
     #
     $self->{stopProcessing} ||= 0;
+
 
 
     if ( !$self->{stopProcessing} ) {
@@ -167,31 +262,8 @@ sub printPage {
             }
         }
 
-        #
-        # get the save with session hash put together
-        #
-        my $sessionScript = '';
-        my %saveWithSessionHash = $self->_saveWithSessionHash();
-        for my $sessionKey ( keys %saveWithSessionHash ) {
-            my $keyValue = $self->formValue( $sessionKey );
-            $sessionScript .= $sessionKey . '|' . $self->urlEncode( $keyValue ) . '|';
-        }
+        $self->saveSession();
 
-        #
-        # set the editMode in range if it is blank
-        #
-        if ( !$self->formValue( 'editMode' ) ) { $self->formValue( 'editMode', 0 ) }
-
-        #
-        # Set the cookie and update the session.. and other groovy header rutines
-        # only if it is diffrent lets update it
-        #
-        if ( $self->formValue( 'FWS_SESSION' ) ne $self->{userLoginId} . '|' . $self->language() . '|' . $self->{adminLoginId} . '|' . $ENV{REMOTE_ADDR} . '|' . $self->formValue( 'editMode' ) . '|' . $self->{affiliateId} . '|' . $self->{affiliateExp} . '|' . $self->{adminSafeMode} . '|' . $sessionScript ) {
-            #
-            # run the SQL to update the session
-            #
-            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "', b='" . $self->safeSQL( $self->{userLoginId} ) . "', s='" . $self->safeSQL( $self->{adminSafeMode} ) . "', bs='" . $self->safeSQL( $self->{adminLoginId} ) . "', ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "', e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "', a='" . $self->safeSQL( $self->{affiliateId} ) . "', a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "', extra_value='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" );
-        }
 
         #
         # Return HTTP
@@ -220,7 +292,7 @@ sub printPage {
         # simple page rendering
         #
         if ( $paramHash{head} ) {
-            $paramHash{content} = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n<head>\n" . $paramHash{head} . "</head>\n<body>\n" . $paramHash{content} . "\n</body>\n</html>";
+            $paramHash{content} = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n<head>\n" . $paramHash{head} . "</head>\n<body>\n" . $paramHash{content} . "\n" . $paramHash{foot} . "\n</body>\n</html>";
         }
 
         #
@@ -247,7 +319,9 @@ sub printPage {
             print "Status: 302 Found\n";
             print 'Location: ' . $self->urlDecode( $self->formValue( 'redirect' ) ) . "\n\n";
         }
-        else { print $theHeader  . $paramHash{content} }
+        else { 
+            print $theHeader  . $paramHash{content};
+        }
 
         #
         # process our queue for every page we render
@@ -270,6 +344,9 @@ sub _FWSContent {
     my $pageHTML;
 
     if ( !$self->{stopProcessing} ) {
+    
+    
+
         my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
 
         #
@@ -616,11 +693,12 @@ sub _FWSContent {
                                $valueHash{type} = '';
                             }
 
+
                             #
-                            # if this is set to 0 then negate the login because it must have been set that way
-                            # from the loginMod
+                            # if this is set to 0 then negative the login because it must have been set that way
+                            # from the loginMod,  This is a string and can contain guids, so we can't use math here
                             #
-                            if ( $userHash{userGroup} > 0 ) {
+                            if ( $userHash{userGroup} !~ /^-/ || $userHash{userGroup} eq '0') {
 
                                 #
                                 # If group ID is "1" then all I need to be is just logged in
@@ -632,15 +710,20 @@ sub _FWSContent {
                                 #
                                 # If we have a spacific group, figure it out and do it
                                 #
-                                elsif ( $userHash{userGroup} > 1 && ( $userHash{group}{$userHash{userGroup}} ) &&  $userHash{active} ) {
+                                elsif ( $userHash{group}{$userHash{userGroup}} && $userHash{active} ) {
                                     #Nice! we are gtg, don't do anything
                                 }
+
                                 #
                                 # Set elementType  your not set to see, set login or blank the element
                                 #
                                 else {
-                                    if ( $userHash{show_login} ) { $valueHash{type} = 'FWSLogin' }
-                                    else { $valueHash{type} = '' }
+                                    if ( $userHash{show_login} ) { 
+                                        $valueHash{type} = 'FWSLogin';
+                                    }
+                                    else {
+                                        $valueHash{type} = '';
+                                    }
                                 }
                             }
                         }
@@ -769,10 +852,7 @@ sub _FWSContent {
                         $columnContent{$valueHash{layout}} .= "<div" . $editBox . " class=\"" . $valueHash{layout} . "_element element_" . $valueHash{guid} . "\" id=\"" . $valueHash{layout} . "_element_" . $columnCount{$valueHash{layout}} . "\">";
 
                         if ( ( $self->{adminLoginId} && $valueHash{siteGUID} eq $self->{siteGUID} && !$self->formValue( 'FWS_showElementOnly' ) && !$showElementOnly && !$valueHash{disableEditMode} && $self->formValue( 'editMode' ) ) )  {
-                            $columnContent{$valueHash{layout}} .= "<div id=\"editModeAJAX_" . $valueHash{guid} . "\" style=\"border: solid 1px #FF0000;border-top: 0;\">";
-                            $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash );
-                            $columnContent{$valueHash{layout}} .= $html;
-                            $columnContent{$valueHash{layout}} .= "</div>";
+                            $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash, AJAXDivStyle => 'border: solid 1px #FF0000;border-top: 0;', editBoxContent => $html );
                         }
                         else {
                             $columnContent{$valueHash{layout}} .= $html;
@@ -786,8 +866,9 @@ sub _FWSContent {
 
             #
             # check if this is the home page, with no stuff on it,  if not we need to dump to login, or redirect to fws_systemInfo
+            # only do this for the site though, if your making blank other sites for other reasons lets just let that happen
             #
-            if ( ( $elementTotal < 1 && $pageId eq $self->homeGUID() ) && !$somethingIsOnThePage ) {
+            if ( $elementTotal < 1 && $pageId eq $self->homeGUID() && !$somethingIsOnThePage && $self->formValue( 's' ) eq 'site' ) {
                 if ( $self->{adminLoginId} ) {
                     print "Status: 302 Found\n";
                     print "Location: " . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo\n\n";
@@ -818,7 +899,7 @@ sub _FWSContent {
                     $self->jqueryEnable( 'ui.slider-1.8.9' );
                     $self->jqueryEnable( 'timepickr-0.9.6' );
                     $self->jqueryEnable( 'ui.tabs-1.8.9' );
-                    $self->jqueryEnable( 'simplemodal-1.4.1' );
+                    $self->jqueryEnable( 'simplemodal-1.4.4' );
                     $self->jqueryEnable( 'fileupload-ui-4.4.1' );
                     $self->jqueryEnable( 'fileupload-4.5.1' );
                     $self->jqueryEnable( 'fileupload-uix-4.6' );
@@ -860,6 +941,11 @@ sub _FWSContent {
                     $FWSMenu .= $self->editBox( %pageHash );
                 }
     
+                #
+                # before we print head and foot css and js we need to compile and set cache
+                #
+                $self->setPageCache();
+
                 #
                 # add the head where it goes
                 #
@@ -954,70 +1040,13 @@ sub _FWSContent {
                             siteGUID        => $pageHash{siteGUID},
                     );
                 }
+   
+   
+                my $FWSJava = $self->FWSJava(); 
+                $pageHTML =~ s/#FWSJavaLoad#/$FWSJava/g;
     
-                #
-                # add tinyMCE if needed fixes a FF bug if we lazy load it.
-                #
-                my $pageJava = '';
-                if ( $self->siteValue( 'urchinId' ) && !$self->formValue( 'editMode' ) ) {
-                    $pageJava .= "<script type=\"text/javascript\">\n";
-                    $pageJava .= "var gaJsHost = ((\"https:\" == document.location.protocol) ? \"https://ssl.\" : \"http://www.\");\n";
-                    $pageJava .= "document.write(unescape(\"%3Cscript src='\" + gaJsHost + \"google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E\"));\n";
-                    $pageJava .= "</script>\n";
-                    $pageJava .= "<script type=\"text/javascript\">\n";
-                    $pageJava .= "var pageTracker = _gat._getTracker(\"" . $self->siteValue( 'urchinId' ) . "\");\n";
-                    $pageJava .= "pageTracker._initData();\n";
-                    $pageJava .= "pageTracker._trackPageview();\n";
-                    $pageJava .= "</script>\n";
-                }
     
                 my $FWSLink = "<a href=\"http://www.frameworksites.com/poweredByFrameWorkSites\"><img style=\"border: 0 none;\" src=\"https://www.frameworksites.com/poweredByFrameWorkSites.jpg\" alt=\"This site was built using FrameWork Sites!\"/></a>";
-    
-                #
-                # at some point landingId should be settable in site settings
-                #
-                if ( $self->siteValue( 'facebookAppId' ) ) {
-    
-                    my $landingId = $self->safeQuery( $self->formValue( 'p' ) );
-                    if ( $self->formValue( 'id' ) ) { $landingId .= '&id=' . $self->safeQuery( $self->formValue( 'id' ) ) }
-    
-                    $pageJava .= '<div id="fb-root"></div><script>';
-    
-                    #
-                    # tell FB we are french if we are
-                    #
-                    my $FBLang = 'en_US';
-                    if ( $self->language() =~ /fr/i ) { $FBLang = 'fr_CA' }
-    
-                    #
-                    # leave this split up goofy for now.  The code compressor freaks out a bit on
-                    # on this when it is formated better, so it is this way on pupose.  I need to update
-                    # the compressor first before we can pretty this up
-                    #
-                    $pageJava .= 'window.fbAsyncInit = function () {' .
-                        'FB.init({' .
-                        "appId: '" . $self->siteValue( 'facebookAppId' ) . "', oauth: true, cookie: true, status: true, xfbml: true" .
-                        '}); ' .
-                        'FB.getLoginStatus(function (response) {' .
-                        "if (response.session) {\$('#loginFBLoginBox').hide(); } " .
-                        "else {\$('#loginFBLoginBox').show(); " .
-                        '} ' .
-                        '}); ' .
-                        "FB.Event.subscribe('auth.login', function () {" .
-                        "window.location = '" . $self->{scriptName} . '?s=' . $self->{siteId} . '&p=' . $landingId . "'; " .
-                        '}); ' .
-                        '}; ' .
-                        '(function () {' .
-                        "var e = document.createElement('script'); e.async = true; " .
-                        'e.src = document.location.protocol + ' .
-                        "'//connect.facebook.net/" . $FBLang . "/all.js'; " .
-                        "document.getElementById('fb-root').appendChild(e); " .
-                        ' }());' .
-                        '</script>';
-                }
-                $pageJava .= $self->siteValue( 'pageFoot' );
-    
-                $pageHTML =~ s/#FWSJavaLoad#/$pageJava/g;
                 $pageHTML =~ s/#FWSLink#/$FWSLink/g;
                 while ( $pageHTML =~ /#FWSField-(.*?)#/g ) {
                     my $formField = $1;
@@ -1046,7 +1075,7 @@ sub _replaceContentColumn {
     $editHash{orderTool}           = 1;
     $editHash{name}               = '| ' . $editHash{layout} . ' |';
     my $changeFrom                = '#' . $editHash{contentType} . '-' . $editHash{layout} . '#';
-    my $changeTo                  = '<div id="' . $editHash{layout} . '">';
+    my $changeTo                  = '<div class="FWSLanguage-' . uc( $self->language() ) . '" id="' . $editHash{layout} . '">';
 
     if ( $editHash{siteGUID} ne $self->fwsGUID() || $self->{showFWSInSiteList} ) {
         if ( $self->formValue( 'editMode' ) && $editHash{contentType} ne 'FWSShowNoHeader' && $editHash{pageType} eq 'page' && !$self->{hideEditModeHeaders} ) {

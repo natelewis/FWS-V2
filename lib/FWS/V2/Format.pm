@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 0.004
+Version 1.13081221
 
 =cut
 
-our $VERSION = '0.004';
+our $VERSION = '1.13081221';
 
 =head1 SYNOPSIS
 
@@ -235,11 +235,21 @@ sub createPin {
     # run a while statement until we get a guid that isn't arelady used
     #
     while ( !$newPin ) {
+
+        #
+        # new pin!
+        #
         $newPin = $self->createPassword( composition => '23456789QWERTYUPASDFGHJKLZXCVBNM', lowLength => 6, highLength => 6 );
-        my ( $foundItUser )           = @{$self->runSQL( SQL => "select 1 from profile where pin='" . $self->safeSQL( $newPin ) . "'" )};
-        my ( $foundItDirectory )      = @{$self->runSQL( SQL => "select 1 from directory where pin='" . $self->safeSQL ( $newPin ) . "'" )};
-        if ( $foundItDirectory || $foundItUser ) { 
-            $newPin = '';
+
+        #
+        # go through all our pins and see if we have a match
+        #
+        for my $table ( keys %{$self->{dataSchema}} ) {
+            if ( $self->{dataSchema}{$table}{pin}{type} ) {
+                if ( @{$self->runSQL( SQL => "select 1 from " . $self->safeSQL( $table ) . " where pin='" . $self->safeSQL( $newPin ) . "'" )} ) {
+                    $newPin = '';
+                }
+            }
         }
     }
     return $newPin;
@@ -369,7 +379,7 @@ sub dialogWindow {
     # this is not a subModal do the whole gig
     #
     else {
-        $returnHTML .= "\$('" . ( $paramHash{id} ? "#" . $paramHash{id} : "<div></div>').html( '" . $paramHash{loadingContent} . "' )").".modal({dataId :'modal_" . $uniqueId . "',";
+        $returnHTML .= "\$('" . ( $paramHash{id} ? "#" . $paramHash{id} : "<div></div>').html( '" . $paramHash{loadingContent} . "' )").".modal({ dataId: 'modal_" . $uniqueId . "',";
     
         #
         # Set the hit and autoresize

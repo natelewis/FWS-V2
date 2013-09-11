@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 0.001
+Version 1.13071816
 
 =cut
 
-our $VERSION = '0.001';
+our $VERSION = '1.13071816';
 
 
 =head1 SYNOPSIS
@@ -63,12 +63,12 @@ Return a standard HTML admin header for admin elements that open in new pages.
     # Header for an admin page that opens in a new window
     #
     $valueHash{html} .= $fws->adminPageHeader(    
-                            name            =>'Page Name in the upper right',
-                            rightContent    =>'This will show up on the right,' .
-                                                'usually its a saving widget',
-                            title           =>'This is title on the left, it will' .
-                                                'look just like a panel title',
-                            icon            =>'somethingInTheFWSIconDirectory.png');
+        name            => 'Page Name in the upper right',
+        rightContent    => 'This will show up on the right,' .
+                           'usually its a saving widget',
+        title           => 'This is title on the left, it will' .
+                           'look just like a panel title',
+        icon            => 'somethingInTheFWSIconDirectory.png');
 
 NOTE: This should only be used in the context of the FWS Administration, and is only here as a reference for modifiers of the admin.
 
@@ -174,26 +174,26 @@ Return jQueryUI tab html.  The tab names, tab content, tinyMCE editing field nam
     # add the data to the tabs and panels to the HTML
     #
     $valueHash{html} .= $self->tabs(
-                        id              => 'theIdOfTheTabContainer',
-                        tabs            => [@tabs],
-                        tabContent      => [@tabContent],
-                        tabJava         => [@tabJava],
+        id              => 'theIdOfTheTabContainer',
+        tabs            => [@tabs],
+        tabContent      => [@tabContent],
+        tabJava         => [@tabJava],
 
-                        # html and file tab support
-                        tabType         => [@tabType],       # file, html or leave empty for standard panel
-                                                             # setting type will overwrite content and java provided
+        # html and file tab support
+        tabType         => [@tabType],       # file, html or leave empty for standard panel
+                                             # setting type will overwrite content and java provided
 
-                        tabFields       => [@tabFields],     # field your updating
+        tabFields       => [@tabFields],     # field your updating
 
-                        guid            => 'someGUID',       # guid your updating
+        guid            => 'someGUID',       # guid your updating
 
-                        # optional if your talking to a non-data table
-                        tabUpdateType   => [@tabUpdateType], # defaults to AJAXExt
-                        table           => 'data',           # defaults to data
+        # optional if your talking to a non-data table
+        tabUpdateType   => [@tabUpdateType], # defaults to AJAXExt
+        table           => 'data',           # defaults to data
 
-                        # for file type only (required)
-                        currentFile     => [@currentFile],   #
-                        );
+        # for file type only (required)
+        currentFile     => [@currentFile],   #
+    );
 
 NOTE: This should only be used in the context of the FWS Administration, and is only here as a reference for modifiers of the admin.   In future versions this will be replaced with a hash array style paramater to make this less cumbersome, but this will be avaiable for legacy controls.
 
@@ -236,12 +236,12 @@ sub tabs {
         # tab type overwrites tabJava and tabContent!
         #
         if ( $tabType eq 'file' ) {
-            $tabContent     = "<div id=\"dataEdit" . $fieldName . "\">Loading...</div>";
+            $tabContent = "<div id=\"dataEdit" . $fieldName . "\">Loading...</div>";
             $tabJava    = "if(\$('#dataEdit" . $fieldName . "').html().length < 50) {\$('#dataEdit" . $fieldName . "').FWSAjax({queryString: '" . $self->{queryHead} . "p=fws_fileManager&current_file=" . $currentFile . "&field_update_type=" . $tabUpdateType . "&field_table=" . $paramHash{table} . "&field_name=" . $fieldName . "&guid=" . $paramHash{guid} . "',showLoading: false});}";
         }
 
         if ( $tabType eq 'html' ) {
-            $tabContent     = "<div name=\"" . $fieldName . "\" id=\"" . $editorName . "\" class=\"HTMLEditor\" style=\"width:100%;height:445px;\">" . $tabContent . "</div><div style=\"display:none;\" id=\"" . $paramHash{guid} . "_v_" . $fieldName . "_v_StatusNote\"></div>";
+            $tabContent = "<div name=\"" . $fieldName . "\" id=\"" . $editorName . "\" class=\"HTMLEditor\" style=\"width:100%;height:445px;\">" . $tabContent . "</div><div style=\"display:none;\" id=\"" . $paramHash{guid} . "_v_" . $fieldName . "_v_StatusNote\"></div>";
         }
 
         #
@@ -254,11 +254,11 @@ sub tabs {
         # also tack on any tabJava we had passed to us
         #
         my $javaScript      = "FWSCloseMCE();";
-        $javaScript         .= "if ( typeof(tinyMCE) != 'undefined' ) { tinyMCE.execCommand('mceAddControl', false, '" . $editorName . "'); }";
-        $javaScript         .= "if ( typeof(\$.modal) != 'undefined' ) { \$.modal.update(); }";
-        $javaScript         .= "if ( typeof(\$.modal) != 'undefined' ) { \$.modal.update(); }";
-        $javaScript         .= $tabJava;
-        $javaScript         .= "return false;";
+        $javaScript        .= "if ( typeof(tinyMCE) != 'undefined' ) { tinyMCE.execCommand('mceAddControl', false, '" . $editorName . "'); }";
+        $javaScript        .= "if ( typeof(\$.modal) != 'undefined' ) { \$.modal.update(); }";
+        $javaScript        .= "if ( typeof(\$.modal) != 'undefined' ) { \$.modal.update(); }";
+        $javaScript        .= $tabJava;
+        $javaScript        .= "return false;";
 
         #
         # flag we are on the first one!... we want to hide the content areas if we are not
@@ -449,9 +449,9 @@ sub importSiteImage {
                 # get just the directory so we can make the dir in case it does not exist already
                 #
                 my $fileDir = $self->{filePath} . $fileName;
-                my @splitDir = split(/\//, $fileDir);
+                my @splitDir = split( /\//, $fileDir );
                 pop(@splitDir);
-                my $justDirectory = join("/", @splitDir);
+                my $justDirectory = join( "/", @splitDir );
 
                 #
                 # make sure nothing dangrous is in the dir
@@ -552,7 +552,7 @@ sub importSiteImage {
                         #
                         # if we hvan't already skip the first comma, and then add the field
                         #
-                        if (!$skipComma) {$cleanData .= ','}
+                        if (!$skipComma) { $cleanData .= ',' }
 
 
                         #
@@ -567,8 +567,8 @@ sub importSiteImage {
                             my @splitExtra = split(/\|/,$data[$dataCount]);
                             my %extraHash;
                             while (@splitExtra) {
-                                my $field     = shift( @splitExtra );
-                                my $value     = shift( @splitExtra );
+                                my $field     = shift @splitExtra;
+                                my $value     = shift @splitExtra;
                                 $value        = $self->urlDecode( $value );
                                 $value        = $self->_convertImportTags( content => $value, siteGUID => $siteGUID, homeGUID => $homeGUID );
                                 $extraHash{$self->urlDecode( $field )} = $value;
@@ -636,38 +636,22 @@ Return an edit field or field block for the FWS Admin.   The adminField method i
 NOTE: This should only be used in the context of the FWS Administration, and is only here as a reference for modifiers of the admin.
 
 Passable Keys:
-
-fieldType
-
-fieldName
-
-fieldValue
-
-fieldOptions
-
-unilingual: [1|0]
-
-ajaxUpdateGUID
-
-ajaxUpdateParentId
-
-id
-
-class
-
-style
-
-onSaveComplete
-
-updateType
-
-guid
-
-onKeyDown
-
-note
-
-afterFieldHTML
+    fieldType
+    fieldName
+    fieldValue
+    fieldOptions
+    unilingual: [1|0]
+    ajaxUpdateGUID
+    ajaxUpdateParentId
+    id
+    class
+    style
+    onSaveComplete
+    updateType
+    guid
+    onKeyDown
+    note
+    afterFieldHTML
 
 =cut
 
@@ -710,7 +694,7 @@ sub adminField {
         #
         # convert from SQL format and spin it around for normal US date formats
         #
-        if ( $paramHash{dateFormat} =~ /(sql|)/i) {
+        if ( $paramHash{dateFormat} =~ /(sql|)/i ) {
             my ( $year, $month, $day, $hour, $minute, $second ) = split( /\D/, $paramHash{fieldValue} );
             $paramHash{fieldValue} = $month . "-" . $day . "-" . $year . " " . $hour . ":" . $minute . ":" . $second;
         }
@@ -1047,15 +1031,13 @@ sub adminField {
     # run all these if on fields, even if ajax is not on
     #
     if ( ( $paramHash{fieldType} =~ /^(dateTime|color|currency|number|text|password|textArea|date)$/ ) ) {
-        $fieldHTML .= " onfocus=\"" . $copyToHidden;
-        $fieldHTML .=  $paramHash{onFocus} ."\"";
+        $fieldHTML .= " onfocus=\"" . $copyToHidden . $paramHash{onFocus} ."\"";
     }
-
+        
+    #
+    # key down & context right clicking ajax image update
+    #
     if ( $paramHash{updateType} && ( $paramHash{fieldType} =~ /^(color|dateTime|currency|number|text|password|date|textArea)$/ ) )  {
-
-        #
-        # key down & context right clicking ajax image update
-        #
 
         #
         # choose a different icon
@@ -1101,9 +1083,10 @@ sub adminField {
         $paramHash{fieldOptions} =~ s/\n//sg;
         my @optionSplit = split( /\|/, $paramHash{fieldOptions} );
         my $matchFound = 0;
+        $fieldHTML .= "<div class=\"FWSRadioButtonGroup\">";
         while (@optionSplit) {
-            my $optionValue = shift(@optionSplit);
-            my $optionName = shift(@optionSplit);
+            my $optionValue = shift @optionSplit;
+            my $optionName  = shift @optionSplit;
             $fieldHTML .= "<input type=\"radio\" name=\"" . $paramHash{fieldName} . "\"" . $styleHTML . " class=\"" . $paramHash{class} . "\"";
             $fieldHTML .= " onclick=\"" . $paramHash{onChange};
             $fieldHTML .= "\$('#" . $paramHash{uniqueId} . "_ajax').val('" . $optionValue . "');";
@@ -1117,12 +1100,13 @@ sub adminField {
             $fieldHTML .= "/> ";
             $fieldHTML .= "<span class=\"FWSRadioButtonTitle\">" . $optionName . " &nbsp; </span>";
         }
+        $fieldHTML .= "</div>";
     }
     #
     #
     # if we are a dropDown, put the options in and close the select
     #
-    if ( $paramHash{fieldType} eq "dropDown" ) {
+    if ( $paramHash{fieldType} eq 'dropDown' ) {
         $fieldHTML .= ">";
         #
         # clean these up in case peole did some formatting in the box
@@ -1139,28 +1123,22 @@ sub adminField {
         $fieldHTML .= "</select>";
     }
 
-
     if ( !$paramHash{fieldType} ) {
-        $fieldHTML .= "<div class=\"FWSNoFieldType\"" . $styleHTML . ">";
-        $fieldHTML .= $paramHash{fieldValue};
-        $fieldHTML .= "</div>";
+        $fieldHTML .= "<div class=\"FWSNoFieldType\"" . $styleHTML . ">" . $paramHash{fieldValue} . "</div>";
     }
 
     #
-    #
     # html
     #
-    if ( $paramHash{fieldType} eq "html" ) {
+    if ( $paramHash{fieldType} eq 'html' ) {
         $self->{tinyMCEEnable} = 1; 
     }
 
     #
     # textArea
     #
-    if ( $paramHash{fieldType} eq "textArea" ) {
-        $fieldHTML .= ">";
-        $fieldHTML .= $paramHash{fieldValue};
-        $fieldHTML .= "</textarea>";
+    if ( $paramHash{fieldType} eq 'textArea' ) {
+        $fieldHTML .= ">" . $paramHash{fieldValue} . "</textarea>";
     }
 
     #
@@ -1253,10 +1231,11 @@ sub adminField {
 
         if ( ( $paramHash{fieldType} =~ /^text$/ || $paramHash{fieldType} =~ /^textArea$/) && !$paramHash{unilingual} && $paramHash{fieldName} ne 'name' ) {
             my @langArray = $self->languageArray();
+
             #
             # eat the default
             #
-            shift(@langArray);
+            shift @langArray;
             while (@langArray) {
                 my $langId = shift( @langArray );
                 my %langHash = %origHash;
@@ -1269,7 +1248,7 @@ sub adminField {
             }
         }
 
-        if ( $paramHash{note} ) { $html .= "<div class=\"FWSFieldValueNote\">" . $paramHash{note} . "</div>" }
+        if ( $paramHash{note} ) { $html .= "<div class=\"FWSFieldValueNote help-block\">" . $paramHash{note} . "</div>" }
         $html .= "</div>";
 
         $html .= "<div style=\"clear:both;\"></div>";
@@ -1314,9 +1293,13 @@ sub systemInfo {
     #
     if ( !$errorReturn ) { $errorReturn .= $self->_systemInfoCheckDir( $self->{filePath} . "/fws") }
     if ( !$errorReturn ) { $errorReturn .= $self->_systemInfoCheckDir( $self->{filePath} . "/fws/jquery") }
-    if ( !$errorReturn ) { $errorReturn = "<li>All directories are present with suitable permissions.</li>"; $adminInstalled = 1 }    
+    if ( !$errorReturn ) {
+        $errorReturn = "<li>All directories are present with suitable permissions.</li>"; 
+        $adminInstalled = 1;
+    }
+
     $systemInfo .= $errorReturn . "</ul>";
-            
+        
     #
     # run Module Checks
     #
@@ -1338,6 +1321,16 @@ sub systemInfo {
     else { $systemInfo .= $errorReturn . '<br/>' }
     
     #
+    # run go file checks
+    #
+    $errorReturn = '';
+    $systemInfo .= '<b>Script compatibility Check:</b><br/>';
+    $errorReturn .= $self->_checkScript();
+    if ( !$errorReturn ) { $systemInfo .= '<ul><li>All script compatability checks passed.</li></ul>' }
+    else { $systemInfo .= $errorReturn  }
+
+
+    #
     # Database Checks
     #
     $systemInfo .= '<b>Database Table And Index Check:</b><br/>';
@@ -1345,6 +1338,10 @@ sub systemInfo {
     if ( !$errorReturn ) { $systemInfo .= '<ul><li>All tables and indexes are correct.</li></ul>' }    
     else {$systemInfo .= $errorReturn . '<br/>' }
 
+    if ( $adminInstalled )  {
+        $systemInfo .= "<input style=\"width:300px;\" type=\"button\" onclick=\"location.href='" . $self->{scriptName} . "?s=site';\" value=\"View Site\"/>";
+    }
+            
     return $systemInfo;
 }
 
@@ -1365,16 +1362,16 @@ sub aceTextArea {
     #
     # load the JS for for ace... but only ONCE!
     #    
-    if ( !$self->formValue( 'FWSAceJSLoaded' ) ) {
-        $self->addToHead(    
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/ace.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/theme-" . $self->{aceTheme} . ".js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-javascript.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-html.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-0.2.0/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n"
+    if ( !$self->{FWSAceJSLoaded} ) {
+        $self->addToFoot(    
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/ace.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/theme-" . $self->{aceTheme} . ".js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-javascript.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-html.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
+            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n"
         );
-        $self->formValue( 'FWSAceJSLoaded', '1' );
+        $self->{FWSAceJSLoaded}++;
     }
 
 
@@ -1395,14 +1392,12 @@ sub aceTextArea {
         $modeScript = "var CSSScriptMode = require(\"ace/mode/css\").Mode;" . $paramHash{name} . ".getSession().setMode(new CSSScriptMode());";
     }
 
-    $self->addToHead( "<script type=\"text/javascript\">" .
+    $self->addToFoot( "<script type=\"text/javascript\">" .
                     "\$(document).ready(function() {" .
-                    "\$(\".FWSScriptEditContainer\").hide();" .
                     "window." . $paramHash{name} . " = ace.edit(\"" . $paramHash{name} . "\");" .
                     $paramHash{name} . ".setTheme(\"ace/theme/" . $self->{aceTheme} . "\");" .
                     $paramHash{name} . ".getSession().setUseWrapMode(true);" .
-                    $paramHash{name} . ".setShowPrintMargin(false);" .
-                    $modeScript.    
+                    $paramHash{name} . ".setShowPrintMargin(false);" . $modeScript .
                     $paramHash{name} . ".getSession().on('change', function () {document.getElementById('" . $statusContainer . "').innerHTML='[Not Saved]';});" .
                     "});" .
                     "</script>\n");
@@ -1416,7 +1411,7 @@ sub aceTextArea {
     #
     # create the line that will actually be rendered to the screen
     #
-    return "<pre id=\"" . $paramHash{name} . "\" class=\"FWSScriptEditContainer ui-widget ui-state-default ui-corner-bottom\">" . $paramHash{value} . "</pre>";
+    return "<pre style=\"position: absolute; padding: 0; right: 0; bottom: 0; left: 0;display:none;\" id=\"" . $paramHash{name} . "\" class=\"FWSScriptEditContainer ui-widget ui-state-default ui-corner-bottom\">" . $paramHash{value} . "</pre>";
 }
 
 
@@ -1442,7 +1437,8 @@ sub editBox {
     my ( $self, %editHash ) = @_;
 
     my $editHTML;
-    my $ajaxID = '#editModeAJAX_' . $self->formValue( 'FWS_elementId' );
+    #my $ajaxID = '#editModeAJAX_' . $self->formValue( 'FWS_elementId' );
+    my $ajaxID = '#editModeAJAX_' . $editHash{guid};
 
     #
     # default always show to off if its not passed
@@ -1476,6 +1472,7 @@ sub editBox {
                 my $bgColor     = $self->_getHighlightColor( $editHash{editBoxColor} );
                 my $divStyle    = "color:" . $editHash{editBoxColor} . ";background-color:".$bgColor.";border:dotted 1px " . $editHash{editBoxColor} . ";border-bottom:dotted 1px " . $editHash{editBoxColor} . ";text-align:right;";
     
+                $editHTML .=  "<div style=\"" . $editHash{AJAXDivStyle} . "\" id=\"editModeAJAX_" . $editHash{guid} . "\">";
                 $editHTML .=  "<div style=\"" . $divStyle . "\" class=\"FWSEditBoxControls\">";
                 $editHTML .=  $editHash{name} . " ";
             }
@@ -1522,12 +1519,11 @@ sub editBox {
             #
             if ( ( $editHash{deleteTool} || ( $self->{siteGUID} eq $editHash{guid_xref_site_guid} ) || $editHash{forceDelete} ) && !$editHash{disableDeleteTool} ) {
         
-        
                 #
                 # set up som vars for the post,  we want to do this differntly if we are talking about
                 # a base element, or a sub element
                 #
-                my $baseClear = "\$('#delete_" . $editHash{guid} . "').parent().parent().parent().hide();";
+                #my $baseClear = "\$('#delete_" . $editHash{guid} . "').parent().parent().parent().parent().parent().hide();";
         
                 #
                 # If the parent isn't a page, that means we are talking about a sub element of an element.
@@ -1535,8 +1531,10 @@ sub editBox {
                 #
                 # if it is a sub elemenet of an element, we also need to disable the "display none" it dosn't look goofy
                 #
-                if ( $self->formValue( "FWS_pageId" ) eq $editHash{parent} && !$self->formValue( "FWS_editModeUpdate" ) ) { $ajaxID = '<div></div>' }
-                else { $baseClear = "" }
+                #if ( $self->formValue( "FWS_pageId" ) eq $editHash{parent} && !$self->formValue( "FWS_editModeUpdate" ) ) { 
+                #    $ajaxID = '<div></div>';
+                #}
+                #else { $baseClear = "" }
         
                 $editHTML .= $self->FWSIcon(
                     icon    => "delete_16.png",
@@ -1552,11 +1550,11 @@ sub editBox {
             #
             if ( !$editHash{disableEditTool} && $editHash{type} ne 'page') {
                 $editHTML .= $self->FWSIcon(     
-                                icon    =>"properties_16.png",
-                                onClick => $self->dialogWindow( queryString => "p=fws_dataEdit&guid=" . $editHash{guid} . "&parentId=" . $editHash{parent} ),
-                                alt     => "Edit",
-                                width   => "16");
-        
+                    icon    => "properties_16.png",
+                    onClick => $self->dialogWindow( queryString => "p=fws_dataEdit&guid=" . $editHash{guid} . "&parentId=" . $editHash{parent} ),
+                    alt     => "Edit",
+                    width   => "16",
+                );
             }
         
             #
@@ -1571,6 +1569,11 @@ sub editBox {
     
             $editHTML .= $editHash{editBoxContent};   
             $editHTML .= $editHash{editBox};
+        
+            #
+            # close the delete ajax container
+            #    
+            if ( !$editHash{editBoxJustButtons} ) { $editHTML .= '</div>' }
         }
     }
 
@@ -1726,7 +1729,7 @@ sub displayAdminPage {
     my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
         
     if ( $self->isAdminLoggedIn() ) {
-        $self->jqueryEnable( 'simplemodal-1.4.1' );
+        $self->jqueryEnable( 'simplemodal-1.4.4' );
         $self->jqueryEnable( 'ui.core-1.8.9' );
         $self->jqueryEnable( 'ui.widget-1.8.9' );
         $self->jqueryEnable( 'ui.tabs-1.8.9' );
@@ -1767,7 +1770,6 @@ sub displayAdminPage {
                         $valueHash{elementId}       = $guid;
                         $valueHash{elementWebPath}  = $self->fileWebPath() . "/" . $elementHash{siteGUID} . "/" . $valueHash{elementId};
     
-        
                         my $fws = $self;
     
                         ## no critic
@@ -1782,12 +1784,21 @@ sub displayAdminPage {
                         # now put it back
                         #
                         $self = $fws;
+   
+                        #
+                        # set head and foot from cache so we can use it for our admin page
+                        #
+                        $self->{tinyMCEEnable} = 1;
+                        $self->{bootstrapEnable} = 1;
+                        $self->setPageCache();
     
                         #
                         # just in case we havn't rendered yet, here we go!  if we have already rendered  (like we should have
                         # than this just gets passed by
                         #
-                        $self->printPage( content => $valueHash{html}, head => $self->FWSHead() );
+                        #$self->printPage( content => $valueHash{html} . $fws->{ 'pageFoot' } , head => $self->FWSHead() );
+                    #    $self->printPage( content => $valueHash{html} . $fws->{ 'pageFoot' } , head => $self->{pageHead} );
+                        $self->printPage( content => $valueHash{html}, head => $self->FWSHead(), foot => $self->siteValue( 'pageFoot' )  );
                     }
                 }
             }
@@ -1958,7 +1969,7 @@ sub GNFTree {
     # create the table the line item will sit in
     #
     my $treeHTML = "<div id=\"block_" . $paramHash{id} . "\">";
-    $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"row_" . $paramHash{id} . "\">";
+    $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRow " . $paramHash{class} . " FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"row_" . $paramHash{id} . "\">";
     
     #my $treeHTML .= "<div class=\"FWSTreeEventRow " . $paramHash{class} . "\" onmouseover=\"this.className='FWSTreeEventRowHighlight';\" onmouseout=\"this.className='FWSTreeEventRow';\" id=\"block_" . $paramHash{id} . "\">";
 
@@ -2003,7 +2014,7 @@ sub GNFTree {
         }
 
         #
-        #
+        # add up to 10 fields if needed
         #
         
         for ( my $i = 1; $i < 10; $i++ ) {
@@ -2038,7 +2049,7 @@ sub GNFTree {
         if ( $paramHash{addHiddenField1} ) {
             $onClickGo .= "&" . $paramHash{addHiddenField1} . "='+escape(document.getElementById('add_" . $paramHash{addHiddenField1} . '_' . $paramHash{parentId} . "').value)+'";
         }
-        for (my $i = 1; $i < 10; $i++) {
+        for ( my $i = 1; $i < 10; $i++ ) {
             if ( $paramHash{'addField' . $i} ) {
                 $onClickGo .= "&" . $paramHash{'addField' . $i} . "='+escape(document.getElementById('add_" . $paramHash{'addField' . $i} . '_' . $paramHash{parentId} . "').value)+'";
             }
@@ -2068,12 +2079,13 @@ sub GNFTree {
         if ( $paramHash{searchOnClick} || $hasLabel ) {
             $treeHTML .= "<div class=\"FWSTreeSearch\">";
             $treeHTML .= $self->FWSIcon( 
-                            icon    => "go_16.png",
-                            onClick => $paramHash{onClick1} . $paramHash{searchOnClick},
-                            id      => "sel_" . $paramHash{id} . "_" . $paramHash{parentId},
-                            alt     => "go",
-                            width   => "16",
-                            style   => "padding-left:3px;vertical-align:middle;");
+                icon    => "go_16.png",
+                onClick => $paramHash{onClick1} . $paramHash{searchOnClick},
+                id      => "sel_" . $paramHash{id} . "_" . $paramHash{parentId},
+                alt     => "go",
+                width   => "16",
+                style   => "padding-left:3px;vertical-align:middle;"
+            );
             $treeHTML .= "</div>";    
         }
         
@@ -2083,12 +2095,12 @@ sub GNFTree {
         if ( $hasLabel ) {
             $treeHTML .= "<select style=\"width:180px;\" onchange=\"";
 
-            for (my $i = 1; $i < 17; $i++) {
+            for ( my $i = 1; $i < 17; $i++ ) {
                 if ( $paramHash{'onClick' . $i} ) {$treeHTML .= "if (this.value == $i) {document.getElementById('sel_" . $paramHash{id} . "_" . $paramHash{parentId} . "').onclick=function() {" . $paramHash{'onClick' . $i} . "return false;}}" }
              }
             $treeHTML .= "\">";
     
-            for (my $i = 1; $i < 17; $i++) { if ( $paramHash{'label' . $i} ) {$treeHTML.="<option value=\"" . $i . "\">" . $paramHash{'label' . $i}."</option>"} }
+            for ( my $i = 1; $i < 17; $i++ ) { if ( $paramHash{'label' . $i} ) {$treeHTML.="<option value=\"" . $i . "\">" . $paramHash{'label' . $i}."</option>"} }
             $treeHTML.= "</select>";
         }
         if ( $paramHash{searchOnClick} ) {
@@ -2316,65 +2328,45 @@ sub _isValidSID {
 sub _processAdminAction {
     my ( $self ) = @_;
 
-    my $action = $self->formValue('pageAction');
-    my $guid   = $self->safeSQL( $self->formValue( "guid" ) );
+    my $guid   = $self->safeSQL( $self->formValue( 'guid' ) );
 
-    ##############################################################################################
     #
-    # showDeveloper: Developer Admin Controls
+    # To prevent recursive saves we have to update elements insdie the core
     #
-    ##############################################################################################
-    if (($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) && ($action eq "flushWebSearch" || $action eq "flushSearchCache" || $action eq "publishPlugin" || $action eq "deleteArchived" || $action eq "addElement" || $action eq "deleteScriptElement" || $action eq "getLiveScript" || $action eq "getArchivedScript" || $action eq "makeLiveScript" || $action eq "FWSRestore" || $action eq "FWSBackup" || $action eq "installCore" || $action eq "installPlugin" || $action eq "updatePlugin" || $action eq "updateScript" || $action eq "updateDesign" || $action eq "updatePageDesign" || $action eq "updateTemplate")) {
-                   
-         if ($action eq "addElement") {
-            my $title = $self->safeSQL($self->formValue('element_title'));
-            my $type = $self->safeSQL($self->formValue('element_type'));
-            my $parent = $self->safeSQL($self->formValue('guid'));
-            my $siteGUID = $self->safeSQL($self->formValue('site_guid'));
-    
-            #
-            # if the siteGUID if fws, then lets make a special one so fws element ALWAYS are unique no matter what
-            #
-            my $guid= $self->createGUID('e');
-            if ($self->formValue('site_guid') eq $self->fwsGUID()) { $guid= $self->createGUID('f'); }
-    
-            $self->runSQL(SQL=>"insert into element (guid,site_guid,title,type,parent) values ('".$guid."','".$siteGUID."','".$title."','".$type."','".$parent."')");
-            #
-            # cleanup
-            #
-            $self->formValue("element_type","");
-            $self->formValue("element_Title","");
+    if ($self->userValue( 'isAdmin') || $self->userValue('showDeveloper')) {
+        if ( $self->formValue( 'pageAction' )  eq 'updateScript' ) {
+            my %valueHash;
+            my $fws = $self;
+            ## no critic
+            eval $self->formValue( 'script' );
+            ## use critic
+            if ( $@ ) { $self->formValue( 'statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">'.$@.'</textarea><br/>' ) }
+            else {
+                my $script = $self->safeSQL( $self->formValue( "script" ) );
+                my $schema = $self->safeSQL( $self->formValue( "schema" ) );
+                my $checkedOut = $self->safeSQL($self->formValue("checkout"));
+                $self->runSQL(SQL=>"update element set schema_devel='".$schema."',  script_devel='".$script."', checkedout='".$checkedOut."' where guid='" . $self->safeSQL( $self->formValue( 'guid' ) )  . "'");
+                $self->_saveElementFile( $self->formValue( 'guid' ), $self->formValue('site_guid'), 'element', 'css', $self->formValue("css") );
+                $self->_saveElementFile( $self->formValue( 'guid' ), $self->formValue('site_guid'), 'element', 'js', $self->formValue("javaScript") );
+                $self->formValue( 'statusNote', '' );
+            }
         }
-
-
-        #
-        # get the id that will be used for most procedrues, and do an extra security check
-        #
-        if ($action eq "deleteScriptElement") {
-            $self->runSQL(SQL=>"delete from element where guid='".$guid."'");
-            $self->runSQL(SQL=>"delete from element where element.guid in (select guid from (select t1.guid from element as t1 left join element as t2 on t1.parent = t2.guid where t2.guid is null and t1.parent <> t1.site_guid) as delete_items)");
-        }
-
-        if ($action eq "FWSRestore") {
+        
+        if ( $self->formValue( 'pageAction' ) eq "FWSRestore") {
             $self->restoreFWS( id => $self->formValue( 'restoreName' ) );
             $self->formValue( 'restoreStatusNote', 'Restore completed' );
         }
-        if ($action eq "FWSBackup") {
 
-            my $backupID = $self->backupFWS( 
-                                excludeSiteFiles    => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
-                                id                  => $self->formValue('backupName'),
-                                excludeTables       => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
-            );
-
-            $self->formValue('backupStatusNote','Backup completed using backup name '.$backupID);
-        }
-        if ($action eq "installCore") {
+    
+    }
+    if ($self->userValue( 'isAdmin') || $self->userValue('showDeveloper') || $self->userValue('showDesigner') ) {
+        
+        if ( $self->formValue( 'pageAction' ) eq "installCore") {
         
             #
             # We only want the end part of the package for the file name
             #
-            my $distFile        = 'V2.pm';
+            my $distFile     = 'V2.pm';
             my $newV2File    = $self->{fileSecurePath} . "/FWS/" . $distFile;
         
             #
@@ -2428,6 +2420,11 @@ sub _processAdminAction {
                 $self->flushWebCache();
 
                 #
+                # get rid of any orphaned data from the install process
+                #
+                $self->_deleteOrphanedData( "data", 'guid', "guid_xref", "child");
+
+                #
                 # if there is no elements on the site yet lets install our demo site
                 #
                 if ( !@{$self->runSQL( SQL => "select 1 from data where site_guid not like 'f%' and guid not like 'h%'" )} ) {
@@ -2439,55 +2436,24 @@ sub _processAdminAction {
             }
         }
 
-        #
-        # install any plugin if called
-        #
-        if ( $action eq 'installPlugin' ) { $self->_installPlugin( plugin  => $self->safeFile( $self->formValue( 'plugin' ) ) ) }
 
-        if ( $action eq 'updateScript' ) {
-            my %valueHash;
-            my $fws = $self;
-            ## no critic
-            eval $self->formValue( 'script' );
-            ## use critic
-            if ( $@ ) { $self->formValue( 'statusNote', '<textarea style="width:800px;height:67px;font-size:10px;">'.$@.'</textarea><br/>' ) }
-            else {
-                my $script = $self->safeSQL( $self->formValue( "script" ) );
-                my $schema = $self->safeSQL( $self->formValue( "schema" ) );
-                my $checkedOut = $self->safeSQL($self->formValue("checkout"));
-                $self->runSQL(SQL=>"update element set schema_devel='".$schema."', script_devel='".$script."', checkedout='".$checkedOut."' where guid='".$guid."'");
-                $self->_saveElementFile($guid,$self->formValue('site_guid'),'element','css',$self->formValue("css"));
-                $self->_saveElementFile($guid,$self->formValue('site_guid'),'element','js',$self->formValue("javaScript"));
-                $self->formValue('statusNote','');
-            }
+        if ( $self->formValue( 'pageAction' ) eq "FWSBackup") {
+
+            my $backupID = $self->backupFWS( 
+                excludeSiteFiles    => ( $self->formValue('excludeSiteFiles') eq 'true' ) ? 1 : 0,
+                id                  => $self->formValue('backupName'),
+                excludeTables       => 'zipcode,country,cart,geo_block,' . $self->{FWSBackupExcludeTables}, 
+            );
+
+            $self->formValue('backupStatusNote','Backup completed using backup name '.$backupID);
         }
-        
-        if ($action eq "updatePageDesign") {
-            $self->_saveElementFile($guid,$self->formValue('site_guid'),'page','css',$self->formValue("pageCSS"));
-            $self->_saveElementFile($guid,$self->formValue('site_guid'),'page','js',$self->formValue("pageJS"));
-        }
-        if ($action eq "updateDesign") {
-            $self->_saveElementFile('assets',$self->{siteGUID},'site','css',$self->formValue("siteCSS"));
-            $self->_saveElementFile('assets',$self->{siteGUID},'site','js',$self->formValue("siteJS"));
-        }
-    }
-        
 
-    ##############################################################################################
-    #
-    # udpating content
-    #
-    ##############################################################################################
-
-    if ($self->userValue('isAdmin') || $self->userValue('showDeveloper')  || $self->userValue('showContent') || $self->userValue('showDesign')) {
-        
-
-        if ($action eq "clearFWSLog") {
+        if ( $self->formValue( 'pageAction' ) eq "clearFWSLog") {
             unlink $self->{fileSecurePath} . '/FWS.log';
             $self->formValue("logStatusNote", "The FWS.log file was cleared");
         }
 
-        if ($action eq "flushSessions") {
+        if ( $self->formValue( 'pageAction' ) eq "flushSessions") {
             if ( $self->formValue( 'months' ) ne '' ) { 
                 $self->runSQL( SQL => "delete from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod => -( $self->formValue( 'months' ) ) ) . "'");
                 if ( $self->DBType() =~ /^mysql$/i ) { $self->runSQL( SQL => "optimize table fws_sessions" ) }
@@ -2495,65 +2461,19 @@ sub _processAdminAction {
             }
         }
 
-        if ($action eq "flushSearchCache") { 
+        if ( $self->formValue( 'pageAction' ) eq "flushSearchCache") { 
             my ( $dataUnits ) = $self->flushSearchCache( $self->{siteGUID} ) ;
             $self->formValue( "statusNote", "Your search cache was rebuilt using a total of " . $dataUnits . " records.");
         }
     
-        if ($action eq "flushWebCache") { 
+        if ( $self->formValue( 'pageAction' ) eq "flushWebCache") { 
             $self->flushWebCache();
             $self->formValue( "statusNote", "Your web search cache was emptied" );
         }
     
     }        
 
-    ##############################################################################################
-    #
-    # showAdminUsers : Admin Users admin
-    #
-    ##############################################################################################
-
-    if ($self->userValue('isAdmin') || $self->userValue('showAdminUsers')) {
-
-        if ($action eq "deleteMessage") {
-            $self->runSQL(SQL=>"delete from email_queue where guid='".$guid."'");
-        }
-        
-    }
-
-    ##############################################################################################
-    #
-    # showSiteUsers : Profile Users admin
-    #
-    ##############################################################################################
-
-    if ($self->userValue('isAdmin') || $self->userValue("showSiteUsers")) {
-
-        if ($action eq "groupAdd") {
-            my $group_name = $self->safeSQL($self->formValue("group_name"));
-            my $guid = $self->createGUID( 'g' );
-            $self->runSQL( SQL => "insert into groups (guid,name) values ('" . $guid . "','" . $group_name . "')" );
-        }
-    
-        if ($action eq "profileGroupsXRefAdd") {
-            my $profile_guid       = $self->safeSQL($self->formValue("profile_guid"));
-            my $groups_guid    = $self->safeSQL($self->formValue("groups_guid"));
-            $self->runSQL(SQL=>"insert into profile_groups_xref (profile_guid,groups_guid) values ('".$profile_guid."','".$groups_guid."')");
-        }
-    
-        if ($action eq "profileGroupsXRefDelete") {
-            my $profile_guid       = $self->safeSQL($self->formValue("profile_guid"));
-            my $groups_guid    = $self->safeSQL($self->formValue("groups_guid"));
-            $self->runSQL(SQL=>"delete from profile_groups_xref where profile_guid='" . $profile_guid . "' and groups_guid='" . $groups_guid . "'");
-        }
-    
-        if ($action eq "groupDelete") {
-            $self->runSQL(SQL=>"delete from groups where guid='" . $guid . "'");
-       }
-
-    }
-
-    return 1;    
+    return;    
 }
 
 sub _pullDistFile {
@@ -2685,8 +2605,6 @@ sub _createLineMap {
     return $lineHTML
 }
 
-
-
 sub _editModeLink {
     my ( $self, $conName, $linkSpacer ) = @_;
     my $hideConCSSJS = "\$('#" . $conName . "').hide('slow');";
@@ -2716,6 +2634,19 @@ sub _packageLine {
     $line .= "</tr>";
     return $line;
 }
+
+
+sub _checkScript {
+    my ( $self, $moduleName ) = @_;
+    my $errorReturn;
+
+    if ( !$self->{FWSScriptCheck}->{registerPlugins} ) { $errorReturn .= '<li>Your script file is missing $fws->registerPlugins(); this should be added.</li>' }
+
+    if ( $errorReturn ) { $errorReturn = '<ul>' . $errorReturn . '</ul>' }
+    return $errorReturn;
+}
+
+
 
 sub _checkIfModuleInstalled {
     my ( $self, $moduleName ) = @_;
@@ -2866,7 +2797,8 @@ sub _installCountry {
 
 sub _installHeader {
     my ( $self, $name ) = @_;
-    return "Content-Type: text/html; charset=UTF-8\n\n<html><head><title>Installing New " . $name . " Package</title></head>".
+    return "Content-Type: text/html; charset=UTF-8\n\n<html><head><title>Installing New " . $name . " Package</title>" . 
+    "</head>".
     "<body><h2>Installing New " . $name . " Package</h2><br/>".
     "<b>" . $name . " Package</b><hr/>".
     "Doing pre install cleanup";

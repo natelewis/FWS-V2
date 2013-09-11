@@ -11,11 +11,11 @@ FWS::V2::Check - Framework Sites version 2 validation and checking methods
 
 =head1 VERSION
 
-Version 0.003
+Version 1.13071816
 
 =cut
 
-our $VERSION = '0.003';
+our $VERSION = '1.13071816';
 
 
 =head1 SYNOPSIS
@@ -116,7 +116,7 @@ sub isCaptchaValid {
 
 =head2 isStrongPassword
 
-FWS standard strong password checker.   Upper, lower, symbol, at least 6 chars.
+FWS standard strong password checker.   Upper, lower, number, at least 6 chars.
 
 =cut
 

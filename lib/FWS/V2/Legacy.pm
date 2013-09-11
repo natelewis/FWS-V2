@@ -10,11 +10,11 @@ FWS::V2::Legacy - Framework Sites version 2 compatibility and legacy methods and
 
 =head1 VERSION
 
-Version 0.004
+Version 1.13052223
 
 =cut
 
-our $VERSION = '0.004';
+our $VERSION = '1.13052223';
 
 
 =head1 SYNOPSIS
@@ -468,6 +468,19 @@ Renamed to setFormValues()
 sub getFormValues {
     my ( $self ) = @_;
     return $self->setFormValues();
+}
+
+
+=head2 getPluginVersion
+
+Single extraction of version replaced by pluginInfo()
+
+=cut
+
+sub getPluginVersion {
+    my ( $self, $pluginFile ) = @_;
+    my %pluginInfo = $self->pluginInfo( $pluginFile );
+    return $pluginInfo{version};
 }
 
 
