@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 0.007
+Version 1.13072120
 
 =cut
 
-our $VERSION = '0.007';
+our $VERSION = '1.13072120';
 
 
 =head1 SYNOPSIS
@@ -148,7 +148,9 @@ sub setFormValues {
     #
     # if fws_lang is not set, lets set it
     #
-    if ( $self->{form}{fws_lang} ) { $self->language( uc( $self->{form}{fws_lang} ) ) }
+    if ( $self->{form}{fws_lang} ) {
+        $self->language( uc( $self->{form}{fws_lang} ) )
+    }
 
     return;
 }
@@ -391,6 +393,11 @@ sub setSiteFriendly {
                     #
                     $self->formValue( 'id', $p );
                     ( $p ) = @{$self->runSQL( SQL => "select data.guid from data left join site on site.guid=data.site_guid where site.sid='" . $self->safeSQL( $sid ) . "' and friendly_url='" . $self->safeSQL( $pageFriendlyURL ) . "'" )};
+
+                    #
+                    # If its blank from the query, then we are talking about the guid from the post
+                    #
+                    if ( !$p ) { $p = $pageFriendlyURL }
                 }
                 if ( $p ne '' ) {
 
@@ -458,7 +465,7 @@ Set the languages the site will use.  The first one in the list will be consider
 sub languageArray {
     my ( $self, @languageArray ) = @_;
     if ( defined $languageArray[0] ) { $self->{_languageArray} = uc( join( '|', @languageArray ) ) }
-    if ( $self->{_languageArray} eq '' ) { return }
+    if ( !$self->{_languageArray} ) { return }
     return ( split( /\|/, $self->{_languageArray} ) );
 }
 
@@ -574,16 +581,6 @@ sub cryptPassword {
 sub _localLogin {
     my ( $self ) = @_;
 
-
-    #
-    # for scope reasons lets define those known in case we figure them out and need to create a new accoun
-    # with the vars at some point
-    #
-    my $FBId;
-    my $FBAuthEmail;
-    my $FBName;
-    my $FBToken = $self->formValue( 'access_token' );
-
     #
     # Login if the site critera works for an admin
     #
@@ -640,73 +637,19 @@ sub _localLogin {
 
 
     #
-    # get our facebook cookie session info
-    #
-    if ( $self->siteValue( 'facebookAppId' ) ne '' && $self->siteValue( 'facebookConnect' ) eq '1' && $self->formValue( 'access_token' ) ne '' ) {
-
-        my $returnRef = $self->HTTPRequest( url => 'https://graph.facebook.com/me?access_token=' . $FBToken );
-
-        #
-        #  parse the JSON we get back from FB low tech (So we don't need to require extra JSOn Parsing libs
-        #
-        my $firstName;
-        my $lastName;
-        while ( $returnRef->{content} =~ /\"(.*?)\":\"(.*?)\"/g ) {
-            my $field = $1;
-            my $value = $2;
-            if ( $FBId eq '' && $field eq 'id' )  { $FBId         = $value }
-            if ( $field eq 'first_name' )         { $firstName    = $value }
-            if ( $field eq 'email' )              { $FBAuthEmail  = $value }
-            if ( $field eq 'last_name' )          { $lastName     = $value }
-        }
-
-        #
-        # decode any funny chars FB might have in the strings
-        #
-        $FBName         = $firstName . ' ' . $lastName;
-        $FBName         = $self->convertUnicode( $FBName );
-        $FBAuthEmail    = $self->convertUnicode( $FBAuthEmail );
-        if ( $self->formValue( 'b' ) eq '' ) {$self->formValue( 'b', $FBAuthEmail ) }
-    }
-
-    #
     # Login as a profile
     #
-    if ( ( ( $self->formValue( 'b' ) ne '' && $self->formValue( 'password' ) ne '' ) || $FBAuthEmail ne '' )  && $self->formValue( 'pageAction' ) ne 'logout' ) {
+    if ( ( ( $self->formValue( 'b' ) ne '' && $self->formValue( 'password' ) ne '' ) )  && $self->formValue( 'pageAction' ) ne 'logout' ) {
         #
         # set the BH field in case we need to use it to show in the field
         #
         $self->formValue( 'bh', $self->formValue( 'b' ) );
-        my ( $userGUID, $fb_access_token, $FBCheckEmail, $active, $passCheck, $googleAppsId ) = @{$self->runSQL( SQL => "select guid, fb_access_token, email, active, profile_password, google_id from profile where email like '" . $self->safeSQL( $self->formValue( 'b' ) ) . "'" )};
+        my ( $userGUID, $active, $passCheck, $googleAppsId ) = @{$self->runSQL( SQL => "select guid, active, profile_password, google_id from profile where email like '" . $self->safeSQL( $self->formValue( 'b' ) ) . "'" )};
 
         my $formPassword = $self->cryptPassword( $self->formValue( 'password' ) );
-        if ( ( $passCheck eq $formPassword && $passCheck ne '' ) || $FBAuthEmail eq $self->formValue( 'b' ) ) {
-
-            #
-            # if all the setting say to do so, and we have a match that we are on the account we are talking about then check to see
-            # if we can create a new account
-            #
-            if ( $FBAuthEmail eq $self->formValue( 'b' ) && $FBCheckEmail eq '' && $self->siteValue( 'facebookAutoCreateAccount' ) eq '1' ) {
-                my %newUser;
-                $newUser{email}           = $FBAuthEmail;
-                $newUser{name}            = $FBName;
-                $newUser{FBAccessToken}   = $FBToken;
-                $newUser{FBId}            = $FBId;
-                $newUser{active}          = '1';
-                $newUser{password}        = $self->createPassword( composition => '1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM', lowLength => 6, highLength => 8 );
-                $self->saveUser( %newUser );
-                $active = 1;
-            }
+        if ( ( $passCheck eq $formPassword && $passCheck ne '' ) ) {
 
             if (!$active) {
-                if ( $FBAuthEmail ne '' &&  $FBAuthEmail ne $self->formValue( 'b' ) ) {
-                    #
-                    # NO MESSAGE FOR FB FAIL Just pretend like we are not using facebook connect
-                    #
-                }
-                else {
-                    $self->formValue( 'statusNote', $self->formValue( 'statusNote' ) . 'Your account has been disabled.' ) ;
-                }
                 $self->formValue( 'statusNote', $self->formValue( 'statusNote' ) . 'Your account has been disabled.' )
             }
             else {
@@ -765,7 +708,6 @@ sub _localLogin {
             # just to make sure, if did come in to 'admin' then mark isAdmin to 1
             #
             $self->userValue( 'isAdmin', 1 );
-
 
             #
             # Restrict the login if they came in on the adminSafePassword
@@ -834,6 +776,48 @@ sub saveFormValue {
     return $self->_saveWithSessionHash( %saveWithSession );
 }
 
+=head2 saveSession
+
+Commit the current session to the sessions table.   This is only needed if you need to cmmit the session before you perform a 302 redirect or if yuor immitating the pringPage() method with a custom one.   Not the session does actually do anything if its values have not chagned from its innital load from the session table.
+
+    #
+    # This should go in a 'init' element or located int he go.pl file
+    # at any point it can be referenced via formValue
+    #
+    $fws->saveSession();
+
+=cut
+
+sub saveSession {
+    my ( $self, $fieldName ) = @_;
+
+    #
+    # get the save with session hash put together
+    #
+    my $sessionScript = '';
+    my %saveWithSessionHash = $self->_saveWithSessionHash();
+    for my $sessionKey ( keys %saveWithSessionHash ) {
+        my $keyValue = $self->formValue( $sessionKey );
+        $sessionScript .= $sessionKey . '|' . $self->urlEncode( $keyValue ) . '|';
+    }
+
+    #
+    # set the editMode in range if it is blank
+    #
+    if ( !$self->formValue( 'editMode' ) ) { $self->formValue( 'editMode', 0 ) }
+
+    #
+    # Set the cookie and update the session.. and other groovy header rutines
+    # only if it is diffrent lets update it
+    #
+    if ( $self->formValue( 'FWS_SESSION' ) ne $self->{userLoginId} . '|' . $self->language() . '|' . $self->{adminLoginId} . '|' . $ENV{REMOTE_ADDR} . '|' . $self->formValue( 'editMode' ) . '|' . $self->{affiliateId} . '|' . $self->{affiliateExp} . '|' . $self->{adminSafeMode} . '|' . $sessionScript ) {
+        #
+        # run the SQL to update the session
+        #
+            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "', b='" . $self->safeSQL( $self->{userLoginId} ) . "', s='" . $self->safeSQL( $self->{adminSafeMode} ) . "', bs='" . $self->safeSQL( $self->{adminLoginId} ) . "', ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "', e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "', a='" . $self->safeSQL( $self->{affiliateId} ) . "', a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "', extra_value='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" );
+    }
+}
+
 
 =head2 setSiteValues
 
@@ -850,7 +834,6 @@ Set default values derived from the site settings for a site.  This will also se
     $fws->setSiteValues( 'othersite' );
 
 =cut
-
 
 sub setSiteValues {
     my ( $self, $siteId ) = @_;
@@ -904,7 +887,7 @@ sub setSiteValues {
         # xref that does not have a parent it will be flipped to 'page' 
         #
         $self->saveData( type => 'home', parent => '', newGUID => $homeGUID );
-        }
+    }
 
     #
     # check to see if there is no level... if so then we need create a new admin account
@@ -997,9 +980,6 @@ sub userValue {
     return $self->{user}{$field};
 }
 
-############################################################################################
-# HELPER: organize and combine what formValues that will be saved with the session
-############################################################################################
 
 sub _saveWithSessionHash {
     my ( $self, %saveWithSessionHash ) = @_;

@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 0.005
+Version 1.13071816
 
 =cut
 
-our $VERSION = '0.005';
+our $VERSION = '1.13071816';
 
 
 =head1 SYNOPSIS
@@ -1044,11 +1044,13 @@ sub elementArray {
     if ( $paramHash{siteGUID} ) { $addToWhere .= " and site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "'" }
 
     #
-    # match only with matching plugin
-    # all other search cretira is overwritten! 
+    # match only with matching plugin, all other search cretira is overwritten! 
+    # And these plugins are only alowed to be shows if they are the root of a site
     #
-    if ( $paramHash{plugin} ) { $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "'" }
-
+    if ( $paramHash{plugin} ) {
+        # TODO update to not use s%, have it actually xref the site table for parents in case later we descide they won't all start with s
+        $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "' and parent like 's%'"
+    }
 
     if ( $paramHash{tags} ) {
         my @tagsArray = split( /,/, $paramHash{tags} );
@@ -1841,6 +1843,11 @@ sub saveData {
     my ( $self, %paramHash ) = @_;
 
     #
+    # run any pre scripts and return what we were passed
+    #
+    %paramHash = $self->runScript('preSaveData',%paramHash);
+
+    #
     # if siteGUID is blank, lets set it to the site we are looking at
     #
     $paramHash{siteGUID} ||= $self->{siteGUID};
@@ -1983,7 +1990,7 @@ sub saveData {
     # loop though and update every one that is diffrent
     #
     for my $key ( keys %paramHash ) {
-        if ( $key !~ /^ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid$/ ) {
+        if ( $key !~ /^ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|default_element|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid$/ ) {
             $self->saveExtra( table => 'data', siteGUID => $paramHash{siteGUID}, guid => $paramHash{guid}, field => $key, value => $paramHash{$key} );
         }
     }
@@ -1997,6 +2004,11 @@ sub saveData {
     # update the cache data directly
     #
     $self->updateDataCache(%paramHash);
+
+    #
+    # run any post scripts 
+    #
+    %paramHash = $self->runScript('postSaveData',%paramHash);
 
     #
     # return anything created in the paramHash that was changed and already present
@@ -3323,7 +3335,7 @@ sub _fullElementHash {
         # Do alpha sorting and add parent refernces if needed
         #
         my $alphaOrd = 0;
-         for my $guid ( sort { $self->{_fullElementHashCache}->{$a}{title} cmp $self->{_fullElementHashCache}->{$b}{title} } keys %{$self->{_fullElementHashCache}}) {
+        for my $guid ( sort { $self->{_fullElementHashCache}->{$a}{title} cmp $self->{_fullElementHashCache}->{$b}{title} } keys %{$self->{_fullElementHashCache}}) {
             $alphaOrd++;
             $self->{_fullElementHashCache}->{$guid}{alphaOrd} = $alphaOrd;
             my $type = $self->{_fullElementHashCache}->{$guid}{type};
@@ -3356,20 +3368,28 @@ sub _recordInit {
         $paramHash{_guidLeader} ||= 'r';
         $paramHash{siteGUID}    = $self->safeSQL( $paramHash{siteGUID} );
         $paramHash{guid}        = $self->createGUID( $paramHash{_guidLeader} );
+
+        #
+        # if newGUID is set, lets use that as the guid
+        #
+        if ( $paramHash{newGUID} ) {
+            $paramHash{guid} = $paramHash{newGUID};
+        }
+
         $self->runSQL( DBH => $paramHash{DBH}, SQL => "insert into " . $self->safeSQL( $paramHash{_table} ) . " (guid,site_guid,created_date) values ('" . $self->safeSQL( $paramHash{guid} ) . "','" . $self->safeSQL( $paramHash{siteGUID} ) . "','" . $self->formatDate( format => 'SQL' ) . "')" );
-    }
 
-
-    #
-    # TODO: this shouldn't be here.  They need to be exported out to the plugins that need them
-    #
-    if (( $paramHash{_table} eq 'directory' || $paramHash{_table} eq 'profile') && !$paramHash{pin} ) {
 
         #
-        # set the dirived stuff so nobody gets sneeky and tries to pass it to the procedure
+        # Global pin support, if you have a pin field, but its not populated, populate it.
         #
-        $paramHash{pin} = $self->createPin();
-        $self->runSQL( DBH => $paramHash{DBH}, SQL => "update " . $self->safeSQL( $paramHash{_table} ) . " set pin='" . $self->safeSQL( $paramHash{pin} ) . "' where guid='" . $self->safeSQL( $paramHash{guid} ) . "'" );
+        if ( !$paramHash{pin} && $self->{dataSchema}{$paramHash{_table}}{pin}{type} ) {
+    
+            #
+            # set the dirived stuff so nobody gets sneeky and tries to pass it to the procedure
+            #
+            $paramHash{pin} = $self->createPin();
+            $self->runSQL( DBH => $paramHash{DBH}, SQL => "update " . $self->safeSQL( $paramHash{_table} ) . " set pin='" . $self->safeSQL( $paramHash{pin} ) . "' where guid='" . $self->safeSQL( $paramHash{guid} ) . "'" );
+        }
     }
     return %paramHash;
 }

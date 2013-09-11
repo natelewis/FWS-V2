@@ -11,11 +11,11 @@ FWS::V2::Cache - Framework Sites version 2 data caching
 
 =head1 VERSION
 
-Version 0.0001
+Version 1.13082820
 
 =cut
 
-our $VERSION = '0.0001';
+our $VERSION = '1.13082820';
 
 
 =head1 SYNOPSIS
@@ -151,6 +151,8 @@ sub flushCache {
 	# eat each cache in the dir
 	#
     foreach my $dirFile (@getDir) { if (-d $cacheDir.'/'.$dirFile) { $self->deleteCache( key => $dirFile ) } }
+
+    $self->runScript( 'postFlushCache' );
     
     $self->FWSLog( 'Cache Flushed' );
 	
@@ -175,6 +177,8 @@ sub flushWebCache {
     my @fileArray = @{$self->fileArray( directory => $self->{filePath} . '/fws/cache' )};
     for my $i ( 0 .. $#fileArray ) { unlink $fileArray[$i]{fullFile} }
 
+    $self->runScript( 'postFlushWebCache' );
+    
     $self->FWSLog( 'Web Cache Flushed' );
 
     return;
@@ -227,19 +231,22 @@ sub cacheValue {
 }
 
 
-=head2 cacheHead
+=head2 setPageCache
 
-Used internally to craete combined head css and js cached files
+Used internally to craete combined head css and js cached files so they can be used on the page.
 
 =cut
 
-sub cacheHead {
+sub setPageCache {
     my ( $self, %paramHash ) = @_;
 
     use Digest::MD5  qw(md5_hex);
 
-    my $cacheHTML;
-    my $globalJS;
+    #
+    # PH for settables
+    #
+    my $pageHead;
+    my $pageFoot;
     my $cacheFileName = $self->{siteId} . '-';
 
     #
@@ -328,6 +335,17 @@ sub cacheHead {
                     close $FILE;
                 }
             }
+
+            if ( $self->{bootstrapEnable} ) {
+                my $bootstrapCSS = $self->{filePath} . "/fws/bootstrap-2.3.2/css/bootstrap.min.css";
+                if ( -e $bootstrapCSS ) {
+                    open ( my $FILE, "<", $bootstrapCSS ) || $self->FWSLog( "Could not read file:  " .  $bootstrapCSS );
+                    print $CSS "\n\n/* boostrap.min.css */\n\n";
+                    while ( my $line = <$FILE> ) { print $CSS $line }
+                    close $FILE;
+                }
+            }
+
 
             #
             # add tiny mce.  lets do it first because it seems that if it loads after jquery dialog you might be able to dialog before you can render edit tools
@@ -428,20 +446,38 @@ sub cacheHead {
             close $CSS;
             close $JS;
         }
+        
+        $pageFoot .= "<script type=\"text/javascript\" src=\"" . $cacheWeb . ".js\"></script>\n";
 
         if ( $self->{tinyMCEEnable}  && !$paramHash{jqueryOnly} ) {
-            $cacheHTML .= "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/" . $self->{tinyMCEPath} . "/tiny_mce.js\"></script>\n";
+            $pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/" . $self->{tinyMCEPath} . "/tiny_mce.js\"></script>\n" . $pageFoot;
         }
 
-        if ( keys %jqueryHash ) {
-            $cacheHTML .= "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n";
-        }
-        $cacheHTML .= "<script type=\"text/javascript\" src=\"" . $cacheWeb . ".js\"></script>\n";
 
-        if ( !$paramHash{noCSS} ) { $cacheHTML .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . $cacheWeb . ".css\"/>\n" }
+        #
+        # if we are flaged for boostrap, add it!
+        #
+        if ( $self->{bootstrapEnable} ) {
+            $pageFoot = "\n<script src=\"" . $self->{fileWebPath} . "/fws/bootstrap-2.3.2/js/bootstrap.min.js\"></script>\n" . $pageFoot;
+        }
+
+
+
+        if ( keys %jqueryHash && !$self->{loadJQueryInHead} ) {
+            $pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n" . $pageFoot;
+        }
+            
+        if ( !$paramHash{noCSS} ) { $pageHead .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . $cacheWeb . ".css\"/>\n" }
     }
 
-    return $cacheHTML;
+
+    #
+    # set them to be used in templatese
+    #
+    $self->siteValue( 'pageHead', $pageHead .  $self->siteValue( 'pageHead' ) );
+    $self->siteValue( 'pageFoot', $pageFoot .  $self->siteValue( 'pageFoot' ) );
+
+    return $pageHead . $pageFoot;
 }
 
 
