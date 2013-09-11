@@ -11,11 +11,11 @@ FWS::V2::Cache - Framework Sites version 2 data caching
 
 =head1 VERSION
 
-Version 1.13071816
+Version 1.13082820
 
 =cut
 
-our $VERSION = '1.13071816';
+our $VERSION = '1.13082820';
 
 
 =head1 SYNOPSIS
@@ -151,6 +151,8 @@ sub flushCache {
 	# eat each cache in the dir
 	#
     foreach my $dirFile (@getDir) { if (-d $cacheDir.'/'.$dirFile) { $self->deleteCache( key => $dirFile ) } }
+
+    $self->runScript( 'postFlushCache' );
     
     $self->FWSLog( 'Cache Flushed' );
 	
@@ -175,6 +177,8 @@ sub flushWebCache {
     my @fileArray = @{$self->fileArray( directory => $self->{filePath} . '/fws/cache' )};
     for my $i ( 0 .. $#fileArray ) { unlink $fileArray[$i]{fullFile} }
 
+    $self->runScript( 'postFlushWebCache' );
+    
     $self->FWSLog( 'Web Cache Flushed' );
 
     return;
