@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.13092509
+Version 1.13092622
 
 =cut
 
-our $VERSION = '1.13092509';
+our $VERSION = '1.13092622';
 
 
 =head1 SYNOPSIS
@@ -1435,10 +1435,11 @@ sub queueArray {
     if ( $paramHash{type} )           { $whereStatement .= " and type = '" . $self->safeSQL( $paramHash{type} ) . "'" }
 
     #
-    # add date critiria if appicable
+    # add date critiria if applicable
     #
     if ( $paramHash{dateTo} )         { $whereStatement .= " and scheduled_date <= '" . $self->safeSQL( $paramHash{dateTo} ) . "'" }
-    if ( $paramHash{dateFrom} )       { $whereStatement .= " and scheduled_date >= '" . $self->safeSQL( $paramHash{dateFrom} ) . "'" }
+    $paramHash{dateFrom} ||= "0000-00-00 00:00:00";
+    $whereStatement .= " and scheduled_date >= '" . $self->safeSQL( $paramHash{dateFrom} ) . "'";
 
     my $arrayRef = $self->runSQL( SQL => "select profile_guid,directory_guid,guid,type,hash,draft,from_name,queue_from,queue_to,body,subject,digital_assets,transfer_encoding,mime_type,scheduled_date from queue where " . $whereStatement . $keywordSQL . " ORDER BY scheduled_date DESC" );
     my @queueArray;
@@ -1615,7 +1616,7 @@ sub processQueue {
     #
     # get the queue
     #
-    my @queueArray = $self->queueArray();
+    my @queueArray = $self->queueArray( dateTo => $self->formatDate( format => 'SQL' ) );
 
     #
     # make sure its not a draft, or if the type is 
