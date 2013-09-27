@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.13081221
+Version 1.13092509
 
 =cut
 
-our $VERSION = '1.13081221';
+our $VERSION = '1.13092509';
 
 =head1 SYNOPSIS
 
@@ -1516,7 +1516,7 @@ sub endElement {
 
 =head2 convertUnicode
 
-need doc
+Convert from unicode charcters from web services to a standard character.
 
 =cut
 
@@ -1529,7 +1529,7 @@ sub convertUnicode {
 
 =head2 hex2chr
 
-need doc
+Convert hex to its ascii character.
 
 =cut
 
