@@ -1437,8 +1437,8 @@ sub queueArray {
     #
     # add date critiria if appicable
     #
-    if ( $paramHash{dateTo} )         { $whereStatement .= " and scheduled_date <= '" . $self->safeSQL( $paramHash{dateTo} ) . "'";
-    if ( $paramHash{dateFrom} )       { $whereStatement .= " and scheduled_date >= '" . $self->safeSQL( $paramHash{dateFrom} ) . "'";
+    if ( $paramHash{dateTo} )         { $whereStatement .= " and scheduled_date <= '" . $self->safeSQL( $paramHash{dateTo} ) . "'" }
+    if ( $paramHash{dateFrom} )       { $whereStatement .= " and scheduled_date >= '" . $self->safeSQL( $paramHash{dateFrom} ) . "'" }
 
     my $arrayRef = $self->runSQL( SQL => "select profile_guid,directory_guid,guid,type,hash,draft,from_name,queue_from,queue_to,body,subject,digital_assets,transfer_encoding,mime_type,scheduled_date from queue where " . $whereStatement . $keywordSQL . " ORDER BY scheduled_date DESC" );
     my @queueArray;
