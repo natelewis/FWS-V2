@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.13072120
+Version 1.13092509
 
 =cut
 
-our $VERSION = '1.13072120';
+our $VERSION = '1.13092509';
 
 
 =head1 SYNOPSIS
@@ -96,6 +96,13 @@ sub FWSHead {
 
     return $html . $self->siteValue( 'pageHead' ) . $self->siteValue( 'templateHead' );
 }
+
+
+=head2 FWSJava
+
+Return the lazy loaded JavaScript including anything added to the pageFoot.
+
+=cut
 
 sub FWSJava { 
     my ( $self ) = @_;
