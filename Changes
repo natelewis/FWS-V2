@@ -1,5 +1,5 @@
 Revision history for FWS-V2
-1.1305
+1.1305 2013-09-09
  - FULL WEB RELEASE! You can now run FWS web renderings from FWS::V2
  - Added formMap methods as part of core release
  - Minor change to prevent a bug with tinymce
@@ -11,12 +11,14 @@ Revision history for FWS-V2
  - Add Geo.pm methods
  - Add Display.pm methods
  - Add Admin.pm methods
+ - Bootstrap 2 Support
  - siteFriendly update that extends support for pageFriendlyURLs
  - Major update to move more admin modules into the FWS admin package
  - Many minor bug fixes
  - Version of FWS udpated to match  web distro version
  - regesterPlugins() now run all plugins via the developer admin
  - Sub element AJAX wrappers are now present for delete calls on nested elements
+ - Added postFlushWebCache hook
 
 0.009 2012-10-16
  - Add an ease of use method for date comparing: dateDiff()
