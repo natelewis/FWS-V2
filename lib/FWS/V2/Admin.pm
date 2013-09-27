@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.13071816
+Version 1.13092509
 
 =cut
 
-our $VERSION = '1.13071816';
+our $VERSION = '1.13092509';
 
 
 =head1 SYNOPSIS
@@ -1356,6 +1356,7 @@ sub aceTextArea {
     my ( $self, %paramHash ) = @_;
 
     my $statusContainer = 'scriptChangedStatus';
+    my $modeScript;
 
     if ( $paramHash{statusContainer} ) { $statusContainer = $paramHash{statusContainer} }
     
@@ -1371,36 +1372,73 @@ sub aceTextArea {
             "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
             "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n"
         );
+        $self->addToHead( 
+            "<style>" .
+            ".FWSACEFullscreen .FWSACEFullscreen-editor{" . 
+                "height: auto!important;" .
+                "width: auto!important;" .
+                "border: 0;" .
+                "margin: 0;" .
+                "position: fixed !important;" .
+                "top: 0;" .
+                "bottom: 0;" .
+                "left: 0;" .
+                "right: 0;" .
+                "z-index: 10000;" .
+            "}" .
+            ".FWSACEFullscreen {" . 
+                "overflow: hidden;" .
+            "}" .  
+            "</style>\n"
+        );
+        
+        #
+        # mark that we loaded it so we don't do this again
+        #
         $self->{FWSAceJSLoaded}++;
     }
-
+        
+    $modeScript .= 'var FWSAceDOM = require("ace/lib/dom");';
 
     #
     # set the modes if we have them
     #
-    my $modeScript;
     if ( $paramHash{mode} eq 'html' ) {
-        $modeScript = "var HTMLScriptMode = require(\"ace/mode/html\").Mode;" . $paramHash{name} . ".getSession().setMode(new HTMLScriptMode());";
+        $modeScript .= "var HTMLScriptMode = require(\"ace/mode/html\").Mode;" . $paramHash{name} . ".getSession().setMode(new HTMLScriptMode());\n";
     }
     if ( $paramHash{mode} eq 'javascript' ) {
-        $modeScript = "var JSScriptMode = require(\"ace/mode/javascript\").Mode;" . $paramHash{name} .".getSession().setMode(new JSScriptMode());";
+        $modeScript .= "var JSScriptMode = require(\"ace/mode/javascript\").Mode;" . $paramHash{name} .".getSession().setMode(new JSScriptMode());\n";
     }
     if ( $paramHash{mode} eq 'perl' ) {
-        $modeScript = "var HTMLScriptMode = require(\"ace/mode/perl\").Mode;" . $paramHash{name} . ".getSession().setMode(new HTMLScriptMode());";
+        $modeScript .= "var HTMLScriptMode = require(\"ace/mode/perl\").Mode;" . $paramHash{name} . ".getSession().setMode(new HTMLScriptMode());\n";
     }
     if ( $paramHash{mode} eq 'css' ) {
-        $modeScript = "var CSSScriptMode = require(\"ace/mode/css\").Mode;" . $paramHash{name} . ".getSession().setMode(new CSSScriptMode());";
+        $modeScript .= "var CSSScriptMode = require(\"ace/mode/css\").Mode;" . $paramHash{name} . ".getSession().setMode(new CSSScriptMode());\n";
     }
 
-    $self->addToFoot( "<script type=\"text/javascript\">" .
-                    "\$(document).ready(function() {" .
-                    "window." . $paramHash{name} . " = ace.edit(\"" . $paramHash{name} . "\");" .
-                    $paramHash{name} . ".setTheme(\"ace/theme/" . $self->{aceTheme} . "\");" .
-                    $paramHash{name} . ".getSession().setUseWrapMode(true);" .
-                    $paramHash{name} . ".setShowPrintMargin(false);" . $modeScript .
-                    $paramHash{name} . ".getSession().on('change', function () {document.getElementById('" . $statusContainer . "').innerHTML='[Not Saved]';});" .
-                    "});" .
-                    "</script>\n");
+    $modeScript .= $paramHash{name} . '.commands.addCommand({' .
+        'name: "Fullscreen",' .
+        'bindKey: {win: "ctrl-enter",  mac: "ctrl-enter"},' .
+        'exec: function(editor) {' .
+            'FWSAceDOM.toggleCssClass(document.body, "FWSACEFullscreen");' .
+            'FWSAceDOM.toggleCssClass(editor.container, "FWSACEFullscreen-editor");' .
+            'editor.resize();' .
+        '},' .
+        'readOnly: true,' .
+        '});' . 
+        "\n";
+
+    $self->addToFoot( 
+        "<script type=\"text/javascript\">" .
+        "\$(document).ready(function() {" .
+            "window." . $paramHash{name} . " = ace.edit(\"" . $paramHash{name} . "\");" .
+            $paramHash{name} . ".setTheme(\"ace/theme/" . $self->{aceTheme} . "\");" .
+            $paramHash{name} . ".getSession().setUseWrapMode(true);" .
+            $paramHash{name} . ".setShowPrintMargin(false);" . $modeScript .
+            $paramHash{name} . ".getSession().on('change', function () {document.getElementById('" . $statusContainer . "').innerHTML='[Not Saved]';});" .
+        "});" .
+        "</script>\n"
+    );
 
     #
     # clean up thing that need to be escaped for ace
