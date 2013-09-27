@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.13071816
+Version 1.13092509
 
 =cut
 
-our $VERSION = '1.13071816';
+our $VERSION = '1.13092509';
 
 
 =head1 SYNOPSIS
@@ -948,7 +948,7 @@ sub deleteData {
 
 =head2 deleteHash
 
-doc needed
+Remove a hash based on its guid from FWS hash object.
 
 =cut
 
@@ -1296,7 +1296,7 @@ sub getSiteGUID {
 
 =head2 hashArray
 
-doc needed
+Return a FWS Hash in its array format.
 
 =cut
 
@@ -1437,10 +1437,8 @@ sub queueArray {
     #
     # add date critiria if appicable
     #
-    $paramHash{dateFrom}    ||= "0000-00-00 00:00:00";
-    $paramHash{dateTo}      ||= $self->formatDate( format => 'SQL' );
-    $whereStatement .= " and scheduled_date <= '" . $self->safeSQL( $paramHash{dateTo} ) . "'";
-    $whereStatement .= " and scheduled_date >= '" . $self->safeSQL( $paramHash{dateFrom} ) . "'";
+    if ( $paramHash{dateTo} )         { $whereStatement .= " and scheduled_date <= '" . $self->safeSQL( $paramHash{dateTo} ) . "'";
+    if ( $paramHash{dateFrom} )       { $whereStatement .= " and scheduled_date >= '" . $self->safeSQL( $paramHash{dateFrom} ) . "'";
 
     my $arrayRef = $self->runSQL( SQL => "select profile_guid,directory_guid,guid,type,hash,draft,from_name,queue_from,queue_to,body,subject,digital_assets,transfer_encoding,mime_type,scheduled_date from queue where " . $whereStatement . $keywordSQL . " ORDER BY scheduled_date DESC" );
     my @queueArray;
@@ -1537,6 +1535,8 @@ sub queueHistoryArray {
     #
     if ( $paramHash{limit} )          { $limitSQL = ' LIMIT ' . $self->safeSQL( $paramHash{limit} ) }
     if ( $paramHash{email} )          { $whereStatement .= " and (queue_from like '" . $self->safeSQL( $paramHash{email} ) . "' or queue_to like '" . $self->safeSQL( $paramHash{email} ) . "')" }
+    if ( $paramHash{from} )           { $whereStatement .= " and queue_from = '" . $self->safeSQL( $paramHash{from} ) . "'" }
+    if ( $paramHash{to} )             { $whereStatement .= " and queue_to = '" . $self->safeSQL( $paramHash{to} ) . "'" }
     if ( $paramHash{userGUID} )       { $whereStatement .= " and profile_guid='" . $self->safeSQL( $paramHash{userGUID} ) . "'" }
     if ( $paramHash{directoryGUID} )  { $whereStatement .= " and directory_guid='" . $self->safeSQL( $paramHash{directoryGUID} ) . "'" }
     if ( $paramHash{synced} )         { $whereStatement .= " and synced='" . $self->safeSQL( $paramHash{synced} ) . "'" }
@@ -3111,7 +3111,7 @@ sub updateModifiedDate {
 
 =head2 homeGUID
 
-need doc
+Return the guid for the home page.  Without any paramanters it will return the home page guid for the current site.
 
 =cut
 
