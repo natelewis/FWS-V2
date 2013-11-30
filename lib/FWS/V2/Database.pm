@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.13092622
+Version 1.13110420
 
 =cut
 
-our $VERSION = '1.13092622';
+our $VERSION = '1.13110420';
 
 
 =head1 SYNOPSIS
@@ -1199,13 +1199,17 @@ sub exportCSV {
         $returnString .= $dataArray[$i]{guid} . ',';
 
         #
-        # kill anything that is a blank date and aggressivly clean up anything
-        # could break a csv
+        # sanitize the data for csv'ness
         #
         for my $key ( sort keys %theKeys) {
-            $dataArray[$i]{$key} =~ s/(,|;)/ /sg;
-            $dataArray[$i]{$key} =~ s/(\n|\r)//sg;
-            $dataArray[$i]{$key} =~ s/^(0000.00.00.*|'|")//sg;
+
+            #
+            # if thre is a quote or a comma we will need to escape and quote
+            #
+            if ( $dataArray[$i]{$key} =~ /(,|")/ ) {
+                $dataArray[$i]{$key} =~ s/"/""/sg;
+                $dataArray[$i]{$key} = '"' . $dataArray[$i]{$key} . '"';
+            }
             $returnString .= $dataArray[$i]{$key} . ',';
         }
         $returnString .= "\n";
