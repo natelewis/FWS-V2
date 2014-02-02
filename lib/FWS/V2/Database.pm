@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.13110420
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13110420';
+our $VERSION = '1.14012919';
 
 
 =head1 SYNOPSIS
@@ -710,7 +710,7 @@ sub dataArray {
         }
 
     my @hashArray;
-    my $arrayRef = $self->runSQL( SQL => "select distinct " . $keywordScoreSQL . ", " . $dataCacheSQL . ", data.extra_value, data.guid, data.created_date, data.show_mobile, data.lang, guid_xref.site_guid, data.site_guid, data.site_guid, data.active, data.friendly_url, data.page_friendly_url, data.title, data.disable_title, data.default_element, data.disable_edit_mode, data.element_type, data.nav_name, data.name, guid_xref.parent, data.page_guid, guid_xref.layout from guid_xref " . $dataCacheJoin . "  left join data on (guid_xref.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "') and " . $dataConnector . " " . $addToDataXRefJoin . " " . $addToExtJoin . " where guid_xref.parent != '' and guid_xref.site_guid is not null " . $addToDataWhere . " order by guid_xref.ord" );
+    my $arrayRef = $self->runSQL( SQL => "select distinct " . $keywordScoreSQL . ", " . $dataCacheSQL . ", data.extra_value, data.guid, data.created_date, data.show_mobile, data.lang, guid_xref.site_guid, data.site_guid, data.site_guid, data.active, data.friendly_url, data.page_friendly_url, data.disable_sitemap, data.title, data.disable_title, data.default_element, data.disable_edit_mode, data.element_type, data.nav_name, data.name, guid_xref.parent, data.page_guid, guid_xref.layout from guid_xref " . $dataCacheJoin . "  left join data on (guid_xref.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "') and " . $dataConnector . " " . $addToDataXRefJoin . " " . $addToExtJoin . " where guid_xref.parent != '' and guid_xref.site_guid is not null " . $addToDataWhere . " order by guid_xref.ord" );
 
     #
     # for speed we will add this to here so we don't have to ask it EVERY single time we loop though the while statemnent
@@ -737,6 +737,7 @@ sub dataArray {
         $dataHash{active}                 = shift @{$arrayRef};
         $dataHash{friendlyURL}            = shift @{$arrayRef};
         $dataHash{pageFriendlyURL}        = shift @{$arrayRef};
+        $dataHash{disableSitemap}         = shift @{$arrayRef};
         $dataHash{title}                  = shift @{$arrayRef};
         $dataHash{disableTitle}           = shift @{$arrayRef};
         $dataHash{defaultElement}         = shift @{$arrayRef};
@@ -814,7 +815,7 @@ sub dataHash {
     #
     $paramHash{siteGUID} ||= $self->{siteGUID};
 
-    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value, data.element_type, 'pageGUID', data.page_guid, 'lang', lang, 'guid', data.guid, 'pageFriendlyURL', page_friendly_url, 'friendlyURL', friendly_url, 'defaultElement', data.default_element, 'guid_xref_site_guid', data.site_guid, 'showLogin', data.show_login, 'showMobile', data.show_mobile, 'showResubscribe', data.show_resubscribe, 'groupId', data.groups_guid, 'disableEditMode',data.disable_edit_mode, 'siteGUID', data.site_guid, 'site_guid', data.site_guid, 'title', data.title, 'disableTitle', data.disable_title, 'active', data.active, 'navigationName', nav_name, 'name', data.name from data left join site on site.guid=data.site_guid where data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
+    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value, data.element_type, 'pageGUID', data.page_guid, 'lang', lang, 'guid', data.guid, 'pageFriendlyURL', page_friendly_url, 'friendlyURL', friendly_url, 'defaultElement', data.default_element, 'guid_xref_site_guid', data.site_guid, 'disableSitemap', data.disable_sitemap, 'showLogin', data.show_login, 'showMobile', data.show_mobile, 'showResubscribe', data.show_resubscribe, 'groupId', data.groups_guid, 'disableEditMode',data.disable_edit_mode, 'siteGUID', data.site_guid, 'site_guid', data.site_guid, 'title', data.title, 'disableTitle', data.disable_title, 'active', data.active, 'navigationName', nav_name, 'name', data.name from data left join site on site.guid=data.site_guid where data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
 
     #
     # pull off the first two fields because we need to manipulate them
@@ -1048,8 +1049,7 @@ sub elementArray {
     # And these plugins are only alowed to be shows if they are the root of a site
     #
     if ( $paramHash{plugin} ) {
-        # TODO update to not use s%, have it actually xref the site table for parents in case later we descide they won't all start with s
-        $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "' and parent like 's%'"
+        $addToWhere = " and plugin='" . $self->safeSQL( $paramHash{plugin} ) . "'"
     }
 
     if ( $paramHash{tags} ) {
@@ -1179,9 +1179,11 @@ sub exportCSV {
     #
     my @dataArray = @{$paramHash{dataArray}};
     my %theKeys;
-    for my $i (0 .. $#dataArray) {
-        for my $key ( keys %{$dataArray[$i]}) {
-            if ( $key !~ /^(guid|killSession)$/ ) { $theKeys{$key} =1 }
+    for my $i ( 0 .. $#dataArray ) {
+        for my $key ( keys %{$dataArray[$i]} ) {
+            if ( $key !~ /^(guid|killSession)$/ ) {
+                $theKeys{$key} = 1;
+            }
         }
     }
 
@@ -1189,7 +1191,9 @@ sub exportCSV {
     # create the header
     #
     my $returnString = 'guid,';
-    for my $key ( sort keys %theKeys) { $returnString .= $key . ',' }
+    for my $key ( sort keys %theKeys ) { 
+        $returnString .= $key . ',';
+    }
     $returnString .= "\n";
 
     #
@@ -1204,22 +1208,38 @@ sub exportCSV {
         for my $key ( sort keys %theKeys) {
 
             #
-            # if thre is a quote or a comma we will need to escape and quote
+            # if there is a quote or a comma we will need to escape and quote
             #
-            if ( $dataArray[$i]{$key} =~ /(,|")/ ) {
+            if ( $dataArray[$i]{$key} =~ /\D/ ) {
+                $dataArray[$i]{$key} =~ s/[\f\a\e]//sg;
+                $dataArray[$i]{$key} =~ s/\x00//sg;
+                $dataArray[$i]{$key} =~ s/\x01//sg;
+                $dataArray[$i]{$key} =~ s/\x02//sg;
+                $dataArray[$i]{$key} =~ s/\x03//sg;
+                $dataArray[$i]{$key} =~ s/\x04//sg;
+                $dataArray[$i]{$key} =~ s/\x05//sg;
                 $dataArray[$i]{$key} =~ s/"/""/sg;
                 $dataArray[$i]{$key} = '"' . $dataArray[$i]{$key} . '"';
             }
+        
+            #    
+            # add the data and put a comma at the end    
+            #    
             $returnString .= $dataArray[$i]{$key} . ',';
         }
+
+        #
+        # kill the trailing comma and return the string
+        #
+        $returnString =~ s/,$//sg;
+   
+        # 
+        # add the end to the CSV line 
+        # 
         $returnString .= "\n";
     }
 
-    #
-    # kill the trailing comma and return the string
-    #
-    $returnString =~ s/,$//sg;
-    return $returnString . "\n";
+    return $returnString;
 }
 
 
