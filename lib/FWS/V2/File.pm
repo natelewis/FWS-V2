@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 1.13081521
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13081521';
+our $VERSION = '1.14012919';
 
 
 =head1 SYNOPSIS
@@ -1321,7 +1321,6 @@ sub _getElementEditText {
     #
     my $fileText;
     if ( $ext eq 'js' || $ext eq 'css' ) {
-        $self->FWSLog( "Opening Element File: " . $self->{filePath} . '/' . $siteGUID . '/' . $guid . '/FWSElement.' . $ext );
         my $file = $self->safeDir( $self->{filePath} . '/' . $siteGUID . '/' . $guid . '/FWSElement.' . $ext);
         if ( -e $file ) {
             open ( my $FILE, "<", $file );

@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2
 
 =head1 VERSION
 
-Version 1.13071816
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13071816';
+our $VERSION = '1.14012919';
 
 
 =head1 SYNOPSIS
@@ -689,6 +689,7 @@ sub new {
         active                => { type => 'int(1)'   ,key => 'MUL'         ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         lang                  => { type => 'char(2)'  ,key => 'MUL'         ,default => ''                  ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         disable_title         => { type => 'int(1)'   ,key => 'MUL'         ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
+        disable_sitemap       => { type => 'int(1)'   ,key => 'MUL'         ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},
         element_type          => { type => 'char(50)' ,key => 'MUL'         ,default => ''                  },
         created_date          => { type => 'datetime' ,key => ''            ,default => '0000-00-00'        },
         disable_edit_mode     => { type => 'int(1)'   ,key => ''            ,default => '0'                 ,AJAXGroup => 'showDeveloper|showContent|showDesign'},

@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.13072120
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13072120';
+our $VERSION = '1.14012919';
 
 
 =head1 SYNOPSIS
@@ -68,22 +68,9 @@ sub FWSHead {
 
     my $pageTitle = $self->siteValue( 'pageTitle' );
 
-    if ( !$pageTitle && $self->formValue( 'p' ) =~ /^fws_/ ) {
-        $pageTitle = 'FrameWork Sites ' . $self->{FWSVersion};
-        $self->jqueryEnable( 'ui-1.8.9' );
-        $self->jqueryEnable( 'ui.widget-1.8.9' );
-        $self->jqueryEnable( 'ui.mouse-1.8.9' );
-        $self->jqueryEnable( 'ui.dialog-1.8.9' );
-        $self->jqueryEnable( 'ui.datepicker-1.8.9' );
-        $self->jqueryEnable( 'ui.slider-1.8.9' );
-        $self->jqueryEnable( 'timepickr-0.9.6' );
-        $self->jqueryEnable( 'ui.position-1.8.9' );
-    }
-
     my $html = '<title>' . $pageTitle . "</title>\n";
     if ( $self->siteValue( 'pageKeywords' ) )     { $html .= '<meta name="keywords" content="' . $self->siteValue( 'pageKeywords' ) . "\"/>\n" }
     if ( $self->siteValue( 'pageDescription' ) )  { $html .= '<meta name="description" content="' . $self->siteValue( 'pageDescription' ) . "\"/>\n" }
-
 
     #
     # Load jquery in head if it is flagged to, if not it will be lazy loaded
@@ -93,9 +80,15 @@ sub FWSHead {
         $html .= "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n";
     }
 
-
     return $html . $self->siteValue( 'pageHead' ) . $self->siteValue( 'templateHead' );
 }
+
+
+=head2 FWSJava
+
+Return the lazy loaded JavaScript including anything added to the pageFoot.
+
+=cut
 
 sub FWSJava { 
     my ( $self ) = @_;
@@ -187,7 +180,6 @@ Return the full web rendering for a FWS Page.   This includes the Content-Type H
 
 sub displayContent {
     my ( $self ) = @_;
-#$self->setPageCache();
 
     $self->runScript( 'preContent' );
 
@@ -230,8 +222,6 @@ sub printPage {
     #
     $self->{stopProcessing} ||= 0;
 
-
-
     if ( !$self->{stopProcessing} ) {
 
         #
@@ -263,7 +253,6 @@ sub printPage {
         }
 
         $self->saveSession();
-
 
         #
         # Return HTTP
@@ -345,7 +334,6 @@ sub _FWSContent {
 
     if ( !$self->{stopProcessing} ) {
     
-    
 
         my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
 
@@ -360,9 +348,40 @@ sub _FWSContent {
         if ( $pageId eq $self->{adminURL} ) { $self->displayAdminLogin() }
 
         #
-        # if this is an ispadmin contorl process the page differntly
+        # if this is an ispadmin control process the page differntly
         #
         if ( $pageId =~ /^fws_/ ) { $self->displayAdminPage() }
+
+        if ( $pageId eq 'sitemap.xml' ) {
+            print "Status: 200 OK\n";
+            print "Content-Type: text/xml\n\n";
+            print "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+            print "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
+            print "<url>\n";
+            print "\t<loc>" . $self->{domain} . "</loc>\n";
+            print "</url>\n";
+
+            my $addToUnion;
+            for my $table ( keys %{$self->{dataSchema}} ) {
+                if ( $table ne 'data' && $self->{dataSchema}{$table}{friendly_url}{type} ) {
+                    $addToUnion .= "union SELECT friendly_url from " . $self->safeSQL( $table );
+                    if ( $self->{dataSchema}{$table}{disable_sitemap}{type} ) {
+                        $addToUnion .= " where disable_sitemap <> '1'";
+                    }
+                }
+            }
+            my @friendlyArray = @{$self->runSQL( SQL => "select friendly_url from data left join site on site.guid=data.site_guid where disable_sitemap <> '1' and friendly_url <> '' and site.sid='" . $self->safeSQL( $self->{siteId} ) . "' ".  $addToUnion )};
+            while ( @friendlyArray ) {
+                my $friendly_url = shift @friendlyArray;
+                $friendly_url =~ s/^\///sg;
+                print "<url>\n";
+                print "\t<loc>" . $self->{domain} . '/' .  $friendly_url . "</loc>\n";
+                print "</url>\n";
+            }
+
+            print "</urlset>";
+            $self->{stopProcessing} = 1;
+        }
 
         if ( $pageId eq 'favicon.ico' ) {
             print "Status: 404 Not Found\n";
@@ -531,7 +550,6 @@ sub _FWSContent {
             # Mech to figure out what number layout in the list we are so we can set class based on location ancestory
             #
             my %layoutCountHash;
-
 
             my $columnWrapperStartFlag  = 0;
             my $columnWrapperStopFlag   = 0;
@@ -886,25 +904,11 @@ sub _FWSContent {
                 #
                 # Put in the edit mode box if we are in edit mod and loged in as the correct user for this site
                 #
-    
                 if ( $self->{adminLoginId} ) {
+
                     #
-                    # set all the things we could need
+                    # 
                     #
-                    $self->{tinyMCEEnable} = 1;
-                    $self->jqueryEnable( 'ui-1.8.9' );
-                    $self->jqueryEnable( 'ui.widget-1.8.9' );
-                    $self->jqueryEnable( 'ui.mouse-1.8.9' );
-                    $self->jqueryEnable( 'ui.datepicker-1.8.9' );
-                    $self->jqueryEnable( 'ui.slider-1.8.9' );
-                    $self->jqueryEnable( 'timepickr-0.9.6' );
-                    $self->jqueryEnable( 'ui.tabs-1.8.9' );
-                    $self->jqueryEnable( 'simplemodal-1.4.4' );
-                    $self->jqueryEnable( 'fileupload-ui-4.4.1' );
-                    $self->jqueryEnable( 'fileupload-4.5.1' );
-                    $self->jqueryEnable( 'fileupload-uix-4.6' );
-                    $self->jqueryEnable( 'ui.fws-1.8.9' );
-    
                     if ( $pageId eq $self->homeGUID() ) { $pageHash{disableDeleteTool} = 1 }
                     $pageHash{layout}             = 'FWSPageMenu';
                     $pageHash{guid}               = $pageId;
@@ -924,7 +928,6 @@ sub _FWSContent {
                         $pageHash{disableOrderTool}   = 1;
                         $pageHash{name} = "Default FWS Page - To override this page create a new page with the friendly url of [ " . $pageHash{friendlyURL} . " ]";
                     }
-    
     
                     #
                     # if we are not able to see the buttons lets kill them

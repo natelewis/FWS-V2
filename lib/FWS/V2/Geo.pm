@@ -10,11 +10,11 @@ FWS::V2::Geo - Framework Sites version 2 geo location methods
 
 =head1 VERSION
 
-Version 1.13081221
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13081221';
+our $VERSION = '1.14012919';
 
 
 =head1 SYNOPSIS
@@ -289,13 +289,13 @@ sub zipHash {
         @zipArray       = @{$self->runSQL( SQL => "select zipcode.zipCode,zipcode.stateAbbr,zipcode.city,zipcode.areaCode,zipcode.UTC,zipcode.latitude,zipcode.longitude from geo_block left join zipcode on geo_block.loc_id = zipcode.loc_id  where " . $ipNumber . " > start_ip and " . $ipNumber . " < end_ip" )};
     }
     my %zipHash;
-    $zipHash{zip}         = shift( @zipArray );
-    $zipHash{state}       = shift( @zipArray );
-    $zipHash{city}        = shift( @zipArray );
-    $zipHash{areaCode}    = shift( @zipArray );
-    $zipHash{UTC}         = shift( @zipArray );
-    $zipHash{latitude}    = shift( @zipArray );
-    $zipHash{longitude}   = shift( @zipArray );
+    $zipHash{zip}         = shift @zipArray;
+    $zipHash{state}       = shift @zipArray;
+    $zipHash{city}        = shift @zipArray;
+    $zipHash{areaCode}    = shift @zipArray;
+    $zipHash{UTC}         = shift @zipArray;
+    $zipHash{latitude}    = shift @zipArray;
+    $zipHash{longitude}   = shift @zipArray;
     return %zipHash;
 }
 

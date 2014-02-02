@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.13081221
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13081221';
+our $VERSION = '1.14012919';
 
 =head1 SYNOPSIS
 
@@ -980,7 +980,13 @@ Create a button that is default to JQuery UI class structure.  You can pass styl
 
 sub FWSButton{
     my ( $self, %paramHash ) = @_;
-    my $buttonHTML = "<button class=\"ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only " . $paramHash{class} . "\" type=\"button\" ";
+
+    my $class = 'ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only ';
+    if ( $paramHash{framework} eq 'bootstrap' ) {
+        $class = 'btn ';
+    }
+
+    my $buttonHTML = "<button class=\"" . $class . " " . $paramHash{class} . "\" type=\"button\" ";
     if ( $paramHash{style} )   { $buttonHTML .= " style=\"" . $paramHash{style} . "\" " }
     if ( $paramHash{name} )    { $buttonHTML .= " name=\"" . $paramHash{name} . "\" " }
     if ( $paramHash{id} )      { $buttonHTML .= " id=\"" . $paramHash{id} . "\" " }
@@ -1516,7 +1522,7 @@ sub endElement {
 
 =head2 convertUnicode
 
-need doc
+Convert from unicode charcters from web services to a standard character.
 
 =cut
 
@@ -1529,7 +1535,7 @@ sub convertUnicode {
 
 =head2 hex2chr
 
-need doc
+Convert hex to its ascii character.
 
 =cut
 

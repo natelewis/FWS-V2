@@ -11,11 +11,11 @@ FWS::V2::Net - Framework Sites version 2 network access methods
 
 =head1 VERSION
 
-Version 1.13081221
+Version 1.13092509
 
 =cut
 
-our $VERSION = '1.13081221';
+our $VERSION = '1.13092509';
 
 
 =head1 SYNOPSIS
@@ -149,13 +149,39 @@ sub HTTPRequest {
 
 =head2 send
 
-Send an email: Documentation needed.
+Send an email through the FWS queue system. 
+
+Required parameters:
+
+    to          : Space delimited list of email address'
+    body        : Content of email
+    subject     : Subject line
+
+Optional parameters:
+    characterSet        : Default utf-8
+    transferEncoding    : Default 7bit
+    mimeType            : Default text/html
+    from                : Defaults to site admin email
+    fromName            : Defaults to site admin email 
+    type                : Default sendmail
+
+Optional paramaters to set the mail to queue
+    scheduledDate       : SQL formated date for when to send
+
 
 =cut
 
 sub send {
     my ( $self, %paramHash ) = @_;
 
+    #
+    # this is for encrypting subject lines
+    #
+    use MIME::Base64;
+
+    #
+    # split up delimited assets to an array for easy use
+    #
     my @digitalAssets;
     if ( $paramHash{digitalAssets} ) {
         @digitalAssets = split( /\|/, $paramHash{digitalAssets} );
@@ -200,9 +226,8 @@ sub send {
         # convert the subject to utf-8 if it is
         #
         if ( $paramHash{characterSet} eq lc( 'utf-8' ) ) {
-            $paramHash{subject} = '=?utf-8?B?' . encode_base64( $paramHash{subject}, '' ).'?=';
+            $paramHash{subject} = '=?utf-8?B?' . encode_base64( $paramHash{subject}, '' ) . '?=';
         }
- 
 
         #
         # Split the emailTo's space delmited and process them one by one.
@@ -231,8 +256,6 @@ sub send {
                 # Make sure this email is cool. otherwise we might get interneral server errors
                 #
                 if ( $paramHash{to} =~ /^[^@]+@[^@]+.[a-z]{2,}$/i ) {
-
-                    use MIME::Base64;
 
                     open ( my $SENDMAIL, "|-", $self->{sendmailBin} . " -t" ) || $self->FWSLog( "Sendmail execute failed: " . $self->{sendmailBin} );
 

@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 1.13072120
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13072120';
+our $VERSION = '1.14012919';
 
 
 =head1 SYNOPSIS
@@ -71,8 +71,21 @@ Get or set a form value.  If the value was not set, it will always return an emp
 
 sub formValue {
     my ( $self, $field, $fieldVal ) =  @_;
+
+    #
+    # set the value if its was passed
+    #
     if ( defined $fieldVal ) { $self->{form}{$field} = $fieldVal }
-    if ( !defined $self->{form}{$field}) { $self->{form}{$field} = '' }
+
+    #
+    # return an empty string so we don't get undefs on things that
+    # are not supposed to be defined
+    #
+    #if ( !defined $self->{form}{$field} ) { return '' }
+
+    #
+    # if we have one set now, or from before return it.
+    #
     return $self->{form}{$field};
 }
 
@@ -134,10 +147,25 @@ Gather the passed form values, and from it set the language formValue and the se
 
 sub setFormValues {
     my ( $self ) =  @_;
+
+    #
+    # from cgi get the parms
+    #
     use CGI qw(:cgi);
     my $cgi = CGI->new();
     $CGI::POST_MAX=-1;
-    foreach my $paramIn ( $cgi->param ) { $self->{form}{$paramIn} = $cgi->param( $paramIn ) }
+    foreach my $paramIn ( $cgi->param ) {
+
+        #
+        # these can be manipulated
+        #
+        $self->{form}{$paramIn} = $cgi->param( $paramIn );
+        
+        #
+        # these don't get touched in case you want to see if something came from CGI
+        #
+        $self->{cgi}{$paramIn} = $cgi->param( $paramIn ); 
+    }
 
     #
     # grab the one from the cookie if we have it
@@ -211,14 +239,16 @@ sub setSession {
     while (@extraSplit) {
         my $fieldName   = shift( @extraSplit ); 
         my $fieldValue  = shift( @extraSplit );
+
         #
         # for security reasons lets make sure we aren't touching the major ones
         #
         if ( $fieldName !~ /^(p|b|s|bs|e|l|a|a2|fws_lang|id)$/ ) {
+
             #
             # only grab the one from the session, if we have not passed it to the script to change it
             #
-            if ( $self->formValue( $fieldName ) eq '' ) { $self->formValue( $fieldName, $self->urlDecode( $fieldValue ) ) }
+            if ( !defined $self->{cgi}->{$fieldName} ) { $self->formValue( $fieldName, $self->urlDecode( $fieldValue ) ) }
             $saveWithSession{$fieldName} = 1;
         }
     }
@@ -315,7 +345,14 @@ sub setSiteFriendly {
         ( $sid ) = @{$self->runSQL( SQL=> "select sid from site where default_site = '1' limit 1" )};
         if ( $sid eq '' ) { $sid = 'admin' }
     }
-
+    
+    #
+    # set p to common things that we will handle later
+    # 
+    if ( $ENV{REQUEST_URI} =~ /(robots\.txt|sitemap\.xml|favicon\.ico)$/ ) {
+        ( my $fileOnly = $ENV{REQUEST_URI} ) =~ s/.*\///sg;
+        $self->formValue( 'p', $fileOnly );
+    };
 
     #
     # if p is not set, then lets figure out how to set it
@@ -329,6 +366,7 @@ sub setSiteFriendly {
         $friendlyURL =~ s/^\///sg;
         $friendlyURL =~ s/\/$//sg;
         $friendlyURL =~ s/\?(.*)//sg;
+         
 
 
         #
@@ -987,7 +1025,7 @@ sub _saveWithSessionHash {
 
     #
     # add the save with session site value directive also
-    
+    #    
     my @addSession = split( /,/, $self->siteValue( 'saveWithSession' ) );
     while ( @addSession ) { ${$self->{_saveWithSessionHash}}{ shift @addSession } = 1 }
 
