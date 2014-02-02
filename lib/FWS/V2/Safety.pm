@@ -11,11 +11,11 @@ FWS::V2::Safety - Framework Sites version 2 safe data wrappers
 
 =head1 VERSION
 
-Version 1.13081221
+Version 1.14012919
 
 =cut
 
-our $VERSION = '1.13081221';
+our $VERSION = '1.14012919';
 
 
 =head1 SYNOPSIS
@@ -235,8 +235,19 @@ Replace any thing harmful to an XML node that could cause it to fail validation.
 
 sub safeXML {
     my ( $self, $incomingText ) = @_;
+
+    #
+    # switch & and <
+    #
     $incomingText =~ s/&/&amp;/sg;
     $incomingText =~ s/</&lt;/sg;
+
+    #
+    # strip all non ascii
+    #
+    $incomingText =~ s/[^[:ascii:]]//sg;
+    $incomingText =~ s/[^\x20-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]+//sg;
+
     return $incomingText;
 }
 
