@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14020423
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14020423';
 
 
 =head1 SYNOPSIS
@@ -811,11 +811,27 @@ sub dataHash {
     my ( $self, %paramHash ) = @_;
 
     #
+    # bail if I don't like what I see
+    #
+    if ( !$paramHash{guid} && !$paramHash{friendlyURL} ) {
+        return ();
+    }
+    
+    #
     # set site GUID if it wasn't passed to us
     #
     $paramHash{siteGUID} ||= $self->{siteGUID};
 
-    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value, data.element_type, 'pageGUID', data.page_guid, 'lang', lang, 'guid', data.guid, 'pageFriendlyURL', page_friendly_url, 'friendlyURL', friendly_url, 'defaultElement', data.default_element, 'guid_xref_site_guid', data.site_guid, 'disableSitemap', data.disable_sitemap, 'showLogin', data.show_login, 'showMobile', data.show_mobile, 'showResubscribe', data.show_resubscribe, 'groupId', data.groups_guid, 'disableEditMode',data.disable_edit_mode, 'siteGUID', data.site_guid, 'site_guid', data.site_guid, 'title', data.title, 'disableTitle', data.disable_title, 'active', data.active, 'navigationName', nav_name, 'name', data.name from data left join site on site.guid=data.site_guid where data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
+    my $whereStatement;
+    if ( $paramHash{guid} ) {
+        $whereStatement .= " data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and ";
+    }
+
+    if ( $paramHash{friendlyURL} ) {
+        $whereStatement .= " data.friendly_url='" . $self->safeSQL( $paramHash{friendlyURL} ) . "' and ";
+    }
+
+    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value, data.element_type, 'pageGUID', data.page_guid, 'lang', lang, 'guid', data.guid, 'pageFriendlyURL', page_friendly_url, 'friendlyURL', friendly_url, 'defaultElement', data.default_element, 'guid_xref_site_guid', data.site_guid, 'disableSitemap', data.disable_sitemap, 'showLogin', data.show_login, 'showMobile', data.show_mobile, 'showResubscribe', data.show_resubscribe, 'groupId', data.groups_guid, 'disableEditMode',data.disable_edit_mode, 'siteGUID', data.site_guid, 'site_guid', data.site_guid, 'title', data.title, 'disableTitle', data.disable_title, 'active', data.active, 'navigationName', nav_name, 'name', data.name from data left join site on site.guid=data.site_guid where " . $whereStatement . " (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
 
     #
     # pull off the first two fields because we need to manipulate them
@@ -1942,6 +1958,7 @@ sub saveData {
         # insert the record
         #
         $self->runSQL( SQL => "insert into data (guid,site_guid,created_date) values ('" . $self->safeSQL( $paramHash{guid} ) . "','" . $self->safeSQL( $paramHash{siteGUID} ) . "','" . $self->formatDate( format => 'SQL' ) . "')");
+
     }
 
     #
