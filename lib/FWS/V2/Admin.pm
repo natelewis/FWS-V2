@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14021218
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14021218';
 
 
 =head1 SYNOPSIS
@@ -626,8 +626,16 @@ sub systemInfo {
     #
     $systemInfo .= '<b>Database Table And Index Check:</b><br/>';
     $errorReturn = $self->updateDatabase();
-    if ( !$errorReturn ) { $systemInfo .= '<ul><li>All tables and indexes are correct.</li></ul>' }    
-    else {$systemInfo .= $errorReturn . '<br/>' }
+    if ( !$errorReturn ) { 
+        $systemInfo .= '<ul><li>All tables and indexes are correct.</li></ul>' 
+    }
+    else {
+        # 
+        # Pretty it up
+        # 
+        $errorReturn =~ s/;/;<br\/>/sg;
+        $systemInfo .= $errorReturn . '<br/>' 
+        }
 
     if ( $adminInstalled )  {
         $systemInfo .= "<input style=\"width:300px;\" type=\"button\" onclick=\"location.href='" . $self->{scriptName} . "?s=site';\" value=\"View Site\"/>";
@@ -758,256 +766,33 @@ sub onOffLight {
 
 =head2 editBox
 
-Return a edit box for the passed element hash;
+Placeholder for editBox() until the admin element brings one in.
 
 =cut
 
 sub editBox {    
     my ( $self, %editHash ) = @_;
+    return $editHash{name};
+}
 
-    my $editHTML;
-    #my $ajaxID = '#editModeAJAX_' . $self->formValue( 'FWS_elementId' );
-    my $ajaxID = '#editModeAJAX_' . $editHash{guid};
-
-    #
-    # default always show to off if its not passed
-    #
-    $editHash{alwaysShow} ||= 0;
-
-    #
-    # default color
-    #
-    $editHash{editBoxColor} ||= '#008000;';
-
-    #
-    # Define things to blank that might not be passed that we will
-    # use
-    #
-    $editHash{siteGUID} ||= '';
-    $editHash{name}     ||= '';
-    $editHash{type}     ||= '';
-
-    #
-    # if we are in edit mode, make buttons and container
-    # 
-    if ( ( $self->formValue( 'editMode' ) || $editHash{alwaysShow} ) ) {
-
-         if ( $self->{siteGUID} eq $editHash{siteGUID} || !$editHash{siteGUID} ||  $editHash{alwaysShow} ) { 
-    
-            #
-            # Edit Bar Open Div Container
-            #
-            if ( !$editHash{editBoxJustButtons} ) {
-                my $bgColor     = $self->_getHighlightColor( $editHash{editBoxColor} );
-                my $divStyle    = "color:" . $editHash{editBoxColor} . ";background-color:".$bgColor.";border:dotted 1px " . $editHash{editBoxColor} . ";border-bottom:dotted 1px " . $editHash{editBoxColor} . ";text-align:right;";
-    
-                $editHTML .=  "<div style=\"" . $editHash{AJAXDivStyle} . "\" id=\"editModeAJAX_" . $editHash{guid} . "\">";
-                $editHTML .=  "<div style=\"" . $divStyle . "\" class=\"FWSEditBoxControls\">";
-                $editHTML .=  $editHash{name} . " ";
-            }
-            #
-            # check to see if this could have children
-            #
-            my $showOrderButton = 0;
-            my %elementHash = $self->_fullElementHash( typeAlso => 1 );
-            for my $type ( keys %elementHash ) {
-                if ( defined $elementHash{$type}{parent} ) {
-                    if ( defined $editHash{type} ) {
-                         if ( $elementHash{$type}{parent} eq $editHash{type} ) {  $showOrderButton = 1 }
-                    }
-                    if ( defined $elementHash{$editHash{type}}{guid} ) {
-                        if ( $elementHash{$type}{parent} eq $elementHash{$editHash{type}}{guid} ) { $showOrderButton = 1 }
-                    }
-                } 
-            }
-    
-            my $layoutFlag;
-            my $pageFlag;
-    
-            #
-            # if this is a column header edit box it will not have a type, which means we have to pass layout
-            #
-            if ( !$editHash{type} ) { $layoutFlag = "&layout=" . $editHash{layout} }
-        
-            if ( $editHash{pageOnly} ) { 
-                $showOrderButton    = 1; 
-                $pageFlag           = '&pageOnly=1';
-                $layoutFlag         = '&layout=' . $editHash{layout};
-            }
-    
-            if ( ( $showOrderButton || $editHash{orderTool} ) && !$editHash{disableOrderTool} ) {
-                $editHTML .= $self->FWSIcon(    
-                                icon        => "add_reorder_16.png",
-                                onClick     => $self->dialogWindow(queryString=>"p=fws_dataOrdering&guid=" . $editHash{guid} . $pageFlag . $layoutFlag),
-                                alt         => "Add And Ordering",
-                                width       => "16");
-            }
-        
-            #
-            # Check to see if we should put the delete trash can icon
-            #
-            if ( ( $editHash{deleteTool} || ( $self->{siteGUID} eq $editHash{guid_xref_site_guid} ) || $editHash{forceDelete} ) && !$editHash{disableDeleteTool} ) {
-        
-                #
-                # set up som vars for the post,  we want to do this differntly if we are talking about
-                # a base element, or a sub element
-                #
-                #my $baseClear = "\$('#delete_" . $editHash{guid} . "').parent().parent().parent().parent().parent().hide();";
-        
-                #
-                # If the parent isn't a page, that means we are talking about a sub element of an element.
-                # we need to make sure the ajaxID is the parent of this element and then refresh the element in place.
-                #
-                # if it is a sub elemenet of an element, we also need to disable the "display none" it dosn't look goofy
-                #
-                #if ( $self->formValue( "FWS_pageId" ) eq $editHash{parent} && !$self->formValue( "FWS_editModeUpdate" ) ) { 
-                #    $ajaxID = '<div></div>';
-                #}
-                #else { $baseClear = "" }
-        
-                $editHTML .= $self->FWSIcon(
-                    icon    => "delete_16.png",
-                    onClick => "\$('" . $ajaxID . "').FWSDeleteElement({pageGUID: '" . $self->formValue( 'FWS_elementId' ) . "',parentGUID: '" . $editHash{parent} . "', guid: '" . $editHash{guid} . "'});", 
-                    alt     => "Delete",
-                    width   => "16",
-                    id      => "delete_" . $editHash{guid},
-                );
-            }
-    
-            #
-            # add and order Tool Button
-            #
-            if ( !$editHash{disableEditTool} && $editHash{type} ne 'page') {
-                $editHTML .= $self->FWSIcon(     
-                    icon    => "properties_16.png",
-                    onClick => $self->dialogWindow( queryString => "p=fws_dataEdit&guid=" . $editHash{guid} . "&parentId=" . $editHash{parent} ),
-                    alt     => "Edit",
-                    width   => "16",
-                );
-            }
-        
-            #
-            # ON/OFF cotnrol
-            #
-            if ( !$editHash{disableActiveTool} && $editHash{guid} ne $self->homeGUID() ) { $editHTML .= $self->onOffLight( $editHash{active}, $editHash{guid} ) }
-        
-            #
-            # close the edit bar container
-            #    
-            if ( !$editHash{editBoxJustButtons} ) { $editHTML .= '</div>' }
-    
-            $editHTML .= $editHash{editBoxContent};   
-            $editHTML .= $editHash{editBox};
-        
-            #
-            # close the delete ajax container
-            #    
-            if ( !$editHash{editBoxJustButtons} ) { $editHTML .= '</div>' }
-        }
-    }
-
-    #
-    # edit mode is not on, just show the content and call this good
-    #
-    else { $editHTML .= $editHash{editBoxContent} . $editHash{editBox} }
-    return $editHTML;
-}    
-    
  
 =head2 FWSMenu
 
-Return the FWS top menu bar.
+Placeholder for FWSMenu() until the admin element brings one in.
 
 =cut
 
 sub FWSMenu {
     my ( $self, %paramHash ) = @_;
 
-    #
-    # because we have a menu, it might need tiny mce
-    #
-    $self->{tinyMCEEnable} = 1;
-            
-    my $linkSpacer = " &nbsp;&middot;&nbsp; ";
-    my $FWSMenu;
-    
+    return  $self->_bootstrapCDN() . 
+            '<div class="container"><div class="hero-unit">' . 
+            '<h1>Welcome to FrameWork Sites!</h1>' .
+            '<p>First thing your going to need is a way to access your installation.   This will install a default site, give you access to install plugins, and everything else you will need to get going.</p>' . 
+            '<p><a href="' . $self->{scriptName} . $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Install Default Admin Package</a></p>' .
+            '</div>';
+            '</div>';
 
-    #
-    # create a correct label for fws/devel link to know what we have access too
-    #
-    if ( $self->userValue( 'isAdmin' ) || $self->userValue( 'showDeveloper' ) )  {
-        $FWSMenu .= $self->popupWindow( queryString => "p=fws_systemInfo", linkHTML => "System" );
-        $FWSMenu .= $linkSpacer;
-    }
-
-    #
-    # get the FWSMenu taged elements and add them to the list
-    #
-    my @elementArray    = $self->elementArray( tags => 'FWSMenu' );
-    @elementArray       = $self->sortDataByNumber( 'ord', @elementArray );
-    for my $i (0 .. $#elementArray) {
-
-        #
-        # blank out the adminGroup if we have access so we can pass by the security check
-        #
-        map { if ( $self->userValue( $_ ) eq 1 ) { $elementArray[$i]{adminGroup} = '' } } split( /,/, $elementArray[$i]{adminGroup} );
-
-        #
-        # if we have access or we are super user show it
-        #
-        if ( !$elementArray[$i]{adminGroup} || $self->userValue( 'isAdmin' ) ) {
-    
-            #
-            # convert to our friendly name format
-            #
-            ( my $fwsLink = $elementArray[$i]{type} ) =~ s/^FWS/fws_/sg;
-    
-            #
-            # if this is not a friendly type version menu item then use the guid
-            #
-            $fwsLink ||= 'fws_' . $elementArray[$i]{guid};
-
-            my $queryString = "FWS_pageId=" . $paramHash{pageId} . "&p=" . $fwsLink . "&FWS_showElementOnly=";
-            if ( $elementArray[$i]{rootElement} ) { $FWSMenu .= $self->popupWindow( queryString => $queryString . "0", linkHTML => $elementArray[$i]{title} ) }
-            else { $FWSMenu .= $self->dialogWindow( queryString => $queryString . "1", linkHTML => $elementArray[$i]{title} ) }
-            $FWSMenu .= $linkSpacer;
-        }
-    }
-
-    if ( $self->formValue( "p" ) =~ /^fws_/ ) {
-        $FWSMenu .= $self->_selfWindow( "", "View Site" );
-        $FWSMenu .= $linkSpacer;
-    }
-    
-    #    
-    # ALWAYS ON
-    #
-    if ( $self->userValue( 'isAdmin' ) || $self->userValue( 'showDesign' ) || $self->userValue( 'showContent' ) || $self->userValue( 'showDeveloper' ) )  {
-        $FWSMenu .= $self->_editModeLink( '', $linkSpacer );
-    }
-
-    $FWSMenu .= $self->_logOutLink();
-    
-    if ( $self->userValue( 'isAdmin' ) || $self->userValue( 'showDesign' ) || $self->userValue( 'showContent' ) || $self->userValue( 'showDeveloper' ) )  {
-
-        #
-        # just in case we havn't installed FWS core yet, lets make sure the image is there before we 
-        # try to display it.
-        #
-        if ( -e $self->{filePath} . '/fws/icons/add_reorder_16.png' ) {
-            $FWSMenu .= $linkSpacer;
-            $FWSMenu .= $self->FWSIcon( 
-                icon    => 'add_reorder_16.png',
-                onClick => $self->dialogWindow( queryString => 'p=fws_dataOrdering&guid=' . $paramHash{pageId} . '&pageOnly=1' ),
-                alt     => 'Add And Ordering',
-                width   => '16',
-            );
-        }
-    }
-
-    $FWSMenu .= $linkSpacer;
-
-    return $FWSMenu;
 }
 
 
@@ -1056,7 +841,7 @@ sub displayAdminPage {
     my $showElementOnly = 0;
     my $quitPageProcessing = 0;
     my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
-        
+       
     if ( $self->isAdminLoggedIn() ) {
 
         #
@@ -1701,6 +1486,10 @@ sub _convertImportTags {
     $conversionString =~ s/#FWSSecureDomain#/$secureDomain/sg;
     $conversionString =~ s/#FWSFileWebPath#/$fileWebPath/sg;
     return $conversionString;
+}
+
+sub _bootstrapCDN {
+    return  '<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">';
 }
 
 
