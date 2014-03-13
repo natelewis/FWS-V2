@@ -477,11 +477,12 @@ function GNFTreeUpdate(catId,scriptName,queryStringHead,depth,forceRefresh) {
                         }
                 else {
 			$('#cat'+catId).FWSAjax({showLoading:false,queryString: queryStringHead+'&parentId='+catId+'&depth='+depth,
-						onSuccess: function(returnData) { 	$(this).html(returnData); 
-											$.modal.setContainerDimensions(); }
-						});
+						onSuccess: function(returnData) { 	
+                            $(this).html(returnData); 
+							if (!noModalUpdate) { $.modal.setContainerDimensions(); } 
+                        }
+			});
 
-                        //GNFAjax(scriptName,queryStringHead+'&amp;parentId='+catId+'&amp;depth='+depth,'cat'+catId,'$.modal.setContainerDimensions();');
                         }
                 if (catId!=0) {
 
