@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.14021218
+Version 1.14031318
 
 =cut
 
-our $VERSION = '1.14021218';
+our $VERSION = '1.14031318';
 
 
 =head1 SYNOPSIS
@@ -138,7 +138,15 @@ sub tabs {
     # seed our tab html and the div html that will hold the content
     #
     my $tabDivHTML;
-    my $tabHTML = "<div id=\"" . $paramHash{id} . "\" class=\"FWSTabs tabContainer ui-tabs ui-widget ui-widget-content ui-corner-all\"><ul class=\"tabList ui-tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all\">";
+    my $tabHTML;
+    my $tabContentClass = 'tab-pane';
+    my $tabActiveClass = ' active';
+    my $tabItemClass;
+    
+    if ( !$self->{bootstrapEnable} ) {
+        $tabContentClass = 'ui-tabs-panel ui-widget-content ui-corner-bottom'; 
+        $tabItemClass = 'tabItem tabItem ui-state-default ui-corner-top ui-state-hover';
+    }
 
     while (@{$paramHash{tabs}}) {
         my $tabJava         = shift( @{$paramHash{tabJava}} );
@@ -168,7 +176,7 @@ sub tabs {
         }
 
         if ( $tabType eq 'html' ) {
-            $tabContent = "<div name=\"" . $fieldName . "\" id=\"" . $editorName . "\" class=\"HTMLEditor\" style=\"width:100%;height:445px;\">" . $tabContent . "</div><div style=\"display:none;\" id=\"" . $paramHash{guid} . "_v_" . $fieldName . "_v_StatusNote\"></div>";
+            $tabContent = "<div name=\"" . $fieldName . "\" id=\"" . $editorName . "\" class=\"HTMLEditor\" style=\"width:100%;height:500px;\">" . $tabContent . "</div><div style=\"display:none;\" id=\"" . $paramHash{guid} . "_v_" . $fieldName . "_v_StatusNote\"></div>";
         }
 
         #
@@ -191,32 +199,49 @@ sub tabs {
         # flag we are on the first one!... we want to hide the content areas if we are not
         #
         my $hideMe;
-        if ( $tabCount > 0 ) { $hideMe = " ui-tabs-hide" }
+        if ( $tabCount > 0 && !$self->{bootstrapEnable} ) { $hideMe = " ui-tabs-hide" }
+
+
 
         #
         # add to the tab LI and the HTML we will put below for each tab
         #
-        $tabHTML        .= "<li class=\"tabItem tabItem ui-state-default ui-corner-top ui-state-hover\"><a onclick=\"" . $javaScript . "\" href=\"#" . $tabHRef . "\">" . $tabName . "</a></li>";
-        $tabDivHTML     .= "<div id=\"" . $tabHRef . "\" class=\"ui-tabs-panel ui-widget-content ui-corner-bottom" . $hideMe . "\">" . $tabContent . "</div>";
+        $tabHTML        .= "<li class=\"" . $tabItemClass . $tabActiveClass . "\"><a onclick=\"" . $javaScript . "\" href=\"#" . $tabHRef . "\" data-toggle=\"tab\">" . $tabName . "</a></li>";
+        $tabDivHTML     .= "<div id=\"" . $tabHRef . "\" class=\"" . $tabContentClass . $tabActiveClass . $hideMe . "\">" . $tabContent . "</div>";
 
         #
         # add another tabCount to make our next tab unique ( plus a unique 6 char key )
         #
-        $tabCount++;
+        $tabCount++;    
+        
+        #
+        # after the fist one, they are not active
+        #
+        $tabActiveClass = '';
     }
 
     #
-    # the tabs need this jquery ui stuff to work.  lets make sure they are here if they aren't laoded already
+    # return the tab content closing the ul and div we started in tabHTML
+    #
+
+    if ( $self->{bootstrapEnable} ) {
+        return  '<div class="navbar navbar-static-top"><div class="navbar-inner"><ul class="nav _nav-tabs">' . 
+                $tabHTML .
+                '</ul></div><div class="tab-content">' .
+                $tabDivHTML .
+                '</div>';
+    }
+    
+    #
+    # jquery UI version
     #
     $self->jqueryEnable( 'ui-1.8.9' );
     $self->jqueryEnable( 'ui.widget-1.8.9' );
     $self->jqueryEnable( 'ui.tabs-1.8.9' );
     $self->jqueryEnable( 'ui.fws-1.8.9' );
 
-    #
-    # return the tab content closing the ul and div we started in tabHTML
-    #
-    return $tabHTML . '</ul>' . $tabDivHTML . '</div>';
+    return "<div id=\"" . $paramHash{id} . "\" class=\"FWSTabs tabContainer ui-tabs ui-widget ui-widget-content ui-corner-all\"><ul class=\"tabList ui-tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all\">" .
+    $tabHTML . '</ul>' . $tabDivHTML . '</div>' ;
 }
 
 
@@ -772,7 +797,7 @@ Placeholder for editBox() until the admin element brings one in.
 
 sub editBox {    
     my ( $self, %editHash ) = @_;
-    return $editHash{name};
+    return $editHash{editBoxContent} . $editHash{editBox};
 }
 
  
@@ -807,18 +832,27 @@ sub panel {
     
     my $panel;
 
+    my $panelClass;
+
+    #
+    # if we are bootstrap this does not apply
+    #
+    if  ( $self->{boostrapEnable} ) {
+        $panelClass = ' ui-widget ui-widget-content ui-corner-all';
+    }
+
     if ( $paramHash{inline} ) {
-        $panel .= "<div style=\"width:95%;font-size:12px;margin-top:10px;padding-bottom:10px;margin-bottom:10px;border: 1px solid #d3d3d3; padding:10px;background: #ffffff; -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px; font-weight: normal; color: #555555;" . $paramHash{panelStyle} . "\" class=\"FWSPanel ui-widget ui-widget-content ui-corner-all\">";
-        $panel .= "<div style=\"padding:5px 15px 15px 15px;font-weight:800;font-size:14px;color:#2B6FB6;\" class=\"FWSPanelTitle\">" . $paramHash{title} . "</div>";
-        $panel .= "<div steyl=\" padding:5px 15px 15px 15px;font-size:12px;\" class=\"FWSPanelContent\">" . $paramHash{content} . "</div>";
+        $panel .= "<div style=\"width:95%;font-size:12px;margin-top:10px;padding-bottom:10px;margin-bottom:10px;border: 1px solid #d3d3d3; padding:10px;background: #ffffff; -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px; font-weight: normal; color: #555555;" . $paramHash{panelStyle} . "\" class=\"FWSPanel" . $panelClass . "\">";
+        $panel .= "<h3 style=\"padding:5px 15px 15px 15px;font-weight:800;font-size:14px;color:#2B6FB6;\" class=\"FWSPanelTitle\">" . $paramHash{title} . "</h3>";
+        $panel .= "<div style=\" padding:5px 15px 15px 15px;font-size:12px;\" class=\"FWSPanelContent\">" . $paramHash{content} . "</div>";
         $panel .= "</div>";
     }
     else {
         $panel .= "<div ";
         if ( defined $paramHash{panelStyle} ) { $panel .= "style=\"" . $paramHash{panelStyle} . "\" " }
-        $panel .= "class=\"FWSPanel ui-widget ui-widget-content ui-corner-all\">";
-        $panel .= "<div class=\"FWSPanelTitle\">" . $paramHash{title} . "</div>";
-        $panel .= "<div class=\"FWSPanelContent\">" . $paramHash{content} . "</div>";
+        $panel .= "class=\"FWSPanel" . $panelClass . "\">";
+        $panel .= "<h3 class=\"FWSPanelTitle\">" . $paramHash{title} . "</h3>";
+        $panel .= "<div class=\"FWSPanelContent\"><div class=\"form-horizontal\">" . $paramHash{content} . "</div></div>";
         $panel .= "</div>";
     }
     return $panel;
@@ -849,6 +883,7 @@ sub displayAdminPage {
         #
         if ( $pageId =~ /^fws_/ ) { 
             my %elementHash = $self->_fullElementHash();
+
             for my $guid ( sort { $elementHash{$a}{alphaOrd} <=> $elementHash{$b}{alphaOrd} } keys %elementHash ) {
 
                 #
@@ -1492,6 +1527,29 @@ sub _bootstrapCDN {
     return  '<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">';
 }
 
+sub _elementFiles {
+    my ( $fws, %paramHash ) = @_;
+
+    #
+    # create where
+    #
+    my $whereStatement = " plugin= '" . $fws->safeSQL( $paramHash{plugin} ) . "'";
+    if ( $paramHash{guid} ) {
+        $whereStatement = " guid= '" . $fws->safeSQL( $paramHash{guid} ) . "'";
+    }
+
+    #
+    # get the plugin files or just the files for an element in the same way you get SQL
+    #
+    my $sth = $fws->{'_DBH_' . $fws->{DBName} . $fws->{DBHost} }->prepare( "SELECT * FROM element WHERE " . $whereStatement );
+    $sth->execute();
+
+    my $elementFiles;
+    while ( my $hash_ref = $sth->fetchrow_hashref() ) {
+        $elementFiles .= $fws->packDirectory( directory => $fws->{filePath} . '/' . $fws->{siteGUID} . '/' . $hash_ref->{guid}, noFWSBackups => 1);
+    }
+    return $elementFiles;
+}
 
 =head1 AUTHOR
 
