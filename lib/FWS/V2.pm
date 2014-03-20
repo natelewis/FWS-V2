@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14031919
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14031919';
 
 
 =head1 SYNOPSIS
@@ -775,6 +775,15 @@ sub new {
         active                => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         checkedout            => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         root_element          => { type => 'int(1)'   ,key => ''            ,default => '0'                 ,AJAXGroup => 'showDeveloper'},
+    };
+    
+    $self->{dataSchema}{element_history} = {
+        %{$self->{dataSchema}{element}},
+        
+        #
+        # fields that make it different from the regular element table 
+        #
+        plugin_version        => { type => 'decimal(4,4)',key => 'MUL'      ,default => 0                   },
     };
 
     $self->{dataSchema}{groups} = {
