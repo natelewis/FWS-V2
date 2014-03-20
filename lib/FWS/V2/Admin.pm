@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.14031318
+Version 1.14031919
 
 =cut
 
-our $VERSION = '1.14031318';
+our $VERSION = '1.14031919';
 
 
 =head1 SYNOPSIS
@@ -206,7 +206,19 @@ sub tabs {
         #
         # add to the tab LI and the HTML we will put below for each tab
         #
-        $tabHTML        .= "<li class=\"" . $tabItemClass . $tabActiveClass . "\"><a onclick=\"" . $javaScript . "\" href=\"#" . $tabHRef . "\" data-toggle=\"tab\">" . $tabName . "</a></li>";
+        $tabHTML        .= "<li class=\"" . $tabItemClass . $tabActiveClass . "\">";
+       
+        # 
+        # make it a link only if there is corrisponding div html;
+        #
+        if ( $tabContent || $tabJava ) { 
+            $tabHTML    .= "<a onclick=\"" . $javaScript . "\" href=\"#" . $tabHRef . "\" data-toggle=\"tab\">" . $tabName . "</a>";
+        }
+        else {
+            $tabHTML    .= $tabName;
+        }
+         
+        $tabHTML        .= "</li>";
         $tabDivHTML     .= "<div id=\"" . $tabHRef . "\" class=\"" . $tabContentClass . $tabActiveClass . $hideMe . "\">" . $tabContent . "</div>";
 
         #
