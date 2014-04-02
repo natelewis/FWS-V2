@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 1.14021218
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14021218';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -748,6 +748,12 @@ sub _localLogin {
             # just to make sure, if did come in to 'admin' then mark isAdmin to 1
             #
             $self->userValue( 'isAdmin', 1 );
+use Data::Dumper;
+
+            #
+            # run the admin modules
+            #
+            $self->registerPlugin( $self->{FWSAdminLib} || 'FWSAdmin2' );
 
             #
             # Restrict the login if they came in on the adminSafePassword
