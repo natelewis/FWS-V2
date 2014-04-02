@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.14021218
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14021218';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -354,7 +354,9 @@ sub _FWSContent {
         #
         # if this is an ispadmin control process the page differntly
         #
-        if ( $pageId =~ /^fws_/ || $pageId eq 'admin' ) { $self->displayAdminPage() }
+        if ( $pageId =~ /^fws_/ || $pageId eq 'admin' ) { 
+            $self->displayAdminPage(); 
+        }
 
         if ( $pageId eq 'sitemap.xml' ) {
             print "Status: 200 OK\n";
@@ -779,15 +781,15 @@ sub _FWSContent {
                         my %elementHash = $self->elementHash( guid => $valueHash{type} );
 
                         #
-                        # add css or js if its needed
+                        # add element css or js if its needed
                         #
                         if ( !$JSHash{$valueHash{type}} && $elementHash{jsDevel} ) {
                             $JSHash{$valueHash{type}} = 1;
-                            $self->_jsEnable( $elementHash{siteGUID} . "/" . $valueHash{type} . "/FWSElement-" . $elementHash{jsDevel},-1000 );
+                            $self->_jsEnable( $elementHash{siteGUID} . '/' . $valueHash{type} . '/FWSElement', -1000 );
                         }
                         if ( !$CSSHash{$valueHash{type}} && $elementHash{cssDevel} ) {
                             $CSSHash{$valueHash{type}} = 1;
-                            $self->_cssEnable( $elementHash{siteGUID} . "/" . $valueHash{type} . "/FWSElement-" . $elementHash{cssDevel},-1000 );
+                            $self->_cssEnable( $elementHash{siteGUID} . '/' . $valueHash{type} . '/FWSElement', -1000 );
                         }
 
                         #
@@ -1004,19 +1006,22 @@ sub _FWSContent {
                     );
                 }
    
-   
+                #
+                # replace any FWSJava-
+                #
                 my $FWSJava = $self->FWSJava(); 
                 $pageHTML =~ s/#FWSJavaLoad#/$FWSJava/g;
     
-    
+                #
+                # replace any FWSLink-
+                #
                 my $FWSLink = "<a href=\"http://www.frameworksites.com/poweredByFrameWorkSites\"><img style=\"border: 0 none;\" src=\"https://www.frameworksites.com/poweredByFrameWorkSites.jpg\" alt=\"This site was built using FrameWork Sites!\"/></a>";
                 $pageHTML =~ s/#FWSLink#/$FWSLink/g;
-                while ( $pageHTML =~ /#FWSField-(.*?)#/g ) {
-                    my $formField = $1;
-                    my $changeFrom = '#FWSField-' . $formField . '#';
-                    my $changeTo = $self->removeHTML( $self->formValue( $formField ) );
-                    $pageHTML =~ s/$changeFrom/$changeTo/g;
-                }
+
+                #
+                # replace any FWSField-
+                #
+                $pageHTML = $self->replaceFWSField( content => $pageHTML );
             }
         }
     }
@@ -1024,6 +1029,29 @@ sub _FWSContent {
 }
 
 
+=head2 replaceFWSField
+
+Return the content with FWSField objects replaced with the corresponding field values.  
+
+Example: 
+    $fws->replaceFWSField( content => $theContent );
+
+=cut
+
+sub replaceFWSField {
+    my ( $self, %paramHash ) = @_;
+
+    my $content = $paramHash{content};
+
+    while ( $content =~ /#FWSField-(.*?)#/g ) {
+        my $formField       = $1;
+        my $changeFrom      = '#FWSField-' . $formField . '#';
+        my $changeTo        = $self->removeHTML( $self->formValue( $formField ) );
+        $paramHash{content} =~ s/$changeFrom/$changeTo/g;
+    }
+
+    return $paramHash{content};
+}
 
 sub _replaceContentColumn {
     my ( $self, %editHash ) = @_;
