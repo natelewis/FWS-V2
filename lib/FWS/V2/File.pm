@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -658,7 +658,7 @@ Extract the version and description from a FWS plugin.  If no version is labeled
     #
     # get the info from the plugin
     #
-    my %pluginInfo = $fws->pluginInfo( $somePluginFile );
+    my %pluginInfo = $fws->pluginInfo( file => $somePluginFile );
     print "Description: " . $pluginInfo{description} . "\n";
     print "Version: " . $pluginInfo{version} . "\n";
     print "Author: " . $pluginInfo{author} . "\n";
@@ -667,7 +667,8 @@ Extract the version and description from a FWS plugin.  If no version is labeled
 =cut
 
 sub pluginInfo {
-    my ( $self, $pluginFile ) = @_;
+    my ( $self, %paramHash ) = @_;
+    
 
     #
     # the return we will build
@@ -677,24 +678,26 @@ sub pluginInfo {
     #
     # pull the file into a string so we can parse it
     #
-    my $scriptContent;
-    if ( -e $pluginFile ) {
-        open ( my $SCRIPTFILE, "<", $pluginFile );
+    my $scriptContent = $paramHash{script};
+    if ( $paramHash{file} && -e $paramHash{file} ) {
+        open ( my $SCRIPTFILE, "<", $paramHash{file} );
         while ( <$SCRIPTFILE> ) { $scriptContent .= $_ }
         close $SCRIPTFILE;
     }
-    
+   
     #
     # strip the version and header data out and create the commit button
     #
     $scriptContent             =~ s/our\s\$VERSION\s*=\s*\'([\d\.]+).*?\n//s;
     $returnHash{version}       = $1;
-   
+  
     #
     # make the version cool if its not in there
     # 
     $returnHash{version}        =~ s/[^\d\.]//g;
     $returnHash{version}       ||= '0.0000';
+
+    $returnHash{version}        = sprintf( "%.4f", $returnHash{version} );
 
     #   
     # get description

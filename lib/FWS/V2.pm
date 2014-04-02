@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -776,6 +776,15 @@ sub new {
         checkedout            => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         root_element          => { type => 'int(1)'   ,key => ''            ,default => '0'                 ,AJAXGroup => 'showDeveloper'},
     };
+    
+    $self->{dataSchema}{element_history} = {
+        %{$self->{dataSchema}{element}},
+        
+        #
+        # fields that make it different from the regular element table 
+        #
+        plugin_version        => { type => 'decimal(4,4)',key => 'MUL'      ,default => 0                   },
+    };
 
     $self->{dataSchema}{groups} = {
         site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => ''                  ,noSite => 1},
@@ -799,6 +808,7 @@ sub new {
         js_devel              => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         css_devel             => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         default_site          => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
+        init_script           => { type => 'text'     ,key => ''            ,default => ''                  },
         site_plugins          => { type => 'text'     ,key => ''            ,default => ''                  },
         extra_value           => { type => 'text'     ,key => ''            ,default => ''                  ,AJAXGroup => 'showSiteSettings'},
     };
@@ -831,7 +841,7 @@ sub registerPlugins {
     #
     # move trough the list registering each one 
     #
-    my @pluginArray = split /\|/, $self->{sitePlugins};
+    my @pluginArray =  split /\|/, $self->{sitePlugins};
 
     while ( @pluginArray )  {
         $self->registerPlugin( shift @pluginArray );
@@ -841,7 +851,7 @@ sub registerPlugins {
     # this if for the systemInfo sanity checking.  I happened!
     #
     $self->{FWSScriptCheck}->{registerPlugins} = 1;
-
+           
     return;
 }
 

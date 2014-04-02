@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -416,15 +416,47 @@ sub connectDBH {
         # send an error if we got one
         #
         if ( DBI->errstr() ) { $self->FWSLog( 'DB connection error: ' . DBI->errstr() ) }
+
+        #
+        # run the init script ( does not work if noCache it will eat up the connections )
+        #
+        elsif ( !$paramHash{noCache} ) {
+            
+            #
+            # set the DBH storage cache handler
+            #
+            $self->{'_DBH_' . $paramHash{DBName} . $paramHash{DBHost}} = $DBH;
+
+            #
+            # get and save init script
+            #
+            my ( $initScript ) = @{$self->runSQL( DBH => $DBH, SQL => "select init_script from site where sid='site'" )};
+       
+            if ( $initScript ) { 
+
+#
+                #
+                # move the object around
+                #
+                my $fws = $self;
+                
+                ## no critic
+                eval $initScript;
+                ## use critic
+                
+                $self = $fws;
+                
+                #
+                # process any error if we got one
+                #
+                my $errorCode = $@;
+                if ( $errorCode ) { $self->FWSLog( 'site_init',  $errorCode ) }
+            }
+        }
     }
 
     #
-    # if DBH cache isn't defined then lets define it
-    #
-    if ( !$self->{'_DBH_' . $paramHash{DBName} . $paramHash{DBHost}} && !$paramHash{noCache} )  { $self->{'_DBH_' . $paramHash{DBName} . $paramHash{DBHost}} = $DBH }
-
-    #
-    # in either case return the DBH in case someone wants it for convience
+    # Return the DBH in case you arn't caching it 
     #
     return $DBH;
 }
@@ -811,11 +843,27 @@ sub dataHash {
     my ( $self, %paramHash ) = @_;
 
     #
+    # bail if I don't like what I see
+    #
+    if ( !$paramHash{guid} && !$paramHash{friendlyURL} ) {
+        return ();
+    }
+    
+    #
     # set site GUID if it wasn't passed to us
     #
     $paramHash{siteGUID} ||= $self->{siteGUID};
 
-    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value, data.element_type, 'pageGUID', data.page_guid, 'lang', lang, 'guid', data.guid, 'pageFriendlyURL', page_friendly_url, 'friendlyURL', friendly_url, 'defaultElement', data.default_element, 'guid_xref_site_guid', data.site_guid, 'disableSitemap', data.disable_sitemap, 'showLogin', data.show_login, 'showMobile', data.show_mobile, 'showResubscribe', data.show_resubscribe, 'groupId', data.groups_guid, 'disableEditMode',data.disable_edit_mode, 'siteGUID', data.site_guid, 'site_guid', data.site_guid, 'title', data.title, 'disableTitle', data.disable_title, 'active', data.active, 'navigationName', nav_name, 'name', data.name from data left join site on site.guid=data.site_guid where data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
+    my $whereStatement;
+    if ( $paramHash{guid} ) {
+        $whereStatement .= " data.guid='" . $self->safeSQL( $paramHash{guid} ) . "' and ";
+    }
+
+    if ( $paramHash{friendlyURL} ) {
+        $whereStatement .= " data.friendly_url='" . $self->safeSQL( $paramHash{friendlyURL} ) . "' and ";
+    }
+
+    my $arrayRef =  $self->runSQL( SQL => "select data.extra_value, data.element_type, 'pageGUID', data.page_guid, 'lang', lang, 'guid', data.guid, 'pageFriendlyURL', page_friendly_url, 'friendlyURL', friendly_url, 'defaultElement', data.default_element, 'guid_xref_site_guid', data.site_guid, 'disableSitemap', data.disable_sitemap, 'showLogin', data.show_login, 'showMobile', data.show_mobile, 'showResubscribe', data.show_resubscribe, 'groupId', data.groups_guid, 'disableEditMode',data.disable_edit_mode, 'siteGUID', data.site_guid, 'site_guid', data.site_guid, 'title', data.title, 'disableTitle', data.disable_title, 'active', data.active, 'navigationName', nav_name, 'name', data.name from data left join site on site.guid=data.site_guid where " . $whereStatement . " (data.site_guid='" . $self->safeSQL( $paramHash{siteGUID} ) . "' or site.sid='fws')" );
 
     #
     # pull off the first two fields because we need to manipulate them
@@ -1942,6 +1990,7 @@ sub saveData {
         # insert the record
         #
         $self->runSQL( SQL => "insert into data (guid,site_guid,created_date) values ('" . $self->safeSQL( $paramHash{guid} ) . "','" . $self->safeSQL( $paramHash{siteGUID} ) . "','" . $self->formatDate( format => 'SQL' ) . "')");
+
     }
 
     #
@@ -2836,6 +2885,12 @@ Return the hash for a user.
 sub userHash {
     my ( $self, %paramHash ) = @_;
 
+
+    #
+    # manipulate any incomming settings
+    #
+    %paramHash = $self->runScript('preUserHash',%paramHash);
+
     #
     # store the guid in this, till we figure out what one we are looking up
     #
@@ -3280,7 +3335,7 @@ sub _deleteOrphanedData {
         #
         # create the SQL that will be used for the delete and the reflective query
         #
-        my $fromSQL = "from " . $table . " where " . $table . " . " . $field . " in (select " . $field . " from (select distinct " . $table . "." . $field . " from " . $table . " left join " . $refTable . " on " . $refTable . "." . $refField . " = " . $table . "." . $field . " where " . $refTable . "." . $refField . " is null ".$extraWhere.") as delete_list)";
+        my $fromSQL = "from " . $table . " where " . $table . "." . $field . " in (select " . $field . " from (select distinct " . $table . "." . $field . " from " . $table . " left join " . $refTable . " on " . $refTable . "." . $refField . " = " . $table . "." . $field . " where " . $refTable . "." . $refField . " is null " . $extraWhere . ") as delete_list)";
 
         #
         # do the actual delete

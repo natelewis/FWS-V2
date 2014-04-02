@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -181,6 +181,8 @@ Return the full web rendering for a FWS Page.   This includes the Content-Type H
 sub displayContent {
     my ( $self ) = @_;
 
+
+
     $self->runScript( 'preContent' );
 
     #
@@ -330,6 +332,8 @@ sub _FWSContent {
     my ( $self ) = @_;
 
 
+
+
     my $pageHTML;
 
     if ( !$self->{stopProcessing} ) {
@@ -350,7 +354,9 @@ sub _FWSContent {
         #
         # if this is an ispadmin control process the page differntly
         #
-        if ( $pageId =~ /^fws_/ ) { $self->displayAdminPage() }
+        if ( $pageId =~ /^fws_/ || $pageId eq 'admin' ) { 
+            $self->displayAdminPage(); 
+        }
 
         if ( $pageId eq 'sitemap.xml' ) {
             print "Status: 200 OK\n";
@@ -496,18 +502,16 @@ sub _FWSContent {
                 $self->_jsEnable( $self->{siteGUID} . "/" . $templateHash{guid} . "/FWSElement-" . $templateHash{js} );
                 $somethingIsOnThePage = 1;
             }
-
+            
             #
             # site level css and js
             #
             $pageHead .= $self->siteValue( 'siteHead' );
             if ( $self->siteValue( 'cssDevel' ) > 0 ) {
                 $self->_cssEnable( $self->{siteGUID} . "/assets/FWSElement-" . $self->siteValue( 'cssDevel' ) );
-                $somethingIsOnThePage = 1;
             }
             if ( $self->siteValue( 'jsDevel' ) > 0 ) {
                 $self->_jsEnable( $self->{siteGUID} . "/assets/FWSElement-" . $self->siteValue( 'jsDevel' ) );
-                $somethingIsOnThePage = 1;
             }
 
             #
@@ -777,15 +781,15 @@ sub _FWSContent {
                         my %elementHash = $self->elementHash( guid => $valueHash{type} );
 
                         #
-                        # add css or js if its needed
+                        # add element css or js if its needed
                         #
                         if ( !$JSHash{$valueHash{type}} && $elementHash{jsDevel} ) {
                             $JSHash{$valueHash{type}} = 1;
-                            $self->_jsEnable( $elementHash{siteGUID} . "/" . $valueHash{type} . "/FWSElement-" . $elementHash{jsDevel},-1000 );
+                            $self->_jsEnable( $elementHash{siteGUID} . '/' . $valueHash{type} . '/FWSElement', -1000 );
                         }
                         if ( !$CSSHash{$valueHash{type}} && $elementHash{cssDevel} ) {
                             $CSSHash{$valueHash{type}} = 1;
-                            $self->_cssEnable( $elementHash{siteGUID} . "/" . $valueHash{type} . "/FWSElement-" . $elementHash{cssDevel},-1000 );
+                            $self->_cssEnable( $elementHash{siteGUID} . '/' . $valueHash{type} . '/FWSElement', -1000 );
                         }
 
                         #
@@ -886,14 +890,8 @@ sub _FWSContent {
             # check if this is the home page, with no stuff on it,  if not we need to dump to login, or redirect to fws_systemInfo
             # only do this for the site though, if your making blank other sites for other reasons lets just let that happen
             #
-            if ( $elementTotal < 1 && $pageId eq $self->homeGUID() && !$somethingIsOnThePage && $self->formValue( 's' ) eq 'site' ) {
-                if ( $self->{adminLoginId} ) {
-                    print "Status: 302 Found\n";
-                    print "Location: " . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo\n\n";
-                }
-                else {
-                    $self->displayAdminLogin();
-                }
+            if ( $elementTotal < 1 && $pageId eq $self->homeGUID() && !$somethingIsOnThePage && $self->formValue( 's' ) eq 'site' && !$self->{adminLoginId} ) {
+                $self->displayAdminLogin();
             }
             
 
@@ -905,43 +903,7 @@ sub _FWSContent {
                 # Put in the edit mode box if we are in edit mod and loged in as the correct user for this site
                 #
                 if ( $self->{adminLoginId} ) {
-
-                    #
-                    # 
-                    #
-                    if ( $pageId eq $self->homeGUID() ) { $pageHash{disableDeleteTool} = 1 }
-                    $pageHash{layout}             = 'FWSPageMenu';
-                    $pageHash{guid}               = $pageId;
-                    $pageHash{FWSMenuTool}        = 1;
-                    $pageHash{pageOnly}           = 1;
-                    $pageHash{alwaysShow}         = 1;
-                    $pageHash{disableActiveTool}  = 1;
-                    $pageHash{disableOrderTool}   = 1;
-                    if ( $pageHash{siteGUID} eq $self->{siteGUID} ) {
-                        $pageHash{name} = $self->FWSMenu( pageId => $pageId ) . $pageHash{name};
-                    }
-                    else {
-                        $pageHash{addElementTool}     = 0;
-                        $pageHash{disableDeleteTool}  = 1;
-                        $pageHash{disableEditTool}    = 1;
-                        $pageHash{disableActiveTool}  = 1;
-                        $pageHash{disableOrderTool}   = 1;
-                        $pageHash{name} = "Default FWS Page - To override this page create a new page with the friendly url of [ " . $pageHash{friendlyURL} . " ]";
-                    }
-    
-                    #
-                    # if we are not able to see the buttons lets kill them
-                    #
-                    if ( ( !$self->userValue( 'showDesign' ) && !$self->userValue( 'showContent' ) && !$self->userValue( 'showDeveloper' ) ) || ( $pageHash{siteGUID} ne $self->{siteGUID} ) ) {
-                        $pageHash{addElementTool}       = 0;
-                        $pageHash{disableDeleteTool}    = 1;
-                        $pageHash{disableEditTool}      = 1;
-                        $pageHash{disableActiveTool}    = 1;
-                        $pageHash{disableOrderTool}     = 1;
-                    }
-    
-                    $pageHash{editBoxColor} = '#000000';
-                    $FWSMenu .= $self->editBox( %pageHash );
+                    $FWSMenu = $self->FWSMenu( %pageHash );
                 }
     
                 #
@@ -1044,19 +1006,22 @@ sub _FWSContent {
                     );
                 }
    
-   
+                #
+                # replace any FWSJava-
+                #
                 my $FWSJava = $self->FWSJava(); 
                 $pageHTML =~ s/#FWSJavaLoad#/$FWSJava/g;
     
-    
+                #
+                # replace any FWSLink-
+                #
                 my $FWSLink = "<a href=\"http://www.frameworksites.com/poweredByFrameWorkSites\"><img style=\"border: 0 none;\" src=\"https://www.frameworksites.com/poweredByFrameWorkSites.jpg\" alt=\"This site was built using FrameWork Sites!\"/></a>";
                 $pageHTML =~ s/#FWSLink#/$FWSLink/g;
-                while ( $pageHTML =~ /#FWSField-(.*?)#/g ) {
-                    my $formField = $1;
-                    my $changeFrom = '#FWSField-' . $formField . '#';
-                    my $changeTo = $self->removeHTML( $self->formValue( $formField ) );
-                    $pageHTML =~ s/$changeFrom/$changeTo/g;
-                }
+
+                #
+                # replace any FWSField-
+                #
+                $pageHTML = $self->replaceFWSField( content => $pageHTML );
             }
         }
     }
@@ -1064,6 +1029,29 @@ sub _FWSContent {
 }
 
 
+=head2 replaceFWSField
+
+Return the content with FWSField objects replaced with the corresponding field values.  
+
+Example: 
+    $fws->replaceFWSField( content => $theContent );
+
+=cut
+
+sub replaceFWSField {
+    my ( $self, %paramHash ) = @_;
+
+    my $content = $paramHash{content};
+
+    while ( $content =~ /#FWSField-(.*?)#/g ) {
+        my $formField       = $1;
+        my $changeFrom      = '#FWSField-' . $formField . '#';
+        my $changeTo        = $self->removeHTML( $self->formValue( $formField ) );
+        $paramHash{content} =~ s/$changeFrom/$changeTo/g;
+    }
+
+    return $paramHash{content};
+}
 
 sub _replaceContentColumn {
     my ( $self, %editHash ) = @_;

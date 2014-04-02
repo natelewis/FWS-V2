@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14040108';
 
 =head1 SYNOPSIS
 
@@ -34,6 +34,17 @@ our $VERSION = '1.14012919';
 Framework Sites version 2 methods that use or manipulate text either for rendering or default population.
 
 =head1 METHODS
+
+=head2 frameworkSites
+
+Return the FRAMWORK SITES CSS'd logo with green F W S and the FWS font-family of arial, helvetica, clean, sans-serif.
+
+=cut
+
+sub frameworkSites {
+    my ( $self ) = @_;
+    return '<span style="font-family: arial,helvetica,clean,sans-serif;"><span style="color:#80a828;">F</span>RAME<span style="color:#80a828;">W</span>ORK <span style="color:#80a828;">S</span>ITES</span>';
+}
 
 
 =head2 anOrA
@@ -335,76 +346,95 @@ HTML passed as the "now loading..." type text as HTML.  This is javascript wrapp
 
 =cut
 
-
 sub dialogWindow {
     my ( $self, %paramHash ) = @_;
+    my $returnHTML;
 
-    #
-    # Determine Auto Resize Settings default it to true if it is blank
-    #
-    $paramHash{autoResize} = 'true' if ( !$paramHash{autoResize} );
-
-    #
-    # set defaults and fix up the width
-    #
-    $self->jqueryEnable( 'ui-1.8.9' );
-    $self->jqueryEnable( 'ui.dialog-1.8.9' );
-    $self->jqueryEnable( 'ui.position-1.8.9' );
-    if ( !defined $paramHash{width} ) { $paramHash{width} = '800' }
-    my $returnHTML = "var jsAutoResize = '" . $paramHash{autoResize} . "';";
-    
-    #
-    # build the ajax load without the jquery pre object because we could use it two different ways
-    #
-    my $ajaxLoad = "load('" . $self->{scriptName} . $self->{queryHead} . $paramHash{queryString} . "',function(){";
-    if ( $self->{adminLoginId} ) { $ajaxLoad .= "FWSUIInit();" }
-    $ajaxLoad .= "if (jsAutoResize.length) { \$.modal.update(); } });";
-
-    #
-    # create someting small and unique so we can use it as a reference
-    #
-    my $uniqueId = '_' . $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM', lowLength => 6, highLength => 6 );
-
-    $paramHash{loadingContent} ||= "<img src=".$self->loadingImage()."></img> Loading, please wait...";
-
-    #
-    # return the ajax against he modal wrapper if we are just refreshing with new content
-    #
-
-    if ( $paramHash{subModal} ) {
-        $returnHTML .= "\$('.simplemodal-data').html( '".$paramHash{loadingContent} ."' );\$('.simplemodal-data')." . $ajaxLoad;
+    if ( $self->{bootstrapEnable} ) {
+        $self->jqueryEnable( 'fwsbootbox-3.3.0' );
+        $paramHash{title} .= '&nbsp;';
+        $returnHTML =   "\$('<div></div>').FWSAjax({".
+                        "queryString: '" . $paramHash{queryString} ."'," .
+                        "onSuccess: function(returnData) {";
+        $returnHTML .=  "fwsbootbox.dialog( returnData, [], {header: '" . $paramHash{title} . "'} );";
+        if ( $self->{adminLoginId} ) { 
+            $returnHTML .= "FWSUIInit();" 
+        }
+        $returnHTML .= "}});";
     }
-    
-    #
-    # this is not a subModal do the whole gig
-    #
-    else {
-        $returnHTML .= "\$('" . ( $paramHash{id} ? "#" . $paramHash{id} : "<div></div>').html( '" . $paramHash{loadingContent} . "' )").".modal({ dataId: 'modal_" . $uniqueId . "',";
-    
+    else { 
         #
-        # Set the hit and autoresize
+        # Determine Auto Resize Settings default it to true if it is blank
         #
-        if ( defined $paramHash{height} ) { $returnHTML .= "minHeight: " . $paramHash{height} . ",maxHeight: " . $paramHash{height} . "," }
-        $returnHTML .= "autoResize: " . $paramHash{autoResize} . ",";
+        $paramHash{autoResize} = 'true' if ( !$paramHash{autoResize} );
     
         #
-        # because we do NOT have an ID, lets build the onShow loader
+        # set defaults and fix up the width
         #
-        if ( !$paramHash{id} ) { $returnHTML .= "onShow: function (dialog) { \$('#modal_" . $uniqueId . "')." . $ajaxLoad . " }," }
+        $self->jqueryEnable( 'ui-1.8.9' );
+        $self->jqueryEnable( 'ui.dialog-1.8.9' );
+        $self->jqueryEnable( 'ui.position-1.8.9' );
+        if ( !defined $paramHash{width} ) { $paramHash{width} = '800' }
+        $returnHTML = "var jsAutoResize = '" . $paramHash{autoResize} . "';";
     
         #
-        # create the oncloase to clean up any mce thingies
+        # build the ajax load without the jquery pre object because we could use it two different ways
         #
-        $returnHTML .= "onClose: function(dialog) { FWSCloseMCE(); \$.modal.close(); },";
-        $returnHTML .= "minWidth:" . $paramHash{width};
-        $returnHTML .= "}); ";
+        my $ajaxLoad = "load('" . $self->{scriptName} . $self->{queryHead} . $paramHash{queryString} . "',function(){";
+        if ( $self->{adminLoginId} ) { $ajaxLoad .= "FWSUIInit();" }
+        $ajaxLoad .= "if (jsAutoResize.length) { \$.modal.update(); } });";
+    
+        #
+        # create someting small and unique so we can use it as a reference
+        #
+        my $uniqueId = '_' . $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM', lowLength => 6, highLength => 6 );
+    
+        $paramHash{loadingContent} ||= "<img src=".$self->loadingImage()."></img> Loading, please wait...";
+    
+        #
+        # return the ajax against he modal wrapper if we are just refreshing with new content
+        #
+    
+        if ( $paramHash{subModal} ) {
+            $returnHTML .= "\$('.simplemodal-data').html( '".$paramHash{loadingContent} ."' );\$('.simplemodal-data')." . $ajaxLoad;
+        }
+        
+        #
+        # this is not a subModal do the whole gig
+        #
+        else {
+            $returnHTML .= "\$('" . ( $paramHash{id} ? "#" . $paramHash{id} : "<div></div>').html( '" . $paramHash{loadingContent} . "' )").".modal({ dataId: 'modal_" . $uniqueId . "',";
+        
+            #
+            # Set the hit and autoresize
+            #
+            if ( defined $paramHash{height} ) { $returnHTML .= "minHeight: " . $paramHash{height} . ",maxHeight: " . $paramHash{height} . "," }
+            $returnHTML .= "autoResize: " . $paramHash{autoResize} . ",";
+        
+            #
+            # because we do NOT have an ID, lets build the onShow loader
+            #
+            if ( !$paramHash{id} ) { $returnHTML .= "onShow: function (dialog) { \$('#modal_" . $uniqueId . "')." . $ajaxLoad . " }," }
+        
+            #
+            # create the oncloase to clean up any mce thingies
+            #
+            $returnHTML .= "onClose: function(dialog) { FWSCloseMCE(); \$.modal.close(); },";
+            $returnHTML .= "minWidth:" . $paramHash{width};
+            $returnHTML .= "}); ";
+        }
     }
-    
+ 
     #
     # return the link wrapperd onclick or just the onclick
     #
     if ( $paramHash{linkHTML} ) { 
-        return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
+        if ( $self->{bootstrapEnable} ) {
+            return "<a class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</a>";
+        }
+        else {
+            return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
+        }
     }
     return $returnHTML;
 }
@@ -465,18 +495,6 @@ sub fieldHash {
        }
        return %fieldHash;
 }
-
-
-=head2 fontCSS
-
-Return css that will set the default FWS font for inline use before CSS is capable of being applied.
-
-=cut
-
-sub fontCSS {
-    return "font-size:12px;font-family: Tahoma, serifSansSerifMonospace;";
-}
-
 
 =head2 formatDate
 
@@ -982,7 +1000,7 @@ sub FWSButton{
     my ( $self, %paramHash ) = @_;
 
     my $class = 'ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only ';
-    if ( $paramHash{framework} eq 'bootstrap' ) {
+    if ( $self->{bootstrapEnable} ) {
         $class = 'btn ';
     }
 
@@ -1283,7 +1301,12 @@ sub popupWindow {
     my ( $self, %paramHash ) = @_;
     my $returnHTML = "window.open('" . $self->{scriptName} . $self->{queryHead} . $paramHash{queryString} . "','_blank');";
     if ( $paramHash{linkHTML} ) {
-        return "<span class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
+        if ( $self->{bootstrapEnable} ) {
+            return "<a class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</a>";
+        }
+        else {
+            return "<span class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
+        }
     }
     return $returnHTML;
 }
@@ -1601,44 +1624,6 @@ sub _cssEnable {
 
     return %cssHash;
 }
-
-
-sub _minCSS {
-    my ( $self ) = @_;
-    #
-    # when showing pre-installation screens this is the CSS that will make login's and panels show up correctly
-    # this is only used for adminLogin and for fws_systemInfo
-    #
-    return '<style type="text/css">'.
-          'body {font-family: Tahoma, serifSansSerifMonospace;font-size:12px;}' . 
-          '.FWSStatusNote { padding:15px;text-align:center;color:#FF0000; }' . 
-          '.FWSPanelTitle { padding:10px;color:#2B6FB6;padding-bottom:15px;font-size:16px;font-weight:800; }' . 
-          '.FWSPanel { width:90%;margin:auto;margin-bottom:20px; }' . 
-          '.FWSPanelContent { padding:10px;font-size:12px;}' . 
-          '.loginInput { width:200px; }' . 
-          '.loginSubmit { text-align:right;width:275px; }' . 
-          '.ui-corner-all { -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px; }' . 
-          '.ui-widget { font-family: Tahoma, serifSansSerifMonospace; font-size: 14px }' . 
-          '.ui-widget button { font-family: Tahoma, serifSansSerifMonospace; font-size: 14px; }' . 
-          '.ui-widget-content { border: 1px solid #aaaaaa; background: #ffffff url(' . $self->{fileFWSPath} . '/jquery/ui-1.8.9/ui-bg_flat_75_ffffff_40x100.png) 50% 50% repeat-x; color: #222222; }' . 
-          '.ui-button { display: inline-block; position: relative; padding: 5px; margin-right: .1em; text-decoration: none !important; cursor: pointer; text-align: center; overflow: visible; }' . 
-          '.ui-state-default { border: 1px solid #d3d3d3; background: #e6e6e6 url(' . $self->{fileFWSPath} . '/jquery/ui-1.8.9/images/ui-bg_glass_75_e6e6e6_1x400.png) 50% 50% repeat-x; font-weight: normal; color: #555555; }' . 
-          '.FWSAdminLoginLeft { float: left; text-align: left; }' . 
-          '.FWSAdminLoginRight { float: right; text-align: left; }' . 
-          '.FWSAdminLoginContainer { margin: 170px auto; width: 581px; border: solid 1px; }' . 
-          '#FWSAdminLogin h2 {  font-size: 24px; color: #f78d1d; font-weight: 800; }'.
-          '#FWSAdminLogin { text-align: left; padding: 2px 57px 50px; background: #ddd; }' . 
-          '#FWSAdminLogin { text-align: center; }'.
-          '#FWSAdminLoginUser, #FWSAdminLoginPassword { overflow:visible; width: 224px; padding: 3px; height: 20px; border-color: #AAAAAA #C8C8C8 #C8C8C8 #AAAAAA; border-style: solid; border-width: 1px; font-size: 12px; }' . 
-          '.FWSAdminLoginContainer #FWSAdminLogin label { color: #333333; font-weight: bold; font-size: 12px; }' . 
-          '.FWSAdminLoginLegal { background: #fff; padding: 8px 8px 5px; margin: 0; border-top: dashed 1px; font-size: 10px; }' . 
-          '.FWSAdminLoginContainer .FWSAdminLoginBottom { height: 5px; width: 581px; overflow: hidden; background: #fff; }' . 
-          '.FWSAdminLoginButton { float: right; margin-top: 10px; cursor: pointer; padding: 5px 20px; text-shadow: 0 1px 1px rgba(0,0,0,.3); -webkit-border-radius: 5px; -moz-border-radius: 5px; border-radius: 5px; -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2); -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2); box-shadow: 0 1px 2px rgba(0,0,0,.2); color: #fef4e9; border: solid 1px #da7c0c; background: #f78d1d; background: -webkit-gradient(linear, left top, left bottom, from(#faa51a), to(#f47a20)); background: -moz-linear-gradient(top,  #faa51a,  #f47a20); } ' . 
-          '.clear { clear: both; }' . 
-        '</style>';
-
-}
-
 
 =head1 AUTHOR
 

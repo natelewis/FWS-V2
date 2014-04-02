@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -663,16 +663,18 @@ sub _localLogin {
             }
         }
 
+
         if ( $adminPass eq $formPassword && $adminPass ne '' ) {
             $self->{adminLoginId} = $self->formValue( 'bs' );
+             
             if ( $self->formValue( 'p' ) eq $self->{adminURL} ) { $self->formValue( 'p', $self->homeGUID() ) }
         }
         else {
             $self->formValue( 'statusNote', $self->formValue( 'statusNote' ) . 'Your login criteria was incorrect.' );
+            $self->FWSLog( 'Failed admin login attempt from: ' . $ENV{REMOTE_ADDR} );
             $self->adminLogOut();
         }
     }
-
 
     #
     # Login as a profile
@@ -746,6 +748,12 @@ sub _localLogin {
             # just to make sure, if did come in to 'admin' then mark isAdmin to 1
             #
             $self->userValue( 'isAdmin', 1 );
+use Data::Dumper;
+
+            #
+            # run the admin modules
+            #
+            $self->registerPlugin( $self->{FWSAdminLib} || 'FWSAdmin2' );
 
             #
             # Restrict the login if they came in on the adminSafePassword

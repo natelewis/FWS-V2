@@ -10,11 +10,11 @@ FWS::V2::Legacy - Framework Sites version 2 compatibility and legacy methods and
 
 =head1 VERSION
 
-Version 1.13052223
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.13052223';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -327,6 +327,17 @@ sub getPageGUID {
 }
 
 
+=head2 fontCSS
+
+Return css that will set the default FWS font for inline use before CSS is capable of being applied.
+
+=cut
+
+sub fontCSS {
+        return "font-size:12px;font-family: Tahoma, serifSansSerifMonospace;";
+}
+
+
 =head2 navigationHref
 
 Deprecated, use navigationLink() and add hrefOnly flag.
@@ -479,7 +490,7 @@ Single extraction of version replaced by pluginInfo()
 
 sub getPluginVersion {
     my ( $self, $pluginFile ) = @_;
-    my %pluginInfo = $self->pluginInfo( $pluginFile );
+    my %pluginInfo = $self->pluginInfo( file => $pluginFile );
     return $pluginInfo{version};
 }
 
