@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.14031919
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14031919';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -23,9 +23,9 @@ our $VERSION = '1.14031919';
     use FWS::V2;
 
     #
-    # Create $fws
+    # Create $self
     #
-    my $fws = FWS::V2->new();
+    my $self = FWS::V2->new();
 
 
 =head1 DESCRIPTION
@@ -44,7 +44,7 @@ These modules are used for FWS admin display and logic.   They should not be use
 
 =head2 runAdminAction
 
-Run admin actions.  This will be depricated once they are all moved into the FWS display elements.
+Run admin actions to do the initial install or reinstall of core FWS package.
 
 =cut
 
@@ -62,198 +62,23 @@ Return the HTML used for a default FWS admin login.
 =cut
 
 sub displayAdminLogin {
-    my ( $self, @tabList ) = @_;
-    my $pageId = $self->formValue('p');
+    my ( $self ) = @_;
 
-    my $loginForm = "<div class=\"FWSAdminLoginContainer\"><div id=\"FWSAdminLogin\">";
-    $loginForm .= "<form method=\"post\" enctype=\"multipart/form-data\" action=\"" . $self->{scriptName} . "\">";
-
-    $loginForm .= "<h2>FWS Administrator Login</h2>";
-
-    $loginForm .= "<div class=\"FWSAdminLoginLeft\"><label for=\"FWSAdminLoginUser\">Username:</label><br/><input type=\"text\" name=\"bs\" id=\"FWSAdminLoginUser\" value=\"" . $self->formValue("bs_hold") . "\" /></div>";
-    $loginForm .= "<div class=\"FWSAdminLoginRight\"><label for=\"FWSAdminLoginPassword\">Password:</label><br/><input id=\"FWSAdminLoginPassword\" type=\"password\" name=\"l_password\" /></div>";
-
-    $loginForm .= "<div class=\"clear\"></div>";
-
-    $loginForm .= "<input class=\"FWSAdminLoginButton\" type=\"submit\" title=\"Login\" value=\"Login\" />";
-
-    $loginForm .= "<input type=\"hidden\" name=\"p\" value=\"" . $self->{adminURL} . "\"/>";
-    $loginForm .= "<input type=\"hidden\" name=\"session\" value=\"" . $self->formValue("session") . "\"/>";
-    $loginForm .= "<input type=\"hidden\" name=\"id\" value=\"" . $self->safeQuery( $self->formValue( "id" ) ) . "\"/>";
-    $loginForm .= "<input type=\"hidden\" id=\"s\" name=\"s\" value=\"" . $self->formValue("s") . "\"/>";
-
-    $loginForm .= "</form>";
-    $loginForm .= "</div>";
-
-    $loginForm .= "<div class=\"FWSAdminLoginLegal\">Powered by Framework Sites v" . $self->{FWSVersion} . "</div>";
-
-    $loginForm .= "</div></div>";
-
-    return $self->printPage( content => $loginForm, head => $self->_minCSS() );
-}
-
-
-=head2 tabs
-
-Return jQueryUI tab html.  The tab names, tab content, tinyMCE editing field name, and any javascript for the tab onclick is passed as arrays to the method.
-
-    #
-    # add the data to the tabs and panels to the HTML
-    #
-    $valueHash{html} .= $self->tabs(
-        id              => 'theIdOfTheTabContainer',
-        tabs            => [@tabs],
-        tabContent      => [@tabContent],
-        tabJava         => [@tabJava],
-
-        # html and file tab support
-        tabType         => [@tabType],       # file, html or leave empty for standard panel
-                                             # setting type will overwrite content and java provided
-
-        tabFields       => [@tabFields],     # field your updating
-
-        guid            => 'someGUID',       # guid your updating
-
-        # optional if your talking to a non-data table
-        tabUpdateType   => [@tabUpdateType], # defaults to AJAXExt
-        table           => 'data',           # defaults to data
-
-        # for file type only (required)
-        currentFile     => [@currentFile],   #
-    );
-
-NOTE: This should only be used in the context of the FWS Administration, and is only here as a reference for modifiers of the admin.   In future versions this will be replaced with a hash array style paramater to make this less cumbersome, but this will be avaiable for legacy controls.
-
-=cut
-
-sub tabs {
-    my ( $self, %paramHash ) = @_;
-
-    #
-    # this will be the counter we will use for inique IDs for each tab for referencing
-    #
-    my $tabCount = 0;
-
-    #
-    # seed our tab html and the div html that will hold the content
-    #
-    my $tabDivHTML;
-    my $tabHTML;
-    my $tabContentClass = 'tab-pane';
-    my $tabActiveClass = ' active';
-    my $tabItemClass;
-    
-    if ( !$self->{bootstrapEnable} ) {
-        $tabContentClass = 'ui-tabs-panel ui-widget-content ui-corner-bottom'; 
-        $tabItemClass = 'tabItem tabItem ui-state-default ui-corner-top ui-state-hover';
+    my $loginForm = '<div class="container"><form class="form-inline well" style="margin:auto;margin-top:40px;text-align:center;min-height:170px;max-width:550px;">';
+    $loginForm .= '<h2 style="padding-bottom:20px;">' . $self->frameworkSites() . '</h2>';
+    $loginForm .= '<input name="bs" type="text" class="input-large input-block-level" value="' . $self->formValue( 'bs_hold' ) . '" placeholder="User Name">';
+    $loginForm .= ' <input type="password" name="l_password" class="input-large input-block-level" placeholder="Password">';
+    $loginForm .= ' <button class="btn btn-primary" type="submit">Sign in</button>';
+    $loginForm .= '<input type="hidden" class="name="p" value="' . $self->{adminURL} . '"/>';
+    $loginForm .= '<input type="hidden" name="session" value="' . $self->formValue( 'session' ) . '"/>';
+    $loginForm .= '<input type="hidden" name="id" value="' . $self->safeQuery( $self->formValue( 'id' ) ) . '"/>';
+    $loginForm .= '<input type="hidden" id="s" name="s" value="' . $self->formValue( 's' ) . '"/>';
+    if ( $self->formValue( 'statusNote' ) ) {
+        $loginForm .= '<div style="margin:auto;width:450px;margin-top:20px;" class="alert alert-error">' . $self->formValue( 'statusNote' ) . '</div>';
     }
+    $loginForm .= '</form></div>';
 
-    while (@{$paramHash{tabs}}) {
-        my $tabJava         = shift( @{$paramHash{tabJava}} );
-        my $tabContent      = shift( @{$paramHash{tabContent}} );
-        my $tabName         = shift( @{$paramHash{tabs}} );
-        my $fieldName       = shift( @{$paramHash{tabFields}} );
-        my $tabType         = shift( @{$paramHash{tabType}} );
-        my $tabUpdateType   = shift( @{$paramHash{tabUpdateType}} );
-        my $currentFile     = $self->urlEncode( shift( @{$paramHash{currentFile}} ) );
-
-        #
-        # set the default
-        #
-        $tabUpdateType ||= 'AJAXExt';
-
-        #
-        # pass all the info in as the id so we can save it later
-        #
-        my $editorName  = $paramHash{guid} . "_v_" . $fieldName . "_v_" . $paramHash{table} . "_v_" . $tabUpdateType;
-
-        #
-        # tab type overwrites tabJava and tabContent!
-        #
-        if ( $tabType eq 'file' ) {
-            $tabContent = "<div id=\"dataEdit" . $fieldName . "\">Loading...</div>";
-            $tabJava    = "if(\$('#dataEdit" . $fieldName . "').html().length < 50) {\$('#dataEdit" . $fieldName . "').FWSAjax({queryString: '" . $self->{queryHead} . "p=fws_fileManager&current_file=" . $currentFile . "&field_update_type=" . $tabUpdateType . "&field_table=" . $paramHash{table} . "&field_name=" . $fieldName . "&guid=" . $paramHash{guid} . "',showLoading: false});}";
-        }
-
-        if ( $tabType eq 'html' ) {
-            $tabContent = "<div name=\"" . $fieldName . "\" id=\"" . $editorName . "\" class=\"HTMLEditor\" style=\"width:100%;height:500px;\">" . $tabContent . "</div><div style=\"display:none;\" id=\"" . $paramHash{guid} . "_v_" . $fieldName . "_v_StatusNote\"></div>";
-        }
-
-        #
-        # this is the connector between the tab and its HTML
-        #
-        my $tabHRef     = $paramHash{id} . "_" . $tabCount . "_" . $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM', lowLength => 6, highLength => 6 );
-
-        #
-        # if tiny mce is being used on a tab, lets light it up per the clicky
-        # also tack on any tabJava we had passed to us
-        #
-        my $javaScript      = "FWSCloseMCE();";
-        $javaScript        .= "if ( typeof(tinyMCE) != 'undefined' ) { tinyMCE.execCommand('mceAddControl', false, '" . $editorName . "'); }";
-        $javaScript        .= "if ( typeof(\$.modal) != 'undefined' ) { \$.modal.update(); }";
-        $javaScript        .= "if ( typeof(\$.modal) != 'undefined' ) { \$.modal.update(); }";
-        $javaScript        .= $tabJava;
-        $javaScript        .= "return false;";
-
-        #
-        # flag we are on the first one!... we want to hide the content areas if we are not
-        #
-        my $hideMe;
-        if ( $tabCount > 0 && !$self->{bootstrapEnable} ) { $hideMe = " ui-tabs-hide" }
-
-
-
-        #
-        # add to the tab LI and the HTML we will put below for each tab
-        #
-        $tabHTML        .= "<li class=\"" . $tabItemClass . $tabActiveClass . "\">";
-       
-        # 
-        # make it a link only if there is corrisponding div html;
-        #
-        if ( $tabContent || $tabJava ) { 
-            $tabHTML    .= "<a onclick=\"" . $javaScript . "\" href=\"#" . $tabHRef . "\" data-toggle=\"tab\">" . $tabName . "</a>";
-        }
-        else {
-            $tabHTML    .= $tabName;
-        }
-         
-        $tabHTML        .= "</li>";
-        $tabDivHTML     .= "<div id=\"" . $tabHRef . "\" class=\"" . $tabContentClass . $tabActiveClass . $hideMe . "\">" . $tabContent . "</div>";
-
-        #
-        # add another tabCount to make our next tab unique ( plus a unique 6 char key )
-        #
-        $tabCount++;    
-        
-        #
-        # after the fist one, they are not active
-        #
-        $tabActiveClass = '';
-    }
-
-    #
-    # return the tab content closing the ul and div we started in tabHTML
-    #
-
-    if ( $self->{bootstrapEnable} ) {
-        return  '<div class="navbar navbar-static-top"><div class="navbar-inner"><ul class="nav _nav-tabs">' . 
-                $tabHTML .
-                '</ul></div><div class="tab-content">' .
-                $tabDivHTML .
-                '</div>';
-    }
-    
-    #
-    # jquery UI version
-    #
-    $self->jqueryEnable( 'ui-1.8.9' );
-    $self->jqueryEnable( 'ui.widget-1.8.9' );
-    $self->jqueryEnable( 'ui.tabs-1.8.9' );
-    $self->jqueryEnable( 'ui.fws-1.8.9' );
-
-    return "<div id=\"" . $paramHash{id} . "\" class=\"FWSTabs tabContainer ui-tabs ui-widget ui-widget-content ui-corner-all\"><ul class=\"tabList ui-tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all\">" .
-    $tabHTML . '</ul>' . $tabDivHTML . '</div>' ;
+    return $self->printPage ( content => $loginForm, head => $self->_bootstrapCDN() );
 }
 
 
@@ -297,7 +122,7 @@ sub importSiteImage {
         require LWP::UserAgent;
         my $browser         = LWP::UserAgent->new();
         my $response        = $browser->get( $imageURL );
-        if (!$response->is_success ) { return "Error connecting to the FWS Module Server was found: " . $response->status_line }
+        if (!$response->is_success ) { return "Error connecting to the FWS Server was found: " . $response->status_line }
         print $IFILE $response->content;
     }
 
@@ -352,7 +177,6 @@ sub importSiteImage {
     #
     my $validSite = $self->_isValidSID( $paramHash{newSID} );
 
-
     #
     # set a flag for elementOnly
     #
@@ -401,7 +225,6 @@ sub importSiteImage {
     my %tableSchema;
     my $keepAliveCount        = 0;
     $paramHash{keepAlive}   ||= 0;
-
 
     open( my $READ_FILE, "<", $importFile );
 
@@ -558,7 +381,7 @@ sub importSiteImage {
                     #
                     # lets check to make sure we are only going to do elements if we are element only
                     #
-                    if ( ( $tableName ne "element" && $self->formValue( "elementOnly" ) ) ) {
+                    if ( ( $tableName ne 'element' && $self->formValue( 'elementOnly' ) ) ) {
                         $skipInsert = 1;
                     }
 
@@ -610,8 +433,8 @@ sub systemInfo {
     #
     # run directory checks
     #
-    $errorReturn = "";
-    $systemInfo .= "<b>File Directory Check:</b><br/>";
+    $errorReturn;
+    $systemInfo .= '<h3>File directory check:</h3>';
     $systemInfo .= "<ul>";
     $errorReturn .= $self->_systemInfoCheckDir( $self->{filePath} );
     $errorReturn .= $self->_systemInfoCheckDir( $self->{fileSecurePath} );
@@ -632,7 +455,7 @@ sub systemInfo {
     # run Module Checks
     #
     $errorReturn = '';
-    $systemInfo .= '<b>Perl Module Check:</b><br/>';
+    $systemInfo .= '<h3>Perl module check:</h3>';
     $errorReturn .= $self->_checkIfModuleInstalled( 'Captcha::reCAPTCHA' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'MIME::Base64' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'CGI::Carp' );
@@ -640,19 +463,18 @@ sub systemInfo {
     $errorReturn .= $self->_checkIfModuleInstalled( 'File::Find' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'Time::Local' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'File::Path' );
-    $errorReturn .= $self->_checkIfModuleInstalled( 'Google::SAML::Response' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'LWP::UserAgent' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'Crypt::SSLeay' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'Crypt::Blowfish' );
     $errorReturn .= $self->_checkIfModuleInstalled( 'GD' );
-    if ( !$errorReturn ) { $systemInfo .= '<ul><li>All required Perl Modules are present.</li></ul>' }    
-    else { $systemInfo .= $errorReturn . '<br/>' }
+    if ( !$errorReturn ) { $systemInfo .= '<ul><li>All required Perl modules are present.</li></ul>' }    
+    else { $systemInfo .= $errorReturn }
     
     #
     # run go file checks
     #
     $errorReturn = '';
-    $systemInfo .= '<b>Script compatibility Check:</b><br/>';
+    $systemInfo .= '<h3>Script compatibility check:</h3>';
     $errorReturn .= $self->_checkScript();
     if ( !$errorReturn ) { $systemInfo .= '<ul><li>All script compatability checks passed.</li></ul>' }
     else { $systemInfo .= $errorReturn  }
@@ -661,143 +483,20 @@ sub systemInfo {
     #
     # Database Checks
     #
-    $systemInfo .= '<b>Database Table And Index Check:</b><br/>';
+    $systemInfo .= '<h3>Database table and index check:</h3>';
     $errorReturn = $self->updateDatabase();
     if ( !$errorReturn ) { 
-        $systemInfo .= '<ul><li>All tables and indexes are correct.</li></ul>' 
+        $systemInfo .= '<ul><li>All tables and indexes are correct.</li></ul>'; 
     }
     else {
         # 
         # Pretty it up
         # 
-        $errorReturn =~ s/;/;<br\/>/sg;
-        $systemInfo .= $errorReturn . '<br/>' 
-        }
-
-    if ( $adminInstalled )  {
-        $systemInfo .= "<input style=\"width:300px;\" type=\"button\" onclick=\"location.href='" . $self->{scriptName} . "?s=site';\" value=\"View Site\"/>";
+        $errorReturn =~ s/;/;<\/li><li>/sg;
+        $systemInfo .= '<ul><li>' . $errorReturn . '<div class="alert alert-error">The above statments were run to correct database schema</div></li></ul>'; 
     }
-            
+
     return $systemInfo;
-}
-
-
-=head2 aceTextArea
-
-Create an ace editor UI componate.
-
-=cut
-
-sub aceTextArea {
-    my ( $self, %paramHash ) = @_;
-
-    my $statusContainer = 'scriptChangedStatus';
-    my $modeScript;
-
-    if ( $paramHash{statusContainer} ) { $statusContainer = $paramHash{statusContainer} }
-    
-    #
-    # load the JS for for ace... but only ONCE!
-    #    
-    if ( !$self->{FWSAceJSLoaded} ) {
-        $self->addToFoot(    
-            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/ace.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/theme-" . $self->{aceTheme} . ".js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-javascript.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-html.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-perl.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n" .
-            "<script src=\"" . $self->{fileFWSPath}."/ace-1.1.01/mode-css.js\" type=\"text/javascript\" charset=\"utf-8\"></script>\n"
-        );
-        $self->addToHead( 
-            "<style>" .
-            ".FWSACEFullscreen .FWSACEFullscreen-editor{" . 
-                "height: auto!important;" .
-                "width: auto!important;" .
-                "border: 0;" .
-                "margin: 0;" .
-                "position: fixed !important;" .
-                "top: 0;" .
-                "bottom: 0;" .
-                "left: 0;" .
-                "right: 0;" .
-                "z-index: 10000;" .
-            "}" .
-            ".FWSACEFullscreen {" . 
-                "overflow: hidden;" .
-            "}" .  
-            "</style>\n"
-        );
-        
-        #
-        # mark that we loaded it so we don't do this again
-        #
-        $self->{FWSAceJSLoaded}++;
-    }
-        
-    $modeScript .= 'var FWSAceDOM = require("ace/lib/dom");';
-
-    #
-    # set the modes if we have them
-    #
-    if ( $paramHash{mode} eq 'html' ) {
-        $modeScript .= "var HTMLScriptMode = require(\"ace/mode/html\").Mode;" . $paramHash{name} . ".getSession().setMode(new HTMLScriptMode());\n";
-    }
-    if ( $paramHash{mode} eq 'javascript' ) {
-        $modeScript .= "var JSScriptMode = require(\"ace/mode/javascript\").Mode;" . $paramHash{name} .".getSession().setMode(new JSScriptMode());\n";
-    }
-    if ( $paramHash{mode} eq 'perl' ) {
-        $modeScript .= "var HTMLScriptMode = require(\"ace/mode/perl\").Mode;" . $paramHash{name} . ".getSession().setMode(new HTMLScriptMode());\n";
-    }
-    if ( $paramHash{mode} eq 'css' ) {
-        $modeScript .= "var CSSScriptMode = require(\"ace/mode/css\").Mode;" . $paramHash{name} . ".getSession().setMode(new CSSScriptMode());\n";
-    }
-
-    $modeScript .= $paramHash{name} . '.commands.addCommand({' .
-        'name: "Fullscreen",' .
-        'bindKey: {win: "ctrl-enter",  mac: "ctrl-enter"},' .
-        'exec: function(editor) {' .
-            'FWSAceDOM.toggleCssClass(document.body, "FWSACEFullscreen");' .
-            'FWSAceDOM.toggleCssClass(editor.container, "FWSACEFullscreen-editor");' .
-            'editor.resize();' .
-        '},' .
-        'readOnly: true,' .
-        '});' . 
-        "\n";
-
-    $self->addToFoot( 
-        "<script type=\"text/javascript\">" .
-        "\$(document).ready(function() {" .
-            "window." . $paramHash{name} . " = ace.edit(\"" . $paramHash{name} . "\");" .
-            $paramHash{name} . ".setTheme(\"ace/theme/" . $self->{aceTheme} . "\");" .
-            $paramHash{name} . ".getSession().setUseWrapMode(true);" .
-            $paramHash{name} . ".setShowPrintMargin(false);" . 
-            $modeScript . $paramHash{name} . ".getSession().on('change', function () { \$('#saveToStagingImg').addClass( 'btn-primary' );});" .
-        "});" .
-        "</script>\n"
-    );
-
-    #
-    # clean up thing that need to be escaped for ace
-    #
-    $paramHash{value} =~ s/&/&amp;/sg;
-    $paramHash{value} =~ s/\</&lt;/sg;
-
-    #
-    # create the line that will actually be rendered to the screen
-    #
-    return "<pre style=\"position: absolute; padding: 0; right: 0; bottom: 0; left: 0;display:none;\" id=\"" . $paramHash{name} . "\" class=\"FWSScriptEditContainer ui-widget ui-state-default ui-corner-bottom\">" . $paramHash{value} . "</pre>";
-}
-
-
-=head2 onOffLight
-
-Return an on off lightbulb.
-
-=cut 
-
-sub onOffLight {
-    my ( $self, $status, $guid, $style ) = @_;
-    return $self->activeToggleIcon( guid => $guid, style => $style, active => $status );
 }
 
 
@@ -833,7 +532,7 @@ sub FWSMenu {
 }
 
 
-=head2 panel
+=head2 _panel
 
 FWS panel HTML:  Pass title, content and panelStyle keys.
 
@@ -843,30 +542,11 @@ sub panel {
     my ( $self, %paramHash ) = @_;
     
     my $panel;
-
-    my $panelClass;
-
-    #
-    # if we are bootstrap this does not apply
-    #
-    if  ( $self->{boostrapEnable} ) {
-        $panelClass = ' ui-widget ui-widget-content ui-corner-all';
-    }
-
-    if ( $paramHash{inline} ) {
-        $panel .= "<div style=\"width:95%;font-size:12px;margin-top:10px;padding-bottom:10px;margin-bottom:10px;border: 1px solid #d3d3d3; padding:10px;background: #ffffff; -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px; font-weight: normal; color: #555555;" . $paramHash{panelStyle} . "\" class=\"FWSPanel" . $panelClass . "\">";
-        $panel .= "<h3 style=\"padding:5px 15px 15px 15px;font-weight:800;font-size:14px;color:#2B6FB6;\" class=\"FWSPanelTitle\">" . $paramHash{title} . "</h3>";
-        $panel .= "<div style=\" padding:5px 15px 15px 15px;font-size:12px;\" class=\"FWSPanelContent\">" . $paramHash{content} . "</div>";
-        $panel .= "</div>";
-    }
-    else {
-        $panel .= "<div ";
-        if ( defined $paramHash{panelStyle} ) { $panel .= "style=\"" . $paramHash{panelStyle} . "\" " }
-        $panel .= "class=\"FWSPanel" . $panelClass . "\">";
-        $panel .= "<h3 class=\"FWSPanelTitle\">" . $paramHash{title} . "</h3>";
-        $panel .= "<div class=\"FWSPanelContent\"><div class=\"form-horizontal\">" . $paramHash{content} . "</div></div>";
-        $panel .= "</div>";
-    }
+    $panel .= "<div ";
+    $panel .= "class=\"FWSPanel\">";
+    $panel .= "<h3 class=\"FWSPanelTitle\">" . $paramHash{title} . "</h3>";
+    $panel .= "<div class=\"FWSPanelContent\"><div class=\"form-horizontal\">" . $paramHash{content} . "</div></div>";
+    $panel .= "</div>";
     return $panel;
 }
 
@@ -887,7 +567,7 @@ sub displayAdminPage {
     my $showElementOnly = 0;
     my $quitPageProcessing = 0;
     my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
-       
+    
     if ( $self->isAdminLoggedIn() ) {
 
         #
@@ -895,6 +575,9 @@ sub displayAdminPage {
         #
         if ( $pageId =~ /^fws_/ ) { 
             my %elementHash = $self->_fullElementHash();
+
+            
+
 
             for my $guid ( sort { $elementHash{$a}{alphaOrd} <=> $elementHash{$b}{alphaOrd} } keys %elementHash ) {
 
@@ -921,7 +604,7 @@ sub displayAdminPage {
                         my %valueHash;
                         $valueHash{pageId}          = $pageId;
                         $valueHash{elementId}       = $guid;
-                        $valueHash{elementWebPath}  = $self->fileWebPath() . "/" . $elementHash{siteGUID} . "/" . $valueHash{elementId};
+                        $valueHash{elementWebPath}  = $self->fileWebPath() . '/' . $elementHash{siteGUID} . '/' . $valueHash{elementId};
     
                         my $fws = $self;
     
@@ -942,7 +625,6 @@ sub displayAdminPage {
                         # set head and foot from cache so we can use it for our admin page
                         #
                         $self->{tinyMCEEnable} = 1;
-                        $self->{bootstrapEnable} = 1;
                         $self->setPageCache();
     
                         #
@@ -955,94 +637,30 @@ sub displayAdminPage {
             }
         }
 
-            
         #
         # this one does not run in an element, because it installs the elements!
         #
-        if ( $pageId eq 'fws_systemInfo' ) {
-                
-            my $coreElement;
+        if ( $pageId eq 'fws_systemInfo' || $pageId eq 'fws_health' ) {
+
+            $pageHTML .= '<div class="container"><div class="hero-unit">';
+            $pageHTML .= '<h1>FrameWork Sites Installation Health</h1>';
+
             if ( !$self->{hideFWSCoreUpgrade} ) {
-                $coreElement .= "<br/><input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('This could take several moments after you click ok.";
-                $coreElement .= " Do you want to continue?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=installCore';}\" value=\"Install Full Core Element &amp;&nbsp;File Package\"/> ";
-                $coreElement .= ' Use for new installs or if your having FWS related javascript errors.';
-                $coreElement .= "<div class=\"FWSStatusNote\">".$self->formValue("coreStatusNote")."</div>";
+                $pageHTML .= '<p>Reinstalling your admin package can be used to correct some errors.</p>';
+                $pageHTML .= '<p><a href="' . $self->{scriptName} . $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Reinstall default admin package from frameworksites.com</a></p>';
+                if ( $self->formValue("coreStatusNote") ) {
+                    $pageHTML .= '<div class="alert alert-info">' .  $self->formValue("coreStatusNote") . '</div>';
+                }
             }
+                
+            $pageHTML .= '<br/>' . $self->systemInfo();
+            $self->siteValue( 'pageHead', '' );
+            $self->siteValue( 'pageKeywords', '' );
+            $self->siteValue( 'pageDescription', '' );
 
-
-
-            my $log = "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you clear the FWS log file?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=clearFWSLog';}\" value=\"Clear FWS Log\"/> ";
-            my $FWSLogSize = -s $self->{fileSecurePath} . '/FWS.log';
-            $log .=  'FWS.Log ' . sprintf( "%0.1f", $FWSLogSize/1000 ). 'K size <a target="_blank" href="' . $self->{scriptName} . $self->{queryHead} . 'p=fws_log&lines=50">View</a>';
-            $log .= "<div class=\"FWSStatusNote\">".$self->formValue("logStatusNote")."</div>";
-
-
-            my %sessionInfo = $self->_sessionInfo();
-            my $sess = "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you delete all sessions?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushSessions&months=0';}\" value=\"Delete All Sessions\"/> ";
-            $sess .= $sessionInfo{total}." sessions total<br/>"; 
-            $sess .= "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you delete sessions more than 1 month old?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushSessions&months=1';}\" value=\"Delete All Sessions More Than 1 Month Old\"/> ";
-            $sess .= $sessionInfo{1}." sessions over 30 days old<br/>";
-            $sess .= "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you delete sessions more than 3 months old?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushSessions&months=3';}\" value=\"Delete All Sessions More Than 3 Months Old\"/> ";
-            $sess .= $sessionInfo{3}." sessions over 90 days old";
-            $sess .= "<div class=\"FWSStatusNote\">".$self->formValue("sessionStatusNote")."</div>";
-
-            my $backup;
-            $backup = "Backup file name:<br/>";
-            $backup .= "<input style=\"width:150px;\" type=\"text\" name=\"backupName\" id=\"backupName\" />";
-            $backup .= "<input style=\"width:150px;\" type=\"button\" onclick=\"if(confirm('This could take several minutes depending on the size of your data.";
-            $backup .= " Do you want to continue?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . " p=fws_systemInfo&excludeSiteFiles='+document.getElementById('excludeSiteFiles').checked+'&backupName='+escape(document.getElementById('backupName').value)+'&pageAction=FWSBackup';}\" value=\"Backup Now\"/> ";
-            $backup .= ' This will make a backup of your FWS Site files,&nbsp;plugins,&nbsp;and database';
-            $backup .= "<div class=\"FWSExcludeBackup\"><input type=\"checkbox\" name=\"excludeSiteFiles\" id=\"excludeSiteFiles\" /> Do not backup web accessible site uploaded files</div>";
-            $backup .= "<div class=\"FWSStatusNote\">".$self->formValue("backupStatusNote")."</div>";
-
-            $backup .= "Restore file name:<br/>";
-            $backup .= "<input style=\"width:150px;\" type=\"text\" name=\"restoreName\" id=\"restoreName\" />";
-            $backup .= "<input style=\"width:150px;\" type=\"button\" onclick=\"if(confirm('WARNING!!!  This will ovewrite your database and files.";
-            $backup .= " Do you want to continue?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&restoreName='+escape(document.getElementById('restoreName').value)+'&pageAction=FWSRestore';}\" value=\"Restore Now\"/> ";
-            $backup .= ' Overwrite your database,&nbsp;files,&nbsp;and plugins with a backup';
-            $backup .= "<div class=\"FWSStatusNote\">".$self->formValue("restoreStatusNote")."</div>";
-
-            my $publish = "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you flush your search cache? (Depending on the size of your site this could take several minutes)')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushSearchCache';}\" value=\"Rebuild Search Cache\"/>";
-            $publish .= " Replace all search cache, and update parent page references. (This will be slow on large sites)<br/>";
-            $publish .= "<input style=\"width:300px;\" type=\"button\" onclick=\"if(confirm('Are you sure you flush your web cache?')) {location.href='" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo&pageAction=flushWebCache';}\" value=\"Flush Web Cache\"/>";
-            $publish .= " Remove all combined js and css files, and recreate them as needed.";
-            $publish .= "<div class=\"FWSStatusNote\">" . $self->formValue("statusNote") . "</div>";
-
-            #
-            # DB Pakckages
-            #
-            my $dbPackages;
-            $dbPackages .= "<table border=\"1\" cellspacing=\"0\" style=\"margin-left:40px;width:90%;".$self->fontCSS()."\">";
-            $dbPackages .= "<tr>";
-            $dbPackages .= "<th>Module or Element Name</th>";
-            $dbPackages .= "<th>Your Version</th>";
-            $dbPackages .= "<th>Current Version</th>";
-            $dbPackages .= "<th>&nbsp;</th>";
-            $dbPackages .= "</tr>";
-            $dbPackages .= $self->_packageLine( "US Zip Code Package", ( $self->_versionData( 'local', 'zipcode' ) )[0],( $self->_versionData( 'live', 'zipcode' ) )[0], "fws_installZipcode" );
-            $dbPackages .= $self->_packageLine( "Country Package", ( $self->_versionData( 'local', 'country' ) )[0], ( $self->_versionData( 'live', 'country' ) )[0], "fws_installCountry" );
-            $dbPackages .= "</table>";
-
-
-            $pageHTML .= "<div style=\"width:90%;margin:auto;padding:10px;text-align:right;color:#ff0000;\">FrameWork&nbsp;Sites&nbsp;Version&nbsp; " . $self->{FWSVersion} . "</div>";
-            $pageHTML .= $self->panel( title => "FWS Installation And Health"      ,content => $self->systemInfo() . $coreElement );
-            $pageHTML .= $self->panel( title => "Session Maintenance"              ,content => $sess);
-            $pageHTML .= $self->panel( title => "Log Files"                        ,content => $log);
-            $pageHTML .= $self->panel( title => "FWS Site Backups"                 ,content => $backup);
-            $pageHTML .= $self->panel( title => "Flush Cache Engines"              ,content => $publish);
-            $pageHTML .= $self->panel( title => "Core Database Packages"           ,content => $dbPackages);
-            $self->siteValue("pageHead","");
-            $self->siteValue("pageKeywords","");
-            $self->siteValue("pageDescription","");
-
-            $self->printPage( title => "FrameWork&nbsp;Sites&nbsp;Version&nbsp; " . $self->{FWSVersion} . " System Info", content => $pageHTML, head=> $self->_minCSS() );
+            $self->printPage( title => 'FrameWork&nbsp;Sites&nbsp;Version&nbsp; ' . $self->{FWSVersion} . ' System Info', content => $pageHTML, head => $self->_bootstrapCDN() );
+            $pageHTML .= '</div></div>';
         }
-
-        #
-        # do install subroutines
-        #
-        if ( $pageId eq 'fws_installCountry' ) { $pageHTML .= $self->_installCountry() }
-        if ( $pageId eq 'fws_installZipcode' ) { $pageHTML .= $self->_installZipcode() }
 
     }
 
@@ -1054,11 +672,6 @@ sub displayAdminPage {
     return;
 }
 
-
-sub _selfWindow {
-    my ( $self, $queryString, $linkHTML, $extraJava ) = @_;
-    return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"location.href='" . $self->{scriptName} . $self->{queryHead} . $queryString . "';" . $extraJava . "\">" . $linkHTML . "</span>";
-}
 
 sub _isSiteUsed {
     my ( $self, $fieldValue ) = @_;
@@ -1087,19 +700,40 @@ sub _isValidSID {
     
 sub _processAdminAction {
     my ( $self ) = @_;
-
+            
+                
     #
-    # run FWS Admin lib
+    # run FWS Admin lib or the default one
     #
     if ( $self->{adminLoginId} ) {
-        $self->{FWSAdminLib} ||= 'FWSAdmin_'  . $self->{FWSVersion};
-        $self->runScript( $self->{FWSAdminLib} );
+
+        #
+        # make sure this is here in the least
+        #
+        if ( !-e $self->{fileSecurePath} . '/plugins/FWSAdmin2.pm' ) {
+            my ( $updateString, $majorVer, $minorVer, $build ) = $self->_versionData( 'live', 'core', 'fws_installCore' );
+
+            #
+            # set the base URL for where the dist files are pulled from
+            #
+            my $imageBaseURL = $self->{FWSServer} . '/fws_' . $majorVer;
+
+            $self->_pullDistFile( $imageBaseURL . '/FWSAdmin2.pm', $self->{fileSecurePath} . '/plugins/', 'FWSAdmin2.pm', '' );
+        }
+
+        $self->runScript( $self->{FWSAdminLib}  || 'FWSAdmin2' );
     }
 
     if ($self->userValue( 'isAdmin') || $self->userValue('showDeveloper') || $self->userValue('showDesigner') ) {
         
         if ( $self->formValue( 'pageAction' ) eq "installCore") {
         
+            #
+            # set the base URL for where the dist files are pulled from
+            #
+            my ( $updateString, $majorVer, $minorVer, $build ) = $self->_versionData( 'live', 'core', 'fws_installCore' );
+            my $imageBaseURL = $self->{FWSServer} . '/fws_' . $majorVer;
+
             #
             # We only want the end part of the package for the file name
             #
@@ -1116,12 +750,7 @@ sub _processAdminAction {
             $self->FWSLog("Backing up FWS core: " . $newV2File . " - Backup File Is Now: " . $newV2File . "." . $currentTime);
             copy( $newV2File, $newV2File . "." . $currentTime );
 
-            my ( $updateString, $majorVer, $minorVer, $build ) = $self->_versionData( 'live', 'core', 'fws_installCore' );
 
-            #
-            # set the base URL for where the dist files are pulled from
-            #
-            my $imageBaseURL = $self->{FWSServer} . '/fws_' . $majorVer;
 
             #
             # get the core Script
@@ -1129,26 +758,17 @@ sub _processAdminAction {
             if ( $self->_pullDistFile( $imageBaseURL . '/current_frameworksitescom.pm', $self->{fileSecurePath} . '/FWS', $distFile, "package FWS::V2;\n" ) ) {
                 
                 #
-                # import the new core admin
-                #
-                $self->_importAdmin( 'current_core' );
-                $self->FWSLog( 'FWS core element packages updated' );
-                $self->formValue( 'coreStatusNote', 'Current FWS Core element and file packages has been updated' );
-               
-                #
-                # flg our sucess swo we can save versionData
-                # 
-                $self->_versionData( 'live', 'core', 'fws_installCore', 1 );
-
-                #
                 # add the fwsdemo files if they are not there already
                 #
-                my $demoFile =  $self->{fileSecurePath} . '/backups/fwsdemo';
+                my $demoFile        = $self->{fileSecurePath} . '/backups/fwsdemo';
+                my $FWSAdminPlugin  = $self->{fileSecurePath} . '/backups/FWSAdmin2.pm';
                 if ( !-e $demoFile . '.sql' ) {
                     $self->_pullDistFile( $imageBaseURL . '/fwsdemo.sql', $self->{fileSecurePath} . '/backups', 'fwsdemo.sql', '' );
                 }
                 if ( !-e $demoFile . '.files' ) {
                     $self->_pullDistFile( $imageBaseURL . '/fwsdemo.files', $self->{fileSecurePath} . '/backups', 'fwsdemo.files', '' );
+                }
+                if ( !-e $FWSAdminPlugin ) {
                 }
                
                 #
@@ -1168,8 +788,19 @@ sub _processAdminAction {
                     $self->restoreFWS( id => 'fwsdemo' );
                     print "Status: 302 Found\n";
                     print "Location: " .  $self->{scriptName} . "\n\n";
-
                 }
+                
+                #
+                # import the new core admin
+                #
+                $self->_importAdmin( 'current_core' );
+                $self->FWSLog( 'FWS core element packages updated' );
+                $self->formValue( 'coreStatusNote', 'Current FWS Core element and file packages has been updated' );
+               
+                #
+                # flag our success so we can save versionData
+                # 
+                $self->_versionData( 'live', 'core', 'fws_installCore', 1 );
             }
         }
     }        
@@ -1201,59 +832,15 @@ sub _pullDistFile {
     return 1;
 }
 
-#
-# easy reuse optoin sub for the fws_data_edit
-#
-sub _createOptionGroup {
-    my ( $self, $optLabel, $ordMin, $ordMax, %elementHash ) = @_;
-
-    #
-    # for elements in there twice because they are present via the guid, and the elementType lets hold a hash so we don't dup them
-    #
-    my %elementDisplayed; 
-    my $optionFullHTML = "<optgroup label=\"" . $optLabel . "\">";
-    for my $guid ( sort { $elementHash{$a}{alphaOrd} <=> $elementHash{$b}{alphaOrd} } keys %elementHash) {
-        if ( !$elementDisplayed{$elementHash{$guid}{guid}} && ( !$elementHash{$guid}{parent} || $elementHash{$guid}{rootElement} ) && $elementHash{$guid}{ord} > $ordMin && $elementHash{$guid}{ord} <= $ordMax ) {
-            $optionFullHTML .= "<option value=\"" . $guid . "\">" . $elementHash{$guid}{title} . "</option>";
-            
-            #
-            # set the flag that we have seen this one aready,  we don't need two of them!
-            #
-            $elementDisplayed{$elementHash{$guid}{guid}} = 1;
-        }
-    }
-    $optionFullHTML .= "</optgroup>";
-    return $optionFullHTML;
-}
-
-sub _packageLine {
-    my ( $self, $name, $currentVer, $newVer, $script ) = @_; 
-    my $line    = "<tr>";
-    my $upText  = "Upgrade";
-
-    if ( !$currentVer ) {           $currentVer = "Not Installed"; $upText = "Install" }
-    if ( $currentVer eq $newVer ) { $upText = "Re-Install" }
-    $line .= "<td>" . $name . "</td>";
-
-    $line .= "<td style=\"text-align:center;width:200px;\">" . $currentVer . "</td>";
-    $line .= "<td style=\"text-align:center;width:200px;\">" . $newVer . "</td>";  
-    $line .= "<td style=\"text-align:center;width:100px;\"><a href=\"" . $self->{scriptName} . $self->{queryHead} . "p=" . $script . "\">" . $upText . "</a>"; 
-    $line .= "</tr>";
-    return $line;
-}
-
-
 sub _checkScript {
     my ( $self, $moduleName ) = @_;
     my $errorReturn;
 
-    if ( !$self->{FWSScriptCheck}->{registerPlugins} ) { $errorReturn .= '<li>Your script file is missing $fws->registerPlugins(); this should be added.</li>' }
+    if ( !$self->{FWSScriptCheck}->{registerPlugins} ) { $errorReturn .= '<li>Your script file is missing $self->registerPlugins(); this should be added.</li>' }
 
     if ( $errorReturn ) { $errorReturn = '<ul>' . $errorReturn . '</ul>' }
     return $errorReturn;
 }
-
-
 
 sub _checkIfModuleInstalled {
     my ( $self, $moduleName ) = @_;
@@ -1265,11 +852,11 @@ sub _checkIfModuleInstalled {
 
     if ( $@ ) { 
         my $bump;
-        if ($moduleName eq "Google::SAML::Response") {  $bump = $moduleName . " is used for Single Sign On Google Apps integration.  If your not using this website for Google SSO then you will not need this." }
+#        if ($moduleName eq "Google::SAML::Response") {  $bump = $moduleName . " is used for Single Sign On Google Apps integration.  If your not using this website for Google SSO then you will not need this." }
         if ($moduleName eq "Crypt::SSLeay") {           $bump = $moduleName . " is used for secure transactions to payment gateways.  If your not using eCommerce real time payment gateways this module may not be necessary." }
         if ($moduleName eq "Captcha::reCAPTCHA") {      $bump = $moduleName . " is used for captcha support.  If you are not using captchas for human form postings validation then this is not required." }
         if ($moduleName eq "Crypt::Blowfish") {         $bump = $moduleName . " is used to encrypt tranasactional data.  If your not using eCommerce real time payment gateways this module may not be necessary." }
-        $errorReturn .= "<ul><li>" . $moduleName . " Perl module missing.  Your site may not run correctly without it. " . $bump . "<br/><br/><ul><li>To install it if you have shell access you can do the following:<br/>server prompt> cpan<br/>CPAN> install " . $moduleName . "<br/><i>Note: You must be logged in as root to use cpan, if you are unfamiliar with using cpan it might be best to have a system adminstrator do this for you.</i></li><li>To install it from CPanel do the following:<br/>Perl Modules -> Install a Perl Module: " . $moduleName . "</li><li>If these methods are unavailable you may need your server administrator to install it for you.</li></ul></li></ul><br/>" }
+        $errorReturn .= "<ul><li>" . $moduleName . " Perl module missing.  Your site may not run correctly without it. " . $bump . "<br/><br/><ul><li>To install it if you have shell access you can do the following:<br/>server prompt> cpan<br/>CPAN> install " . $moduleName . "<br/><i>Note: You must be logged in as root to use cpan, if you are unfamiliar with using cpan it might be best to have a system adminstrator do this for you.</i></li><li>To install it from CPanel do the following:<br/>Perl modules -> Install a Perl module: " . $moduleName . "</li><li>If these methods are unavailable you may need your server administrator to install it for you.</li></ul></li></ul>" }
 
     return $errorReturn;
 }
@@ -1299,13 +886,13 @@ sub _systemInfoCheckDir {
                 $errorReturn .= ',&nbsp;but was created automaticly.</br> <a href="' . $self->{scriptName} . '?p=fws_systemInfo">Click here to continue system health check</a>';
             }
         }
-        $errorReturn .= "</li></ul><br/>";
+        $errorReturn .= "</li></ul>";
     }
     else {
         if ( !$self->_testDirWritePermission( $newDir ) ) {
             $errorReturn .= "<ul><li>The directory '" . $newDir . "' is not web server writable.<br/>";
             $errorReturn .= "<ul><li>Usually this means changing your file permissions for this directly using: chmod 755 " . $newDir . "</li><li>chmod style permissions can also be done though web based server administration programs or even FTP if your security settings will allow it.</li><li>Some configurations my require an administrator to change the ownership of this directory to the webserver by using: chown nobody:nobody " . $newDir . " ('nobody:nobody' is a default web server user and group, it could be 'www:www' or something different)</li></ul>";
-        $errorReturn .= "</li></ul><br/>";
+        $errorReturn .= "</li></ul>";
         }
     }
     return $errorReturn;
@@ -1313,9 +900,9 @@ sub _systemInfoCheckDir {
 
 sub _testDirWritePermission {
     my ( $self, $testFile ) = @_;
-    $testFile .= "/testfile.tmp";
-    open ( my $FILE, ">", $testFile );
-    print $FILE "TEST FILE";
+    $testFile .= '/testfile.tmp';
+    open ( my $FILE, '>', $testFile );
+    print $FILE 'TEST FILE';
     close $FILE;
     if ( -e $testFile ) { 
         unlink $testFile;
@@ -1323,16 +910,6 @@ sub _testDirWritePermission {
     }
     return 0;
 }
-
-sub _sessionInfo {
-    my ( $self, %paramHash ) = @_;
-    my %returnHash;
-    ( $returnHash{total} ) =  @{$self->runSQL( SQL => "select count(1) from fws_sessions" )};
-    ( $returnHash{1} ) =      @{$self->runSQL( SQL => "select count(1) from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod=>-1 ) . "'" )};
-    ( $returnHash{3} ) =      @{$self->runSQL( SQL => "select count(1) from fws_sessions where created < '" . $self->formatDate( format => 'SQL', monthMod=>-3 ) . "'" )};
-    return %returnHash;
-}
-
 
 sub _importAdmin {
     my ($self,$adminFile) = @_;
@@ -1342,177 +919,31 @@ sub _importAdmin {
         $removeCore = 1;
         $keepAlive  = 0;
     }
-    return $self->importSiteImage( 
-        newSID      => "fws",
-        imageURL    => "http://www.frameworksites.com/downloads/fws_" . $self->{FWSVersion} . "/" . $adminFile . ".fws",
+
+    #
+    # this is where it core comes from
+    #
+    my ( $updateString, $majorVer, $minorVer, $build ) = $self->_versionData( 'live', 'core', 'fws_installCore' );
+    my $imageBaseURL = $self->{FWSServer} . '/fws_' . $majorVer;
+
+    #
+    # get the newest plugin for FWSAdmin2
+    #
+    $self->_pullDistFile( $imageBaseURL . '/FWSAdmin2.pm', $self->{fileSecurePath} . '/plugins/', 'FWSAdmin2.pm', '' );
+
+    #
+    # get the rest of the image
+    #
+    return $self->importSiteImage(
+        newSID      => 'fws',
+        imageURL    => $imageBaseURL . '/' . $adminFile . '.fws',
         removeCore  => $removeCore,
-        parentSID   => "admin",
+        parentSID   => 'admin',
         keepAlive   => $keepAlive,
     );
+
 }
 
-
-sub _installZipcode {
-    my ( $self ) = @_;
-
-    #
-    # make stdout hot! and start sending to browser
-    #
-    local $| = 1;
-    print $self->_installHeader( 'Zipcode' );
-
-    $self->runSQL(SQL=>"delete from zipcode");  
-
-    print "<br/>Downloading and Installing";
-    
-    my $importReturn = $self->_importAdmin( 'current_zipcode' );
-    
-    print "<br/>" . $importReturn;
-
-    print $self->_installFooter( 'Zipcode' );
-    
-    if ( $importReturn !~ /error/i ) { $self->_versionData( 'live', 'zipcode', "fws_installZipcode", 1 ) }
-       
-    $self->{stopProcessing} = 1;
-
-    return;
-}
-    
-sub _installCountry {
-    my ( $self ) = @_;
-    
-    #
-    # make stdout hot! and start sending to browser
-    #
-    local $| = 1;
-    print $self->_installHeader( 'Country' );
-    
-    $self->runSQL( 'delete from country' );
-    
-    print "<br/>Downloading and Installing";
-
-    my $importReturn = $self->_importAdmin( 'current_country' );
-    
-    print $self->_installFooter( 'Country' );
-    
-    if ( $importReturn !~ /error/i ) { $self->_versionData( 'live', 'country', "fws_installCountry", 1 ) }
-    
-    $self->{stopProcessing} = 1;
-
-    return;
-}
-
-sub _installHeader {
-    my ( $self, $name ) = @_;
-    return "Content-Type: text/html; charset=UTF-8\n\n<html><head><title>Installing New " . $name . " Package</title>" . 
-    "</head>".
-    "<body><h2>Installing New " . $name . " Package</h2><br/>".
-    "<b>" . $name . " Package</b><hr/>".
-    "Doing pre install cleanup";
-}
-
-sub _installFooter {
-    my ( $self, $name ) = @_;
-    return "<br/><br/>Finished: <a href=\"" . $self->{scriptName} . $self->{queryHead} . "p=fws_systemInfo\">Click here to continue</a></body></html>";
-}
-
-=head2 uploadSiteFile
-
-Execute a file upload from a form post.
-
-=cut
-
-sub uploadSiteFile {
-    my ( $self, %paramHash ) = @_;
-
-    #
-    # move the passed vars into regular vars because we might want to use this paramHash to do a saveData
-    # and don't want any relics
-    #
-    my $secureFile          = $paramHash{FWSSecureFile};
-    my $uploadFileField     = $paramHash{FWSUploadFileField};
-    my $uploadField         = $paramHash{FWSUploadField};
-    delete $paramHash{FWSUploadFileField};
-    delete $paramHash{FWSUploadField};
-    delete $paramHash{FWSSecureFile};
-
-    #
-    # get the file name and also name the "name" file that.  The "name" could be
-    # replaced with the name extField if it is not blank.  But this will ensure
-    # that the name is populated with at least something
-    #
-    my @fileArray = $self->formValue( $uploadFileField );
-
-    #
-    # set site guid if it wasn't passed
-    #
-    $paramHash{siteGUID} ||= $self->{siteGUID};
-
-    #
-    # process each one (I think this doesn't actually send more than one because of the uploader we use
-    # , but hey, might as well!
-    #
-    foreach my $fileHandle ( @fileArray ) {
-
-        my $runFileCleanup = 0;
-
-        #
-        # clean up the file name, and make sure the dirs are safe before we do anything with them
-        #
-        $paramHash{name}  = $self->justFileName( $self->formValue( $uploadFileField ) );
-        $paramHash{name}  = $self->safeDir( $paramHash{name} );
-
-        #
-        # we have a parent... but we don't ahve a guid, this is a subrecord
-        #
-        if ( $paramHash{parent} && !$paramHash{guid} ) {
-            #
-            # save the record so we have a guid
-            #
-            %paramHash = $self->saveData( %paramHash );
-
-            #
-            # now that we know the guid, lets set the file name
-            #
-            $paramHash{$uploadField}    = $self->{fileWebPath} . '/' . $self->{siteGUID} . '/' . $paramHash{guid} . '/' . $paramHash{name};
-            %paramHash                  = $self->saveData(%paramHash);
-
-            #
-            # because we are saving a record lets flag this so we do image cleanup at the end
-            #
-            $runFileCleanup = 1;
-        }
-
-        #
-        # set the directory
-        #
-        my $directory = '/' . $paramHash{siteGUID} . '/' . $paramHash{guid} . '/';
-        if ( $secureFile ) { $directory = $self->{fileSecurePath} . '/files/' . $directory }
-        else { $directory = $self->{filePath} . $directory }
-        $directory = $self->safeDir( $directory );
-
-        #
-        # make the directory if its not already there
-        #
-        $self->makeDir( $directory );
-        $self->uploadFile( $directory, $fileHandle, $paramHash{name} );
-
-        #
-        # comptabality keys to match those in fileArray
-        #
-        $paramHash{fullFile} = $directory . '/' . $paramHash{name};
-        $paramHash{file} = $paramHash{name};
-
-        #
-        # if we are adding new records redo any of the image thumbs and such and lets delete the guid so we can get a fresh one if there is another pass
-        #
-        if ( $runFileCleanup ) {
-            $self->createSizedImages( guid => $paramHash{guid} );
-            delete $paramHash{guid};
-        }
-    }
-    return %paramHash;
-}
 
 sub _convertImportTags {
     my ( $self, %paramHash ) = @_;
@@ -1537,30 +968,6 @@ sub _convertImportTags {
 
 sub _bootstrapCDN {
     return  '<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">';
-}
-
-sub _elementFiles {
-    my ( $fws, %paramHash ) = @_;
-
-    #
-    # create where
-    #
-    my $whereStatement = " plugin= '" . $fws->safeSQL( $paramHash{plugin} ) . "'";
-    if ( $paramHash{guid} ) {
-        $whereStatement = " guid= '" . $fws->safeSQL( $paramHash{guid} ) . "'";
-    }
-
-    #
-    # get the plugin files or just the files for an element in the same way you get SQL
-    #
-    my $sth = $fws->{'_DBH_' . $fws->{DBName} . $fws->{DBHost} }->prepare( "SELECT * FROM element WHERE " . $whereStatement );
-    $sth->execute();
-
-    my $elementFiles;
-    while ( my $hash_ref = $sth->fetchrow_hashref() ) {
-        $elementFiles .= $fws->packDirectory( directory => $fws->{filePath} . '/' . $fws->{siteGUID} . '/' . $hash_ref->{guid}, noFWSBackups => 1);
-    }
-    return $elementFiles;
 }
 
 =head1 AUTHOR
@@ -1618,5 +1025,4 @@ See http://dev.perl.org/licenses/ for more information.
 
 
 =cut
-
 1; # End of FWS::V2::Admin
