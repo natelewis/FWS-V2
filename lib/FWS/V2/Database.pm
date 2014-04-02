@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.14020423
+Version 1.14040108
 
 =cut
 
-our $VERSION = '1.14020423';
+our $VERSION = '1.14040108';
 
 
 =head1 SYNOPSIS
@@ -416,15 +416,47 @@ sub connectDBH {
         # send an error if we got one
         #
         if ( DBI->errstr() ) { $self->FWSLog( 'DB connection error: ' . DBI->errstr() ) }
+
+        #
+        # run the init script ( does not work if noCache it will eat up the connections )
+        #
+        elsif ( !$paramHash{noCache} ) {
+            
+            #
+            # set the DBH storage cache handler
+            #
+            $self->{'_DBH_' . $paramHash{DBName} . $paramHash{DBHost}} = $DBH;
+
+            #
+            # get and save init script
+            #
+            my ( $initScript ) = @{$self->runSQL( DBH => $DBH, SQL => "select init_script from site where sid='site'" )};
+       
+            if ( $initScript ) { 
+
+#
+                #
+                # move the object around
+                #
+                my $fws = $self;
+                
+                ## no critic
+                eval $initScript;
+                ## use critic
+                
+                $self = $fws;
+                
+                #
+                # process any error if we got one
+                #
+                my $errorCode = $@;
+                if ( $errorCode ) { $self->FWSLog( 'site_init',  $errorCode ) }
+            }
+        }
     }
 
     #
-    # if DBH cache isn't defined then lets define it
-    #
-    if ( !$self->{'_DBH_' . $paramHash{DBName} . $paramHash{DBHost}} && !$paramHash{noCache} )  { $self->{'_DBH_' . $paramHash{DBName} . $paramHash{DBHost}} = $DBH }
-
-    #
-    # in either case return the DBH in case someone wants it for convience
+    # Return the DBH in case you arn't caching it 
     #
     return $DBH;
 }
@@ -2853,6 +2885,12 @@ Return the hash for a user.
 sub userHash {
     my ( $self, %paramHash ) = @_;
 
+
+    #
+    # manipulate any incomming settings
+    #
+    %paramHash = $self->runScript('preUserHash',%paramHash);
+
     #
     # store the guid in this, till we figure out what one we are looking up
     #
@@ -3297,7 +3335,7 @@ sub _deleteOrphanedData {
         #
         # create the SQL that will be used for the delete and the reflective query
         #
-        my $fromSQL = "from " . $table . " where " . $table . " . " . $field . " in (select " . $field . " from (select distinct " . $table . "." . $field . " from " . $table . " left join " . $refTable . " on " . $refTable . "." . $refField . " = " . $table . "." . $field . " where " . $refTable . "." . $refField . " is null ".$extraWhere.") as delete_list)";
+        my $fromSQL = "from " . $table . " where " . $table . "." . $field . " in (select " . $field . " from (select distinct " . $table . "." . $field . " from " . $table . " left join " . $refTable . " on " . $refTable . "." . $refField . " = " . $table . "." . $field . " where " . $refTable . "." . $refField . " is null " . $extraWhere . ") as delete_list)";
 
         #
         # do the actual delete
