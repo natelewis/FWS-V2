@@ -7,7 +7,7 @@ use warnings;
 
 =head1 NAME
 
-FWS::V2 - Framework Sites version 2
+FWS::V2 - Framework Sites version 2.1.x
 
 =head1 VERSION
 
@@ -21,21 +21,20 @@ our $VERSION = '1.14040108';
 =head1 SYNOPSIS
 
     use FWS::V2;
-    my $fws = FWS::V2->new( DBName        => 'myDB',
-                            DBUser        => 'theUser',
-                            DBPassword    => 'superSecret',
-                            DBHost        => 'localhost',
-                            DBType        => 'MySQL');
+    my $fws = FWS::V2->new( 
+        DBName        => 'myDB',
+        DBUser        => 'theUser',
+        DBPassword    => 'superSecret',
+        DBHost        => 'localhost',
+    );
 
 =cut
     
 =head1 DESCRIPTION
 
-FWS::V2 is the utility counterpart to the web based content management development platform provided at www.frameworksites.com.  The web based version of this module is derived from this source with additional web specific features and packaging.   The web based version enables the FWS to function on most any modern hosting environment, be upgraded in real time via the web based FWS administration, and control shared plugins between all of your installations even on different servers.
+FWS::V2 is a web based content management development platform provided at www.frameworksites.com.  You can use FWS::V2 for content managed web pages rendering or as a stand alone script command line script.  Command line scripts are ideal for site maintenance, imports, exports, mass data updates, data mining, 3rd party data synchronization, web services, APIs... and more.  The syntax and usage of the FWS::V2 is identical to the web based element and plugin development available within the FWS web based administration.  Code from either is interchangeable between both.  
 
-Using this version is ideal for accessing any plugin feature, or data stored within a FWS installation from a standalone script.  Examples of this would be scripts to do site maintenance, imports, exports, mass data updates, data mining, 3rd party data synchronization, web services, APIs... and more!   
-
-The syntax and usage of the FWS::V2 is identical to the web based element and plugin development available within the FWS web based administration.  Code from either is interchangeable between both distributions of FWS::V2 and the web based distribution of FWS available from www.frameworksites.com.
+An easy to install version with detailed instrucations can be downloaded from a frameworksites.com account, but is not required.   From frameworksites.com you can manage your installations, plugins do backups and version control of your development work.
 
 =head1 PACKAGE DEPENDENCE
 
@@ -47,60 +46,47 @@ One of the main goals of FWS is to have a bundled, autonomous version of the FWS
 
 =head2 new
 
-Construct a FWS version 2 object. Like the highly compatible web optimized distribution this will initiate access to all the FWS methods to access data, file, session, formatting and network methods. You can pass a variety of different parameters which could be required depending on what methods you are using and the context of your usage. MySQL and SQLite are supported with FWS 2, but MySQL should always be used if it is available. On medium or high traffic sites and sites with any significance of a data footprint, you will see quite a bit of latency with SQLite. 
+Construct a FWS version 2 object. Like the highly compatible web optimized distribution this will initiate access to all the FWS methods to access data, file, session, formatting and network methods. You can pass a variety of different parameters which could be required depending on what methods you are using and the context of your usage.
 
 Example of using FWS with MySQL:
 
     #
-    # Create FWS with MySQL connectivity
+    # Create FWS with MySQL
     #
     use FWS::V2;
-    my $fws = FWS::V2->new(       DBName          => "theDBName",
-                                  DBUser          => "myUser",
-                                  DBPassword      => "myPass");
-
-Example of using FWS with SQLite:
-
-    #
-    # create FWS with SQLite connectivity
-    #
-    use FWS::V2;
-    my $fws = FWS::V2->new(      DBType          => "SQLite",
-                                 DBName          => "/home/user/your.db");
+    my $fws = FWS::V2->new(       
+        DBName          => 'theDBName',
+        DBUser          => 'myUser',
+        DBPassword      => 'myPass'
+    );
 
 Any variable passed or derived can be accessed with the following syntax:
 
-    print $fws->{'someParameter'}."\n";
+    print $fws->{someParameter} . "\n";
 
 With common uses of FWS, you should never need to change any of these settings.  If for some reason, although it is NOT recommended you can set any of these variables with the following syntax:
 
-    $fws->{'someParameter'} = 'new settings';
+    $fws->{someParameter} = 'new settings';
 
 =head2 Required Parameters
 
 =over 4
 
-=item * DBName (MySQL and SQLite Required)
+=item * DBName
 
-For MySQL this is the DB Name.  For SQLite this is the DB file path and file name.
-MySQL example:  user_fws
-SQLite example: /home/user/secureFiles/user_fws.db
+The database that has full grant permission to the DBUser and DBPassword.  Example:  user_fws2
 
-=item * DBUser (MySQL Required)
+=item * DBUser
 
-Required for MySQL and is the database user that has full grant access to the database.
+Database user that has full grant access to the database.
 
-=item * DBPassword (MySQL Required)
+=item * DBPassword
 
 The DBUser's password.
 
-=item * DBHost (MySQL Required if your database is not on localhost)
+=item * DBHost
 
 The DBHost will default to 'localhost' if not specified, but can be what ever is configured for the database environment.
-
-=item * DBType (SQLite Required)
-
-The DBType will default to 'MySQL' if not specified, but needs to be added if you are connecting to SQLite.
 
 =back
 
@@ -226,11 +212,7 @@ An array of form values passed.
 
 =over 4
 
-=item * {siteId}
-
-The site id of the site currently being rendered.  Version 1 of FWS refered to this as the SID.  This will be set via setSiteValues('yourSiteId') if setSiteFriendly is not being used.
-
-=item * formValue('p')
+=item * formValue( 'p' )
 
 The current page friendly or if not available the page guid.
 
@@ -239,14 +221,6 @@ The current page friendly or if not available the page guid.
 =head2 Accessable after setSession() is called
 
 =over 4
-
-=item * {affiliateId}
-
-Is set by passing a value to 'a' as a form value. Can be accessed via $fws->{affiliateId}
-
-=item * {affiliateExp}
-
-The time in epoch that the affiliate code will expire for the current session.
 
 =item * formValue('session')
 
@@ -302,68 +276,65 @@ The current user id for the site user logged in.  Extra warning: This should nev
 
 =head2 Overview
 
-To use the web based rendering you can use this module, or the current web optimized version that is available from http://www.frameworksites.com.  When using this module as opposed to the web based version you still need to run the FWS core upgrade to receive the admin modules to your local installation.   Any time running an FWS core upgrade you of course not have your core updated, only the admin elements and supporting JavaScript and files..
+To use the web based rendering you can use this module, or the web optimized version that is available from http://www.frameworksites.com.  When using this to render web pages you will not receive updates to the core form the frameworksites repository.
 
-=head2 Simple Web Rendering Sequence
+=head2 Prequisites for Web Rendering
 
-    #
-    # Load FWS
-    #
-    use FWS::V2;
-    $fws = new ( 
-        #....  FWS Settings ...
-    );
-    
-    #
-    # add any plugins we have installed
-    #
-    $fws->registerPlugins();
-    
-    #
-    # Get the form values
-    #
-    $fws->setFormValues();
-    
-    #
-    # Connect to the DB
-    #
-    $fws->connectDBH();
-    
-    #
-    # Page descisions and friendly url conversions
-    #
-    $fws->setSiteFriendly();
-    
-    #
-    # Run any init scripts if needed
-    #
-    $fws->runInit();
-    
-    #
-    # Set session and or get session vars
-    #
-    $fws->setSession();
-    
-    #
-    # Set site values based on any information we have collected, created or changed
-    #
-    $fws->setSiteValues();
-    
-    #
-    # Do login procedures
-    #
-    $fws->processLogin();
-    
-    #
-    # Run Internal Admin Actions
-    #
-    $fws->runAdminAction();
-    
-    #
-    # Display the content we just created
-    #
-    $fws->displayContent();
-   
+* Pretty standard Perl distrubution available at any ISP
+* Create a directory that is "not" web accessable ( but web server read/writable )
+* Create a directory that "is" web accessable ( and web server read/writable )
+* User name and password for MySQL 5+ with full grant permissions
+* The web rendering script below that is web server executable
+* Add a .htaccess file in your root directory
+
+
+=head2 Simple .htaccess File
+
+# Friendly URL Support
+Options -Indexes
+ErrorDocument 403 /cgi-bin/go.pl?s=404
+ErrorDocument 404 /cgi-bin/go.pl?s=404
+
+# some ISP's need this to execute the go.pl
+AddHandler cgi-script .pl
+
+# forcing the host name is not a bad idea to keep urls consistant
+RewriteEngine on
+RewriteCond %{HTTP_HOST} ^example.com$
+RewriteRule (.*) http://www.example.com/$1 [R=301,L]
+
+
+=head2 Minimal Web Rendering Script 
+
+This file is usually called /cgi-bin/go.pl  The #!/usr/bin/perl line below this one HAS to be the first line in the file or it won't work.
+
+#!/usr/bin/perl
+
+use FWS::V2;
+
+my $fws = FWS::V2->new(
+    # change these to your database you created
+    DBHost              => 'localhost',
+    DBName              => 'user_fws2',
+    DBUser              => 'user_fws2',
+    DBPassword          => SupErSecRetPassWoRd',
+    scriptName          => '/cgi-bin/go.pl',
+
+    # change these to what makes sense for you server 
+    fileSecurePath      => '/home/user/secureFiles/devel',
+    filePath            => '/home/user/www/files',
+    fileWebPath         => '/files',
+
+    # If you do not have a cert, don't put the https on the secureDomain
+    secureDomain        => 'http://www.example.com',
+    domain              => 'http://www.example.com',
+
+    # not required but handy to use the tools at frameworksites.com
+    FWSKey              => 'this comes from frameworksites.com',
+);
+
+$fws->processWeb();
+
 For a more robust version of this sequence use the go.pl file creation for manual installation located on http://www.frameworksites.com
     
 =cut
@@ -387,10 +358,10 @@ For a more robust version of this sequence use the go.pl file creation for manua
 # consistancy between the two versions everything is inherited, always.
 #
 # ELSE CUDDLING
-# Use non cuddled elses unless its all on the same line with the if. 
+# Use non cuddled elses please.
 #
 # HASH ARRAYS (An array of hashes)
-# If your unfamiliar wit this technique read up on it.  The data model
+# If your unfamiliar with this technique read up on it.  The data model
 # for FWS is based on the idea of arrays of anonymous hashes.  It is
 # everywhere you get data!
 #
@@ -407,6 +378,13 @@ For a more robust version of this sequence use the go.pl file creation for manua
 # syntax.   Make note of the legacy functions in the POD and use the
 # more current syntax when available#
 #
+# WARNINGS
+# Uninitialized values are turned off in this manor by default:
+#     no warnings 'uninitialized';
+# The nature of hashes are used within FWS, they are not defined.  You
+# can still check for undef, but warning will not complain to your
+# logs
+#
 #########################################################################
 
 
@@ -414,18 +392,18 @@ For a more robust version of this sequence use the go.pl file creation for manua
 
 BEGIN {
     
-    use base "FWS::V2::Database";
-    use base "FWS::V2::Check";
-    use base "FWS::V2::File";
-    use base "FWS::V2::Format";
-    use base "FWS::V2::Net";
-    use base "FWS::V2::Legacy";
-    use base "FWS::V2::Session";
-    use base "FWS::V2::Cache";
-    use base "FWS::V2::Geo";
-    use base "FWS::V2::Admin";
-    use base "FWS::V2::Display";
-    use base "FWS::V2::Safety";
+    use base 'FWS::V2::Database';
+    use base 'FWS::V2::Check';
+    use base 'FWS::V2::File';
+    use base 'FWS::V2::Format';
+    use base 'FWS::V2::Net';
+    use base 'FWS::V2::Legacy';
+    use base 'FWS::V2::Session';
+    use base 'FWS::V2::Cache';
+    use base 'FWS::V2::Geo';
+    use base 'FWS::V2::Admin';
+    use base 'FWS::V2::Display';
+    use base 'FWS::V2::Safety';
 
 }
 
@@ -485,7 +463,7 @@ sub new {
     $self->{adminURL}                     ||= 'admin';
 
     # set the secure domain to a non https because it probably does not have a cert if it was not set
-    $self->{secureDomain}                 ||= 'http://'.$ENV{SERVER_NAME};
+    $self->{secureDomain}                 ||= 'http://' . $ENV{SERVER_NAME};
 
     # Change the theme of the ace IDE for developer mode
     $self->{aceTheme}                     ||= 'idle_fingers';
@@ -819,6 +797,90 @@ sub new {
 
 =head1 FWS PLUGINS
 
+=head2 processWeb
+
+Do all the things FWS needs to do to process a web request and return the content to the web server.
+
+    #
+    # Process web request and print web page return
+    #
+    $fws->processWeb();
+
+=cut
+
+sub processWeb {
+    my ( $self ) = @_;
+
+    #
+    # default boostrapEnable to on!
+    # unless its specifically turned off we want it on
+    #
+    if ( $self->{bootstrapEnable} ne '0' ) {
+        $self->{bootstrapEnable} = 1;
+    }
+    
+    #
+    # Apply any plugins tied to this instance
+    #
+    $self->registerPlugins();
+
+    #
+    # Get the form values for our internal hash
+    #
+    $self->setFormValues();
+
+    #
+    # 404 page descisions and friendly url conversions
+    #
+    $self->setSiteFriendly();
+
+    #
+    # Run any init scripts if needed
+    #
+    $self->runInit();
+
+    #
+    # Set session and or get session vars
+    #
+    $self->setSession();
+
+    #
+    # Set site values based on any information we have collected, created or changed
+    #
+    $self->setSiteValues();
+
+    #
+    # Do login procedures
+    #
+    $self->processLogin();
+
+    #
+    # Run Site Actions that don't require security to use
+    #
+    $self->runSiteActions();
+
+    #
+    # Run Admin actions that DO require security to access
+    #
+    $self->runAdminAction();
+
+    #
+    # Display the content we just created
+    #
+    $self->displayContent();
+
+    #
+    # Process anything in the queue
+    #
+    $self->processQueue();
+
+    #
+    # we are done with our rendering, peace out!
+    #
+    return;
+}
+
+
 =head2 registerPlugins
 
 Any plugin that is actived via the plugin list in developer menu will attempt to be loaded.
@@ -861,21 +923,16 @@ sub registerPlugins {
 Apply a plugin to an installation without using the GUI, to force an always on state for the plugin.  If server wide plugins are being added for this instance they will be under the FWS::V2 Namespace, if not they can be added just as the plugin name.
 
     #
-    # register plugins that are available server wide 
-    #
-    $fws->registerPlugin('FWS::V2::SomePlugin');
-    
-    #
     # register some plugin added via the FWS 2.1 Plugin manager
     #
-    $fws->registerPlugin('somePlugin');
+    $fws->registerPlugin( 'somePlugin' );
 
 Additionally if you want to check if a plugin is active inside of element or scripts you can use the following conditional:
 
     #
     # check to see if ECommerce is loaded and active
     #
-    if ($fws->{plugins}->{ECommerce} eq '1') {     print "ECommerce is installed!\n" }
+    if ( $fws->{plugins}->{ECommerce} eq '1' ) {     print "ECommerce is installed!\n" }
     else {                                         print "No ECommerce for you!\n" }
 
 
