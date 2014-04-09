@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14040821
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14040821';
 
 =head1 SYNOPSIS
 
@@ -351,16 +351,26 @@ sub dialogWindow {
     my $returnHTML;
 
     if ( $self->{bootstrapEnable} ) {
-        $self->jqueryEnable( 'fwsbootbox-3.3.0' );
-        $paramHash{title} .= '&nbsp;';
-        $returnHTML =   "\$('<div></div>').FWSAjax({".
-                        "queryString: '" . $paramHash{queryString} ."'," .
-                        "onSuccess: function(returnData) {";
-        $returnHTML .=  "fwsbootbox.dialog( returnData, [], {header: '" . $paramHash{title} . "'} );";
-        if ( $self->{adminLoginId} ) { 
-            $returnHTML .= "FWSUIInit();" 
-        }
-        $returnHTML .= "}});";
+
+        #
+        # unique id for the modal so we don't cross the streams
+        #
+        my $uniqueModalId = $self->createGUID( 'l' );
+
+        #
+        #  set the default loading content
+        #
+        $paramHash{loadingContent} ||= '<img src=' . $self->loadingImage() . '></img> Loading, please wait..';
+
+        #
+        # escape tics
+        #
+        $paramHash{loadingContent} =~ s/\./\\\./sg;
+        
+        # 
+        #  call the modal
+        # 
+        $returnHTML .=   "FWSModal( 'moda" . $uniqueModalId . "', '" .  $paramHash{title} . "', '" . $paramHash{queryString} . "', '" . $paramHash{loadingContent} . "');";
     }
     else { 
         #
