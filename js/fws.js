@@ -444,6 +444,17 @@ function truncate(str, max) {
 }
 
 
+/*
+ * FWSModal
+ * Default modal used with FWSAdmin2
+ *
+ */
+function FWSModal ( modalId, title, remote, loadingContent ) {
+    $( "body" ).append( '<div id="' + modalId + '" class="bsmodal fade in" tabindex="-1" style="overflow:hidden;" aria-hidden="false"> <div class="bsmodal-header"><a href="#" onclick="$(\'#' + modalId + '\').bsmodal(\'hide\');return false;" class="close">×</a><h3>' + title + '&nbsp;</h3></div> <div class="bsmodal-body"><div style="padding:30px">' + loadingContent + '</div></div></div>' );
+    $("#" + modalId ).bsmodal({ remote: scriptName + "?" + remote });
+    $("#" + modalId ).on("hidden", function () { $(this).remove(); });
+    $("#" + modalId ).focus();
+}
 
 
 
