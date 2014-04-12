@@ -457,6 +457,15 @@ function FWSModal ( modalId, title, remote, loadingContent ) {
 }
 
 
+/*
+ * if the screen has an order list on it, set the sortable
+ *
+ */
+function FWSOrderInit( FWSField_guid ) {
+    if ( $('#pageList').length ) {
+        $('#pageList').FWSSortable({ stop: function() { $('#pageList').FWSAjax({ queryString: 'p=fws_dataOrdering&guid=' + FWSField_guid + '&pageAction=reorderItems&itemOrder='+$('#pageList').children().FWSPipeList(), showLoading: false, onSuccess: function(returnData) {} }); } });
+    }
+}
 
 
 

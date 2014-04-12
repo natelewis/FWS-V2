@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.14040821
+Version 1.14040917
 
 =cut
 
-our $VERSION = '1.14040821';
+our $VERSION = '1.14040917';
 
 =head1 SYNOPSIS
 
@@ -370,7 +370,7 @@ sub dialogWindow {
         # 
         #  call the modal
         # 
-        $returnHTML .=   "FWSModal( 'moda" . $uniqueModalId . "', '" .  $paramHash{title} . "', '" . $paramHash{queryString} . "', '" . $paramHash{loadingContent} . "');";
+        $returnHTML .=   "FWSModal( 'moda" . $uniqueModalId . "', '" .  $paramHash{title} . "', '" . $paramHash{queryString} . "', '" . $paramHash{loadingContent} . "');FWSUIInit();";
     }
     else { 
         #
