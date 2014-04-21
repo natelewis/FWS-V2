@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14041920
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14041920';
 
 
 =head1 SYNOPSIS
@@ -724,7 +724,18 @@ sub _processAdminAction {
         $self->runScript( $self->{FWSAdminLib}  || 'FWSAdmin2' );
     }
 
-    if ($self->userValue( 'isAdmin') || $self->userValue('showDeveloper') || $self->userValue('showDesigner') ) {
+    if ( $self->userValue( 'isAdmin' ) ) {
+
+        #
+        # this is used to save elements that actually do the element saving
+        # if you call itself when you try to save yourself it would recurse!
+        #
+        if ( $self->formValue( 'pageAction' ) eq 'forceUpdateScript' ) {
+            my %valueHash;
+            my $script = $self->safeSQL( $self->formValue( "script" ) );
+            $self->runSQL( SQL => "update element set script_devel='" . $self->safeSQL( $self->formValue( "script" ) ) . "' where guid='" . $self->safeSQL( $self->formValue( 'guid' ) )  . "'" );
+            $self->printPage( content => '<div style="padding:20px;">Script was force saved.  This is used to save the script that saves scripts.  No JS, or CSS was saved and no sanity check was made. </div>' );
+        } 
         
         if ( $self->formValue( 'pageAction' ) eq "installCore") {
         
