@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14041920
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14041920';
 
 
 =head1 SYNOPSIS
@@ -108,7 +108,6 @@ sub FWSJava {
         $pageJava .= "pageTracker._trackPageview();\n";
         $pageJava .= "</script>\n";
     }
-   
   
     #
     # at some point landingId should be settable in site settings
@@ -164,13 +163,10 @@ sub FWSJava {
             $pageJava .= '</script>';
     }
    
-
     $pageJava .= $self->siteValue( 'pageFoot' );
     return $pageJava;
 }
 
-
- 
 
 =head2 displayContent
 
@@ -180,7 +176,6 @@ Return the full web rendering for a FWS Page.   This includes the Content-Type H
 
 sub displayContent {
     my ( $self ) = @_;
-
 
 
     $self->runScript( 'preContent' );
@@ -331,14 +326,10 @@ sub printPage {
 sub _FWSContent {
     my ( $self ) = @_;
 
-
-
-
     my $pageHTML;
 
     if ( !$self->{stopProcessing} ) {
     
-
         my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
 
         #
@@ -805,7 +796,6 @@ sub _FWSContent {
                         #
                         # set the valueHash for value conduit style programming
                         #
-                        #my %valueHash;
                         $valueHash{pageId}            = $pageId;
                         $valueHash{elementId}         = $valueHash{guid};
                         $valueHash{elementWebPath}    = $self->{fileWebPath} . "/" . $elementHash{siteGUID} . "/" . $valueHash{type};
@@ -894,7 +884,6 @@ sub _FWSContent {
                 $self->displayAdminLogin();
             }
             
-
             if ( !$showElementOnly ) {
     
                 $pageHTML = $templateHash{template};
