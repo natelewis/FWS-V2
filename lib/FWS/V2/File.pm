@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14041920
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14041920';
 
 
 =head1 SYNOPSIS
@@ -1194,77 +1194,6 @@ sub SQLLog{
         close $FILE;
     }
     return 1;
-}
-
-
-sub _saveElementFile {
-    my ( $self, $guid, $siteGUID, $table, $ext, $content ) = @_;
-
-    #
-    # for security reasons lets make sure ext is safe
-    #
-    if ( ( $ext eq 'css' || $ext eq 'js' ) && ( $table eq 'element' || $table eq 'templates' || $table eq 'site' || $table eq 'page' ) ) {
-
-        #
-        # if siteGUID is blank, lets get the one of the site we are on
-        #
-        $siteGUID ||= $self->{siteGUID};
-
-        #
-        # set the directory and make it if it might not exist
-        #
-        my $directory = $self->{filePath}."/".$siteGUID."/".$guid;
-        $self->makeDir( $directory );
-
-        #
-        # set the timestamp so we will add this to the file name for the cachable named ones
-        #
-        my $timeStamp = time();
-
-        #
-        # for security lets get rid of anything dangerous
-        #
-        my $name        = $self->safeDir( $directory . "/FWSElement." . $ext );
-        my $backupName  = $self->safeDir( $directory . "/FWSElement-" . $timeStamp . "." . $ext );
-
-        #
-        # save the file to the FS
-        #
-        open ( my $FILE, ">", $name ) || $self->FWSLog( "Could not write to file: " . $name );
-        print $FILE $content;
-        close $FILE;
-
-        #
-        # update Key field is guid, unless we are talking about the "site" table, then it is "siteGUID"
-        #
-        if ( $table eq 'site' ) { $guid = $siteGUID }
-
-        #
-        # if it is blank, then we are actually here to delete it
-        #
-        if ( !$content ) {
-            unlink $name;
-            if ( $table eq 'page' ) { $self->saveExtra( table => 'data', siteGUID => $siteGUID, guid => $guid, field => $ext . 'Devel', value => '0' ) }
-            else { $self->runSQL( SQL => "update " . $self->safeSQL( $table ) . " set " . $self->safeSQL( $ext ) . "_devel=0 where guid='" . $self->safeSQL( $guid ) . "'" ) }
-        }
-        else {
-            if ( $table eq 'page' ) { $self->saveExtra( table => 'data', siteGUID => $siteGUID, guid => $guid, field => $ext . 'Devel', value => $timeStamp ) }
-            else { $self->runSQL( SQL => "update " . $self->safeSQL( $table ) . " set " . $self->safeSQL( $ext ) . "_devel=" . $self->safeSQL( $timeStamp ) . " where guid='" . $self->safeSQL( $guid ) . "'" ) }
-
-            #
-            # save the backupName one
-            #
-            open ( my $FILE, ">", $backupName ) || $self->FWSLog( "Could not write to file: " . $backupName );
-            print $FILE $content;
-            close $FILE;
-        }
-
-        #
-        # Remove JS and CSS Cache
-        #
-        $self->flushWebCache();
-    }
-    return;
 }
 
 
