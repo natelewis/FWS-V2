@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14041920
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14041920';
 
 
 =head1 SYNOPSIS
@@ -366,8 +366,6 @@ sub setSiteFriendly {
         $friendlyURL =~ s/^\///sg;
         $friendlyURL =~ s/\/$//sg;
         $friendlyURL =~ s/\?(.*)//sg;
-         
-
 
         #
         # add any url params pass to the formValue pieces
@@ -393,7 +391,6 @@ sub setSiteFriendly {
             #
             ( my $guidBasedURL = $friendlyURL )     =~ s/\..*//sg;
             my ( $permPage, $permId )               = split( /\//, $guidBasedURL );
-
 
             #
             # Add to the union for potential tables that alos hold friendlies
@@ -585,7 +582,6 @@ sub userLogOut {
     my ( $self ) = @_;
     $self->{userLoginId} = '';
     $self->formValue( 'b', '' );
-
     return;
 }
 
@@ -663,7 +659,6 @@ sub _localLogin {
             }
         }
 
-
         if ( $adminPass eq $formPassword && $adminPass ne '' ) {
             $self->{adminLoginId} = $self->formValue( 'bs' );
              
@@ -680,6 +675,7 @@ sub _localLogin {
     # Login as a profile
     #
     if ( ( ( $self->formValue( 'b' ) ne '' && $self->formValue( 'password' ) ne '' ) )  && $self->formValue( 'pageAction' ) ne 'logout' ) {
+
         #
         # set the BH field in case we need to use it to show in the field
         #
@@ -700,19 +696,23 @@ sub _localLogin {
                 # if for ever reason we are on the default login page, lets dump you to the home page
                 # we don't want an endless loop
                 #
-                if ( $self->formValue( 'p' ) eq 'login' ) { $self->formValue( 'p', $self->homeGUID() ) }
+                if ( $self->formValue( 'p' ) eq 'login' ) { 
+                    $self->formValue( 'p', $self->homeGUID() );
+                }
 
-                if ( $self->formValue( 'SAMLRequest' ) ne '' ) {
+                if ( $self->formValue( 'SAMLRequest' ) ) {
                     require Google::SAML::Response;
                     Google::SAML::Response->import();
 
-                    if ( $googleAppsId eq '' ) { $self->formValue( 'statusNote', $self->formValue( 'statusNote' ) . 'Your account does not have a google id associated to it.  Contact your user administrator to add this to your account.' ) }
+                    if ( !$googleAppsId ) { 
+                        $self->formValue( 'statusNote', $self->formValue( 'statusNote' ) . 'Your account does not have a google id associated to it.  Contact your user administrator to add this to your account.' );
+                    }
                     else {
                         my $saml = Google::SAML::Response->new( {
-                                key     => $self->{googleAppsKeyFile},
-                                login   => $googleAppsId,
-                                request => $self->urlDecode( $self->formValue( 'SAMLRequest' ) )
-                                } );
+                            key     => $self->{googleAppsKeyFile},
+                            login   => $googleAppsId,
+                            request => $self->urlDecode( $self->formValue( 'SAMLRequest' ) )
+                        } );
                         if ( $self->formValue( 'RelayState' ) ne '' ) {
                             $self->printPage( content => $saml->get_google_form( $self->urlDecode( $self->formValue( 'RelayState' ) ) ) );
                         }
@@ -728,6 +728,14 @@ sub _localLogin {
     #
     if ( $self->{adminLoginId} ) {
 
+        #
+        # load the admin modules
+        #
+        $self->registerPlugin( $self->{FWSAdminLib} || 'FWSAdmin2' );
+
+        #
+        # get the extra permissions we have
+        #
         my ( $extraValue ) = @{$self->runSQL( SQL => "SELECT extra_value from admin_user where user_id='" . $self->safeSQL( $self->{adminLoginId} ) . "'" )};
 
         #
@@ -748,17 +756,11 @@ sub _localLogin {
             # just to make sure, if did come in to 'admin' then mark isAdmin to 1
             #
             $self->userValue( 'isAdmin', 1 );
-use Data::Dumper;
-
-            #
-            # run the admin modules
-            #
-            $self->registerPlugin( $self->{FWSAdminLib} || 'FWSAdmin2' );
 
             #
             # Restrict the login if they came in on the adminSafePassword
             #
-            if ( $self->{adminSafeMode} eq '1' ) {
+            if ( $self->{adminSafeMode} ) {
                 $self->userValue( 'showDeveloper', '0' );
                 $self->userValue( 'showAdminUsers', '0' );
                 $self->userValue( 'isAdmin', '0' );
@@ -776,10 +778,8 @@ use Data::Dumper;
     #
     if ( !$self->{adminLoginId} ) { $self->formValue( 'editMode', 0 ) }
 
-
     #
     # we aren't logged in at all, lets ditch anything dangerous
-    #
     #
     if ( !$self->{userLoginId} && !$self->{adminLoginId} ) {
 
@@ -795,7 +795,6 @@ use Data::Dumper;
             return 'Your password is invalid or expired';
         }
     }
-
     return;
 }
 
@@ -814,6 +813,7 @@ Mark a formValue to remain persistant with the session.  The return of this func
 
 sub saveFormValue {
     my ( $self, $fieldName ) = @_;
+
     #
     # add to session
     #
@@ -857,6 +857,7 @@ sub saveSession {
     # only if it is diffrent lets update it
     #
     if ( $self->formValue( 'FWS_SESSION' ) ne $self->{userLoginId} . '|' . $self->language() . '|' . $self->{adminLoginId} . '|' . $ENV{REMOTE_ADDR} . '|' . $self->formValue( 'editMode' ) . '|' . $self->{affiliateId} . '|' . $self->{affiliateExp} . '|' . $self->{adminSafeMode} . '|' . $sessionScript ) {
+        
         #
         # run the SQL to update the session
         #
