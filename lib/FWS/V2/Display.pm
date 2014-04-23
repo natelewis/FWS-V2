@@ -864,7 +864,7 @@ sub _FWSContent {
                         $columnContent{$valueHash{layout}} .= "<div" . $editBox . " class=\"" . $valueHash{layout} . "_element element_" . $valueHash{guid} . "\" id=\"" . $valueHash{layout} . "_element_" . $columnCount{$valueHash{layout}} . "\">";
 
                         if ( ( $self->{adminLoginId} && $valueHash{siteGUID} eq $self->{siteGUID} && !$self->formValue( 'FWS_showElementOnly' ) && !$showElementOnly && !$valueHash{disableEditMode} && $self->formValue( 'editMode' ) ) )  {
-                            $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash, AJAXDivStyle => 'border: solid 1px #FF0000;border-top: 0;', editBoxContent => $html );
+                            $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash, AJAXDivStyle => '', editBoxContent => $html );
                         }
                         else {
                             $columnContent{$valueHash{layout}} .= $html;
@@ -1047,6 +1047,7 @@ sub _replaceContentColumn {
 
     $editHash{id}                 = $editHash{guid};
     $editHash{type}               = '';
+    $editHash{editBoxClass}       = 'FWSEditBoxContainerNoHover';
     $editHash{editBoxColor}       = '#2b6fb6';
     $editHash{layoutTitle}        = 1;
     $editHash{addSubElementTool}  = 0;
