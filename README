@@ -20,6 +20,32 @@ Wait a second... why does FWS::V2 seem to have its own home grown methods that a
 One of the main goals of FWS is to have a bundled, autonomous version of the FWS that can be picked up and installed on almost any major ISP or Linux hosting environment without any care for what is present on the server. The packages used by the FWS have been carefully picked and validated to be supported on most all major ISPs.  
 
 
+MINIMAL WEB RENDERING SCRIPT
+
+This file is usually called /cgi-bin/go.pl
+
+#!/usr/bin/perl
+
+use FWS::V2;
+
+my $fws = FWS::V2->new( # change these to your database you created DBHost => 'localhost', DBName => 'user_fws2', DBUser => 'user_fws2', DBPassword => SupErSecRetPassWoRd', scriptName => '/cgi-bin/go.pl',
+
+    # change these to what makes sense for you server 
+    fileSecurePath      => '/home/user/secureFiles/devel',
+    filePath            => '/home/user/www/files',
+    fileWebPath         => '/files',
+
+    # If you do not have a cert, don't put the https on the secureDomain
+    secureDomain        => 'http://www.example.com',
+    domain              => 'http://www.example.com',
+
+    # not required but handy to use the tools at frameworksites.com
+    FWSKey              => 'this comes from frameworksites.com',
+);
+
+$fws->processWeb();
+
+
 INSTALLATION
 
 To install this module, run the following commands:
@@ -54,7 +80,7 @@ You can also look for information at:
 
 LICENSE AND COPYRIGHT
 
-Copyright (C) 2012 Nate Lewis
+Copyright (C) 2014 Nate Lewis
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

@@ -11,11 +11,11 @@ FWS::V2::Cache - Framework Sites version 2 data caching
 
 =head1 VERSION
 
-Version 1.13082820
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.13082820';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS

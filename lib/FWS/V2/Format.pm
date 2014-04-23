@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.14040917
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14040917';
+our $VERSION = '1.14042309';
 
 =head1 SYNOPSIS
 

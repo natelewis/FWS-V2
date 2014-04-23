@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.14041920
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14041920';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS
@@ -521,39 +521,20 @@ Placeholder for FWSMenu() until the admin element brings one in.
 sub FWSMenu {
     my ( $self, %paramHash ) = @_;
 
-    return  $self->_bootstrapCDN() . 
-            '<div class="container"><div class="hero-unit">' . 
-            '<h1>Welcome to FrameWork Sites!</h1>' .
-            '<p>First thing your going to need is a way to access your installation.   This will install a default site, give you access to install plugins, and everything else you will need to get going.</p>' . 
-            '<p><a href="' . $self->{scriptName} . $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Install Default Admin Package</a></p>' .
-            '</div>';
-            '</div>';
+    return $self->_bootstrapCDN() . 
+        '<div class="container"><div class="hero-unit">' . 
+        '<h1>Welcome to FrameWork Sites!</h1>' .
+        '<p>First thing your going to need is a way to access your installation.   This will install a default site, give you access to install plugins, and everything else you will need to get going.</p>' . 
+        '<p><a href="' . $self->{scriptName} . $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Install Default Admin Package</a></p>' .
+        '</div>';
+        '</div>';
 
-}
-
-
-=head2 _panel
-
-FWS panel HTML:  Pass title, content and panelStyle keys.
-
-=cut
-
-sub panel {
-    my ( $self, %paramHash ) = @_;
-    
-    my $panel;
-    $panel .= "<div ";
-    $panel .= "class=\"FWSPanel\">";
-    $panel .= "<h3 class=\"FWSPanelTitle\">" . $paramHash{title} . "</h3>";
-    $panel .= "<div class=\"FWSPanelContent\"><div class=\"form-horizontal\">" . $paramHash{content} . "</div></div>";
-    $panel .= "</div>";
-    return $panel;
 }
 
 
 =head2 displayAdminPage
 
-Run the lookup and display admin pages wrapped in security precautions.
+Run the lookup and display admin pages wrapped in security check.   This also shows fws_systemInfo and fws_health.
 
 =cut
 

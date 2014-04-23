@@ -11,11 +11,11 @@ FWS::V2::Safety - Framework Sites version 2 safe data wrappers
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS

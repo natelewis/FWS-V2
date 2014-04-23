@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS
@@ -30,15 +30,6 @@ our $VERSION = '1.14040108';
                 DBUser      => 'myUser',
                 DBPassword  => 'myPass'
     );
-
-    #
-    # create FWS with SQLite connectivity
-    #
-    my $fws2 = FWS::V2->new(
-                DBType      => 'SQLite',
-                DBName      => '/home/user/your.db'
-    );
-
 
 
 =head1 DESCRIPTION

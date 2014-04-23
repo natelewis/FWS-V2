@@ -10,11 +10,11 @@ FWS::V2::Geo - Framework Sites version 2 geo location methods
 
 =head1 VERSION
 
-Version 1.14012919
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14012919';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS
@@ -32,7 +32,7 @@ our $VERSION = '1.14012919';
 
 =head1 DESCRIPTION
 
-Framework Sites version 2 geographic methods for use with zip code and city searching.
+Framework Sites version 2 geographic methods for use with zip code and city searching.   These modules are dependant on having the country and zip code databses installed on your FWS installation.
 
 =head1 METHODS
 
@@ -115,7 +115,7 @@ sub locationCenterHash {
 
 =head2 cityArray
 
-return a list of cities based on keywords, state, or autoComplete style which will search based on an uncomplete query text.
+Return a list of cities based on keywords, state, or autoComplete style which will search based on an uncomplete query text.
 
 =cut
 

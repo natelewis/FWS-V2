@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2.1.x
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS
@@ -308,36 +308,37 @@ RewriteRule (.*) http://www.example.com/$1 [R=301,L]
 
 This file is usually called /cgi-bin/go.pl  The #!/usr/bin/perl line below this one HAS to be the first line in the file or it won't work.
 
-#!/usr/bin/perl
-
-use FWS::V2;
-
-my $fws = FWS::V2->new(
-    # change these to your database you created
-    DBHost              => 'localhost',
-    DBName              => 'user_fws2',
-    DBUser              => 'user_fws2',
-    DBPassword          => SupErSecRetPassWoRd',
-    scriptName          => '/cgi-bin/go.pl',
-
-    # change these to what makes sense for you server 
-    fileSecurePath      => '/home/user/secureFiles/devel',
-    filePath            => '/home/user/www/files',
-    fileWebPath         => '/files',
-
-    # If you do not have a cert, don't put the https on the secureDomain
-    secureDomain        => 'http://www.example.com',
-    domain              => 'http://www.example.com',
-
-    # not required but handy to use the tools at frameworksites.com
-    FWSKey              => 'this comes from frameworksites.com',
-);
-
-$fws->processWeb();
-
-For a more robust version of this sequence use the go.pl file creation for manual installation located on http://www.frameworksites.com
+    #!/usr/bin/perl
     
+    use FWS::V2;
+    
+    my $fws = FWS::V2->new(
+        # change these to your database you created
+        DBHost              => 'localhost',
+        DBName              => 'user_fws2',
+        DBUser              => 'user_fws2',
+        DBPassword          => SupErSecRetPassWoRd',
+        scriptName          => '/cgi-bin/go.pl',
+    
+        # change these to what makes sense for you server 
+        fileSecurePath      => '/home/user/secureFiles/devel',
+        filePath            => '/home/user/www/files',
+        fileWebPath         => '/files',
+    
+        # If you do not have a cert, don't put the https on the secureDomain
+        secureDomain        => 'http://www.example.com',
+        domain              => 'http://www.example.com',
+    
+        # not required but handy to use the tools at frameworksites.com
+        FWSKey              => 'this comes from frameworksites.com',
+    );
+    
+    $fws->processWeb();
+
+Further instructions on making web based rendering go.pl files visit http://www.frameworksites.com
+
 =cut
+
 
 #########################################################################
 #
@@ -1020,7 +1021,7 @@ L<http://search.cpan.org/dist/FWS-V2/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2013 Nate Lewis.
+Copyright 2014 Nate Lewis.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published

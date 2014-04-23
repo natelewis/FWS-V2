@@ -10,11 +10,11 @@ FWS::V2::Legacy - Framework Sites version 2 compatibility and legacy methods and
 
 =head1 VERSION
 
-Version 1.14040108
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14040108';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS
@@ -360,6 +360,25 @@ Renamed to createFWSDatabase().
 sub newDBCheck {
     my ( $self ) = @_;
     $self->createFWSDatabase();
+}
+
+
+=head2 panel
+
+Old FWS panel HTML:  Pass title, content and panelStyle keys - some old default elements still use it.
+
+=cut
+
+sub panel {
+    my ( $self, %paramHash ) = @_;
+
+    my $panel;
+    $panel .= "<div ";
+    $panel .= "class=\"FWSPanel\">";
+    $panel .= "<h3 class=\"FWSPanelTitle\">" . $paramHash{title} . "</h3>";
+    $panel .= "<div class=\"FWSPanelContent\"><div class=\"form-horizontal\">" . $paramHash{content} . "</div></div>";
+    $panel .= "</div>";
+    return $panel;
 }
 
 

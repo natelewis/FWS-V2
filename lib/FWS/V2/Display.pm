@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.14041920
+Version 1.14042309
 
 =cut
 
-our $VERSION = '1.14041920';
+our $VERSION = '1.14042309';
 
 
 =head1 SYNOPSIS
@@ -107,6 +107,25 @@ sub FWSJava {
         $pageJava .= "pageTracker._initData();\n";
         $pageJava .= "pageTracker._trackPageview();\n";
         $pageJava .= "</script>\n";
+    }
+  
+    #
+    # Google universal anaylitics
+    #
+    if ( $self->siteValue( 'googleUniversalWebPropertyID' ) && !$self->formValue( 'editMode' ) ) {
+
+        $pageJava .= "<!-- Google Analytics -->\n";
+        $pageJava .= "<script>\n";
+        $pageJava .= "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){\n";
+        $pageJava .= "    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),\n";
+        $pageJava .= "    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)\n";
+        $pageJava .= "})(window,document,'script','//www.google-analytics.com/analytics.js','ga');\n";
+
+        $pageJava .= "ga('create', '" . $self->siteValue( 'googleUniversalWebPropertyID' ) . "', 'auto');\n";
+        $pageJava .= "ga('send', 'pageview');\n";
+
+        $pageJava .= "</script>\n";
+        $pageJava .= "<!-- End Google Analytics -->\n";
     }
   
     #
