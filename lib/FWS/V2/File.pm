@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 1.14041920
+Version 1.14042300
 
 =cut
 
-our $VERSION = '1.14041920';
+our $VERSION = '1.14042300';
 
 
 =head1 SYNOPSIS
@@ -1244,25 +1244,6 @@ sub _versionData {
 
     return ( $returnString, $majorVer, $build );
 }
-
-sub _getElementEditText {
-    my ( $self, $siteGUID, $guid, $ext )= @_;
-
-    #
-    # get a file that is to edited in ACE from the elements. only works on js and css files
-    #
-    my $fileText;
-    if ( $ext eq 'js' || $ext eq 'css' ) {
-        my $file = $self->safeDir( $self->{filePath} . '/' . $siteGUID . '/' . $guid . '/FWSElement.' . $ext);
-        if ( -e $file ) {
-            open ( my $FILE, "<", $file );
-            while ( <$FILE> ) { $fileText .= $_ }
-            close $FILE;
-        }
-    }
-    return $fileText;
-}
-
 
 
 =head1 AUTHOR
