@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.14042309
+Version 1.14042521
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '1.14042521';
 
 
 =head1 SYNOPSIS
@@ -2913,7 +2913,7 @@ sub userHash {
         #
         # if its still blank after that, then we are talking about looking up the guy who is logged in currently
         #
-        if ( !$lookupGUID ) { $lookupSQL = "email like '" . $self->safeSQL( $self->{userLoginId} ) . "'" }
+        if ( !$lookupGUID ) { $lookupSQL = "guid like '" . $self->safeSQL( $self->{userLoginId} ) . "'" }
 
         #
         # if the lookupGUID has an @ in it, then look up the guid - least efficient but old stuff still looks for stuff this way

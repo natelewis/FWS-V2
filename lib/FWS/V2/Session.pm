@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 1.14042309
+Version 1.14042521
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '1.14042521';
 
 
 =head1 SYNOPSIS
@@ -690,7 +690,8 @@ sub _localLogin {
             }
             else {
 
-                $self->{userLoginId} = $self->formValue( 'b' );
+                #$self->{userLoginId} = $self->formValue( 'b' );
+                $self->{userLoginId} = $userGUID;
 
                 #
                 # if for ever reason we are on the default login page, lets dump you to the home page
