@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.14042309
+Version 1.14042521
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '1.14042521';
 
 =head1 SYNOPSIS
 
@@ -353,6 +353,11 @@ sub dialogWindow {
     if ( $self->{bootstrapEnable} ) {
 
         #
+        # set the class to FWSModal if its not set so we will at least get that
+        #
+        $paramHash{class} ||= 'FWSModal';
+
+        #
         # unique id for the modal so we don't cross the streams
         #
         my $uniqueModalId = $self->createGUID( 'l' );
@@ -370,7 +375,7 @@ sub dialogWindow {
         # 
         #  call the modal
         # 
-        $returnHTML .=   "FWSModal( 'moda" . $uniqueModalId . "', '" .  $paramHash{title} . "', '" . $paramHash{queryString} . "', '" . $paramHash{loadingContent} . "');FWSUIInit();";
+        $returnHTML .=   "FWSModal( 'moda" . $uniqueModalId . "', '" .  $paramHash{title} . "', '" . $paramHash{queryString} . "', '" . $paramHash{loadingContent} . "', '" .  $paramHash{class} . "');FWSUIInit();";
     }
     else { 
         #
@@ -440,7 +445,7 @@ sub dialogWindow {
     #
     if ( $paramHash{linkHTML} ) { 
         if ( $self->{bootstrapEnable} ) {
-            return "<a class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</a>";
+            return "<a href=\"#\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . ";return false;\">" . $paramHash{linkHTML} . "</a>";
         }
         else {
             return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
