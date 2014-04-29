@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.14042521
+Version 1.14042911
 
 =cut
 
-our $VERSION = '1.14042521';
+our $VERSION = '1.14042911';
 
 =head1 SYNOPSIS
 
@@ -1358,6 +1358,8 @@ sub startElement {
     my $elementClass = $self->formValue( 'FWS_elementClassPrefix' );
     if ( $dataHash{elementClass} ) { $elementClass = $dataHash{elementClass} }
 
+    $dataHash{header} ||= 'h2';
+
     #
     # start two divs for positioning and backgrounds
     #
@@ -1367,9 +1369,9 @@ sub startElement {
     # Title Field/Table
     #
     if ( !$dataHash{disableTitle} ) {
-        $html .= "<div class=\"globalTitleWrapper " . $elementClass . "TitleWrapper\"><h2 class=\"globalTitle " . $elementClass . "Title\">";
+        $html .= "<div class=\"globalTitleWrapper " . $elementClass . "TitleWrapper\"><" . $dataHash{header} . " class=\"globalTitle " . $elementClass . "Title\">";
         $html .= $self->field( 'title', %dataHash );
-        $html .= "</h2></div>";
+        $html .= "</" . $dataHash{header} . "></div>";
     }
 
     $html .= "<div class=\"globalContentWrapper " . $elementClass . "ContentWrapper\">";
