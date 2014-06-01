@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 1.14042521
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042521';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS
@@ -661,8 +661,9 @@ sub _localLogin {
 
         if ( $adminPass eq $formPassword && $adminPass ne '' ) {
             $self->{adminLoginId} = $self->formValue( 'bs' );
-             
-            if ( $self->formValue( 'p' ) eq $self->{adminURL} ) { $self->formValue( 'p', $self->homeGUID() ) }
+            if ( $self->formValue( 'p' ) eq $self->{adminURL} ) { 
+                $self->formValue( 'p', $self->homeGUID() ) 
+            }
         }
         else {
             $self->formValue( 'statusNote', $self->formValue( 'statusNote' ) . 'Your login criteria was incorrect.' );
@@ -721,7 +722,9 @@ sub _localLogin {
                 }
             }
         }
-        else { $self->userLogOut() }
+        else { 
+            $self->userLogOut();
+        }
     }
 
     #
@@ -862,7 +865,7 @@ sub saveSession {
         #
         # run the SQL to update the session
         #
-            $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "', b='" . $self->safeSQL( $self->{userLoginId} ) . "', s='" . $self->safeSQL( $self->{adminSafeMode} ) . "', bs='" . $self->safeSQL( $self->{adminLoginId} ) . "', ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "', e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "', a='" . $self->safeSQL( $self->{affiliateId} ) . "', a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "', extra_value='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'" );
+        $self->runSQL( SQL => "update fws_sessions set fws_lang='" . $self->safeSQL( $self->language() ) . "', b='" . $self->safeSQL( $self->{userLoginId} ) . "', s='" . $self->safeSQL( $self->{adminSafeMode} ) . "', bs='" . $self->safeSQL( $self->{adminLoginId} ) . "', ip='" . $self->safeSQL( $ENV{REMOTE_ADDR} ) . "', e='" . $self->safeSQL( $self->formValue( 'editMode' ) ) . "', a='" . $self->safeSQL( $self->{affiliateId} ) . "', a_exp='" . $self->safeSQL( $self->{affiliateExp} ) . "', extra_value='" . $self->safeSQL( $sessionScript ) . "' where id='" . $self->safeSQL( $self->formValue( 'session' ) ) . "'", noUpdate => 1 );
     }
 }
 
@@ -975,7 +978,20 @@ sub setSiteValues {
     #
     # if p is still blank, lets set it
     #
-    if ( $self->formValue( 'p' ) eq '' ) { $self->formValue( 'p', $self->siteValue( 'homeGUID' ) ) }
+    if ( $self->formValue( 'p' ) eq '' ) {
+        my $scriptName = $self->{scriptName};
+        if ( $ENV{REQUEST_URI} =~ /^$scriptName/ || $ENV{REQUEST_URI} eq '/' ) { 
+            $self->formValue( 'p', $self->siteValue( 'homeGUID' ) )
+        } 
+        else {
+            print "Status: 404 Not Found\n";
+            print "Connection: close\n";
+            print "Content-Type: text/html\n\n";
+            print "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n";
+            print "<HTML><HEAD>\n<TITLE>404 Not Found</TITLE>\n</HEAD><BODY>\n<H1>Not Found</H1>\n<P>The requested file is not available or does not exist.</P>\n</BODY></HTML>";
+            $self->{stopProcessing} = 1;
+        } 
+    }
 
     #
     # set where we will get FWS files from

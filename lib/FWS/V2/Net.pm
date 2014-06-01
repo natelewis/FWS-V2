@@ -11,11 +11,11 @@ FWS::V2::Net - Framework Sites version 2 network access methods
 
 =head1 VERSION
 
-Version 1.14042309
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS

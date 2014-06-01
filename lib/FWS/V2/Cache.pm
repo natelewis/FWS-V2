@@ -11,11 +11,11 @@ FWS::V2::Cache - Framework Sites version 2 data caching
 
 =head1 VERSION
 
-Version 1.14042309
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS
@@ -259,10 +259,12 @@ sub setPageCache {
     #
     if ( $self->{tinyMCEEnable} ) { $cacheFileName .= $self->{tinyMCEPath} . '-' }
 
+
     #
     # add the jquery
     #
     my %jqueryHash = %{$self->{_jqueryHash}};
+    
     foreach my $jqueryLibrary ( sort {$jqueryHash{$a} <=> $jqueryHash{$b} } keys %jqueryHash ) {
         $cacheFileName .= $jqueryLibrary . '-';
     }
@@ -271,6 +273,7 @@ sub setPageCache {
     # load js from elements and pages
     #
     my %jsHash = %{$self->{_jsHash}};
+
     foreach my $jsFile ( sort {$jsHash{$a} <=> $jsHash{$b} } keys %jsHash ) {
         $jsFile =~ s/\//-/sg;
         $cacheFileName .= $jsFile . '-';
@@ -319,31 +322,6 @@ sub setPageCache {
                 print $JS "var globalFiles = \"" .  $self->{fileFWSPath}  . "\";\n";
                 print $JS "var domain = \"" .       $self->{domain}       . "\";\n";
 
-                my $fwsJS = $self->{filePath} . "/fws/fws-" . $self->{FWSVersion} . ".min.js";
-                if ( -e $fwsJS ) {
-                    open ( my $FILE, "<", $fwsJS ) || $self->FWSLog( "Could not read file: " . $fwsJS );
-                    print $JS "\n\n// fws-" . $self->{FWSVersion} . ".min.js\n\n";
-                    while ( my $line = <$FILE> ) { print $JS $line }
-                    close $FILE;
-                }
-
-                my $fwsCSS = $self->{filePath} . "/fws/fws-" . $self->{FWSVersion} . ".css";
-                if ( -e $fwsCSS ) {
-                    open ( my $FILE, "<", $fwsCSS ) || $self->FWSLog( "Could not read file:  " .  $fwsCSS );
-                    print $CSS "\n\n/* fws-" . $self->{FWSVersion} . ".css */\n\n";
-                    while ( my $line = <$FILE> ) { print $CSS $line }
-                    close $FILE;
-                }
-            }
-
-            if ( $self->{bootstrapEnable} ) {
-                my $bootstrapCSS = $self->{filePath} . "/fws/bootstrap-2.3.2/css/bootstrap.min.css";
-                if ( -e $bootstrapCSS ) {
-                    open ( my $FILE, "<", $bootstrapCSS ) || $self->FWSLog( "Could not read file:  " .  $bootstrapCSS );
-                    print $CSS "\n\n/* boostrap.min.css */\n\n";
-                    while ( my $line = <$FILE> ) { print $CSS $line }
-                    close $FILE;
-                }
             }
 
 
@@ -353,13 +331,13 @@ sub setPageCache {
             if ( $self->{tinyMCEEnable} && !$paramHash{jqueryOnly} ) {
                 print $JS $self->tinyMCEHead();
 
-                my $tinyMCEInit = $self->{filePath} . "/fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js";
-                if ( -e $tinyMCEInit ) {
-                    open ( my $FILE, "<", $tinyMCEInit ) || $self->FWSLog( "Can not open file:" .  $tinyMCEInit );
-                    print $JS "\n\n// /fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js\n\n";
-                    while ( my $line = <$FILE> ) { print $JS $line }
-                    close $FILE;
-                }
+                #my $tinyMCEInit = $self->{filePath} . "/fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js";
+                #if ( -e $tinyMCEInit ) {
+                #    open ( my $FILE, "<", $tinyMCEInit ) || $self->FWSLog( "Can not open file:" .  $tinyMCEInit );
+                #    print $JS "\n\n// /fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js\n\n";
+                #    while ( my $line = <$FILE> ) { print $JS $line }
+                #    close $FILE;
+                #}
             }
 
             #
@@ -417,6 +395,15 @@ sub setPageCache {
                 # load js from elements and pages
                 #
                 my %jsHash = %{$self->{_jsHash}};
+
+                #
+                # only add FWSAdmin if we are logged in
+                #
+                if ( $self->{adminLoginId} ) {
+                     my $adminPlugin = $self->{FWSAdminLib} || 'FWSAdmin2';
+                    $jsHash{'plugins/' . $adminPlugin . '/FWSElement'} = -2000;
+                }
+
                 foreach my $fileName ( sort {$jsHash{$a} <=> $jsHash{$b} } keys %jsHash ) {
                     
                     #
@@ -433,7 +420,7 @@ sub setPageCache {
 
                     if (-e $fullFileName) {
                         open ( my $FILE, "<", $fullFileName ) || $self->FWSLog( "Can not open file:" .  $fullFileName );
-                        print $JS "\n\n// " . $fileName . ".js\n\n";
+                        print $JS "\n\n// * /" . $fileName . ".js ( priority: " . $jsHash{$fileName} . " )\n\n";
                         while ( my $line = <$FILE> ) { print $JS $line }
                         close $FILE;
                     }
@@ -450,23 +437,21 @@ sub setPageCache {
         $pageFoot .= "<script type=\"text/javascript\" src=\"" . $cacheWeb . ".js\"></script>\n";
 
         if ( $self->{tinyMCEEnable}  && !$paramHash{jqueryOnly} ) {
-            $pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/" . $self->{tinyMCEPath} . "/tiny_mce.js\"></script>\n" . $pageFoot;
+            $pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/" . $self->{tinyMCEPath} . "/tiny_mce.min.js\"></script>\n" . $pageFoot;
         }
 
 
-        #
-        # if we are flaged for boostrap, add it!
-        #
         if ( $self->{bootstrapEnable} ) {
-            $pageFoot = "\n<script src=\"" . $self->{fileWebPath} . "/fws/bootstrap-2.3.2/js/bootstrap.min.js\"></script>\n" . $pageFoot;
+            $pageFoot = "\n" . $self->_bootstrapJSCDN() ."\n" . $pageFoot;
+            $pageHead = "\n" . $self->_bootstrapCDN() ."\n" . $pageHead;
         }
 
-
-
-        if ( keys %jqueryHash && !$self->{loadJQueryInHead} ) {
-            $pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n" . $pageFoot;
+        #if ( keys %jqueryHash && !$self->{loadJQueryInHead} ) {
+        if ( keys %jqueryHash ) {
+            #$pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n" . $pageFoot;
+            $pageFoot = "<script type=\"text/javascript\" src=\"//code.jquery.com/jquery-1.11.0.min.js\"></script>\n" . $pageFoot;
         }
-            
+        
         if ( !$paramHash{noCSS} ) { $pageHead .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"" . $cacheWeb . ".css\"/>\n" }
     }
 

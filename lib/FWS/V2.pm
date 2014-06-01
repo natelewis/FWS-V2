@@ -7,15 +7,15 @@ use warnings;
 
 =head1 NAME
 
-FWS::V2 - Framework Sites version 2.1.x
+FWS::V2 - Framework Sites version 2.3.x
 
 =head1 VERSION
 
-Version 1.14042309
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS
@@ -417,7 +417,7 @@ sub new {
     #
     # set the FWS version we are using
     #
-    $self->{FWSVersion} = '2.1';
+    $self->{FWSVersion} = '2.3';
 
     #
     # Major version parse
@@ -470,7 +470,8 @@ sub new {
     $self->{aceTheme}                     ||= 'idle_fingers';
 
     # The subdirectory of where tinyMCE is placed to make upgrading  and testing new versions easier
-    $self->{tinyMCEPath}                  ||= 'tinymce-3.5.4';
+    $self->{tinyMCEPath}                  ||= 'tinymce-4.0.26';
+    #$self->{tinyMCEPath}                  ||= 'tinymce-3.5.4';
 
     # Sometimes sites need bigger thatn text blob, 'mediumtext' might be needed
     $self->{scriptTextSize}               ||= 'text';
@@ -906,8 +907,23 @@ sub registerPlugins {
     #
     my @pluginArray =  split /\|/, $self->{sitePlugins};
 
+    #
+    # get the FWSAdmin module reference string
+    #
+    my $FWSAdmin = $self->{FWSAdminLib} || 'FWSAdmin2';
+
+    #
+    # loop through the plugins and add them
+    #
     while ( @pluginArray )  {
-        $self->registerPlugin( shift @pluginArray );
+        my $plugin = shift @pluginArray;
+
+        #
+        # we never add the Admin plugin, we do that if we are logged in later
+        #
+        if ( $plugin ne $FWSAdmin ) {
+            $self->registerPlugin( $plugin );
+        }
     }
     
     #
@@ -924,7 +940,7 @@ sub registerPlugins {
 Apply a plugin to an installation without using the GUI, to force an always on state for the plugin.  If server wide plugins are being added for this instance they will be under the FWS::V2 Namespace, if not they can be added just as the plugin name.
 
     #
-    # register some plugin added via the FWS 2.1 Plugin manager
+    # register some plugin added via the FWS 2.3 Plugin manager
     #
     $fws->registerPlugin( 'somePlugin' );
 
@@ -959,7 +975,9 @@ sub registerPlugin {
     eval 'use ' . $plugin . ';';
     ## use critic
 
-    if( $@ ){ $self->FWSLog( $plugin . " could not be loaded\n" . $@ ) }
+    if( $@ ){ 
+        $self->FWSLog( $plugin . " could not be loaded\n" . $@ ); 
+    }
 
     ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
     eval $plugin . '->pluginInit($self);';

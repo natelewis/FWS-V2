@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 1.14042911
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042911';
+our $VERSION = '3.14052820';
 
 =head1 SYNOPSIS
 
@@ -99,7 +99,7 @@ Create a on off admin lightbulb for an item that will work if you are logged in 
 
 =cut
 
-sub activeToggleIcon {
+sub DEPREICTATED___activeToggleIcon {
     my ( $self, %paramHash ) = @_;
 
     my $table = 'data';
@@ -350,106 +350,37 @@ sub dialogWindow {
     my ( $self, %paramHash ) = @_;
     my $returnHTML;
 
-    if ( $self->{bootstrapEnable} ) {
 
-        #
-        # set the class to FWSModal if its not set so we will at least get that
-        #
-        $paramHash{class} ||= 'FWSModal';
+    #
+    # set the class to FWSModal if its not set so we will at least get that
+    #
+    $paramHash{class} ||= 'FWSModal';
 
-        #
-        # unique id for the modal so we don't cross the streams
-        #
-        my $uniqueModalId = $self->createGUID( 'l' );
+    #
+    # unique id for the modal so we don't cross the streams
+    #
+    my $uniqueModalId = $self->createGUID( 'l' );
 
-        #
-        #  set the default loading content
-        #
-        $paramHash{loadingContent} ||= '<img src=' . $self->loadingImage() . '></img> Loading, please wait..';
+    #
+    #  set the default loading content
+    #
+    $paramHash{loadingContent} ||= '<img src=' . $self->loadingImage() . '></img> Loading, please wait..';
 
-        #
-        # escape tics
-        #
-        $paramHash{loadingContent} =~ s/\./\\\./sg;
-        
-        # 
-        #  call the modal
-        # 
-        $returnHTML .=   "FWSModal( 'moda" . $uniqueModalId . "', '" .  $paramHash{title} . "', '" . $paramHash{queryString} . "', '" . $paramHash{loadingContent} . "', '" .  $paramHash{class} . "');FWSUIInit();";
-    }
-    else { 
-        #
-        # Determine Auto Resize Settings default it to true if it is blank
-        #
-        $paramHash{autoResize} = 'true' if ( !$paramHash{autoResize} );
+    #
+    # escape tics
+    #
+    $paramHash{loadingContent} =~ s/\./\\\./sg;
     
-        #
-        # set defaults and fix up the width
-        #
-        $self->jqueryEnable( 'ui-1.8.9' );
-        $self->jqueryEnable( 'ui.dialog-1.8.9' );
-        $self->jqueryEnable( 'ui.position-1.8.9' );
-        if ( !defined $paramHash{width} ) { $paramHash{width} = '800' }
-        $returnHTML = "var jsAutoResize = '" . $paramHash{autoResize} . "';";
-    
-        #
-        # build the ajax load without the jquery pre object because we could use it two different ways
-        #
-        my $ajaxLoad = "load('" . $self->{scriptName} . $self->{queryHead} . $paramHash{queryString} . "',function(){";
-        if ( $self->{adminLoginId} ) { $ajaxLoad .= "FWSUIInit();" }
-        $ajaxLoad .= "if (jsAutoResize.length) { \$.modal.update(); } });";
-    
-        #
-        # create someting small and unique so we can use it as a reference
-        #
-        my $uniqueId = '_' . $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM', lowLength => 6, highLength => 6 );
-    
-        $paramHash{loadingContent} ||= "<img src=".$self->loadingImage()."></img> Loading, please wait...";
-    
-        #
-        # return the ajax against he modal wrapper if we are just refreshing with new content
-        #
-    
-        if ( $paramHash{subModal} ) {
-            $returnHTML .= "\$('.simplemodal-data').html( '".$paramHash{loadingContent} ."' );\$('.simplemodal-data')." . $ajaxLoad;
-        }
-        
-        #
-        # this is not a subModal do the whole gig
-        #
-        else {
-            $returnHTML .= "\$('" . ( $paramHash{id} ? "#" . $paramHash{id} : "<div></div>').html( '" . $paramHash{loadingContent} . "' )").".modal({ dataId: 'modal_" . $uniqueId . "',";
-        
-            #
-            # Set the hit and autoresize
-            #
-            if ( defined $paramHash{height} ) { $returnHTML .= "minHeight: " . $paramHash{height} . ",maxHeight: " . $paramHash{height} . "," }
-            $returnHTML .= "autoResize: " . $paramHash{autoResize} . ",";
-        
-            #
-            # because we do NOT have an ID, lets build the onShow loader
-            #
-            if ( !$paramHash{id} ) { $returnHTML .= "onShow: function (dialog) { \$('#modal_" . $uniqueId . "')." . $ajaxLoad . " }," }
-        
-            #
-            # create the oncloase to clean up any mce thingies
-            #
-            $returnHTML .= "onClose: function(dialog) { FWSCloseMCE(); \$.modal.close(); },";
-            $returnHTML .= "minWidth:" . $paramHash{width};
-            $returnHTML .= "}); ";
-        }
-    }
+    # 
+    #  call the modal
+    # 
+    $returnHTML .=   "FWSModal( 'moda" . $uniqueModalId . "', '" .  $paramHash{title} . "', '" . $paramHash{queryString} . "', '" . $paramHash{loadingContent} . "', '" .  $paramHash{class} . "');FWSUIInit();";
  
     #
     # return the link wrapperd onclick or just the onclick
     #
     if ( $paramHash{linkHTML} ) { 
-        if ( $self->{bootstrapEnable} ) {
-            return "<a href=\"#\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . ";return false;\">" . $paramHash{linkHTML} . "</a>";
-        }
-        else {
-            return "<span style=\"cursor:pointer;\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
-        }
+        return "<a href=\"#\" class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . ";return false;\" data-toggle=\"collapse\" data-target=\".nav-collapse\"><span>" . $paramHash{linkHTML} . "</span></a>";
     }
     return $returnHTML;
 }
@@ -1014,10 +945,7 @@ Create a button that is default to JQuery UI class structure.  You can pass styl
 sub FWSButton{
     my ( $self, %paramHash ) = @_;
 
-    my $class = 'ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only ';
-    if ( $self->{bootstrapEnable} ) {
-        $class = 'btn ';
-    }
+    my $class = 'btn ';
 
     my $buttonHTML = "<button class=\"" . $class . " " . $paramHash{class} . "\" type=\"button\" ";
     if ( $paramHash{style} )   { $buttonHTML .= " style=\"" . $paramHash{style} . "\" " }
@@ -1025,7 +953,7 @@ sub FWSButton{
     if ( $paramHash{id} )      { $buttonHTML .= " id=\"" . $paramHash{id} . "\" " }
     if ( $paramHash{onClick} ) { $buttonHTML .= " onclick=\"" . $paramHash{onClick} . "\"" }
     $buttonHTML .= ">";
-    $buttonHTML .= "<span class=\"ui-button-text\">" . $paramHash{value} . "</span>";
+    $buttonHTML .= "<span class=\"FWSButtonText\">" . $paramHash{value} . "</span>";
     $buttonHTML .= "</button>";
     
     return $buttonHTML;
@@ -1038,7 +966,7 @@ Return a FWS Hint HTML for roll over hint icons or links.
 
 =cut
 
-sub FWSHint {
+sub DEPRICATED_FWSHint {
     my ( $self, %paramHash ) = @_;
     #
     # add the jquery
@@ -1068,7 +996,7 @@ sub FWSHint {
 }
 
 
-=head2 FWSIcon
+=head2 DEPRICATED_FWSIcon
 
 Return just the file name when given a full file path
 
@@ -1085,7 +1013,7 @@ You can pass the following keys:
 
 =cut
 
-sub FWSIcon {
+sub DEPRICATED_FWSIcon {
     my ( $self, %paramHash ) = @_;
     $paramHash{icon}    ||= 'blank.png';
     $paramHash{alt}     ||= '\'\'';
@@ -1317,7 +1245,7 @@ sub popupWindow {
     my $returnHTML = "window.open('" . $self->{scriptName} . $self->{queryHead} . $paramHash{queryString} . "','_blank');";
     if ( $paramHash{linkHTML} ) {
         if ( $self->{bootstrapEnable} ) {
-            return "<a class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</a>";
+            return "<a class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\" data-toggle=\"collapse\" data-target=\".nav-collapse\"><span>" . $paramHash{linkHTML} . "</span></a>";
         }
         else {
             return "<span class=\"FWSAjaxLink\" onclick=\"" . $returnHTML . "\">" . $paramHash{linkHTML} . "</span>";
@@ -1358,23 +1286,23 @@ sub startElement {
     my $elementClass = $self->formValue( 'FWS_elementClassPrefix' );
     if ( $dataHash{elementClass} ) { $elementClass = $dataHash{elementClass} }
 
-    $dataHash{header} ||= 'h2';
+    $dataHash{headerTag} ||= 'h2';
 
     #
     # start two divs for positioning and backgrounds
     #
-    my $html = "<div class=\"globalElementWrapper " . $elementClass . "Wrapper\"><div class=\"globalElement " . $elementClass . "\">";
+    my $html = "<div class=\"FWSElementWrapper " . $elementClass . "Wrapper\"><div class=\"FWSElement " . $elementClass . "\">";
 
     #
     # Title Field/Table
     #
     if ( !$dataHash{disableTitle} ) {
-        $html .= "<div class=\"globalTitleWrapper " . $elementClass . "TitleWrapper\"><" . $dataHash{header} . " class=\"globalTitle " . $elementClass . "Title\">";
+        $html .= "<div class=\"FWSTitleWrapper " . $elementClass . "TitleWrapper\"><" . $dataHash{headerTag} . " class=\"FWSTitle " . $elementClass . "Title\">";
         $html .= $self->field( 'title', %dataHash );
-        $html .= "</" . $dataHash{header} . "></div>";
+        $html .= "</" . $dataHash{headerTag} . "></div>";
     }
 
-    $html .= "<div class=\"globalContentWrapper " . $elementClass . "ContentWrapper\">";
+    $html .= "<div class=\"FWSContentWrapper " . $elementClass . "ContentWrapper\">";
 
     #
     # wrap the element

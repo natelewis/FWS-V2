@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 1.14042309
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS

@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 1.14042309
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS
@@ -77,7 +77,7 @@ sub FWSHead {
     #
     my %jqueryHash = %{$self->{_jqueryHash}};
     if ( keys %jqueryHash && $self->{loadJQueryInHead} ) {
-        $html .= "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/jquery/jquery-1.7.1.min.js\"></script>\n";
+    #    $html .= "<script type=\"text/javascript\" src=\"//code.jquery.com/ui/1.10.4/jquery-ui.min.js\"></script>\n";
     }
 
     return $html . $self->siteValue( 'pageHead' ) . $self->siteValue( 'templateHead' );
@@ -816,7 +816,9 @@ sub _FWSContent {
                         # set the valueHash for value conduit style programming
                         #
                         $valueHash{pageId}            = $pageId;
+                        $valueHash{pageGUID}          = $pageId;
                         $valueHash{elementId}         = $valueHash{guid};
+                        $valueHash{elementGUID}       = $valueHash{guid};
                         $valueHash{elementWebPath}    = $self->{fileWebPath} . "/" . $elementHash{siteGUID} . "/" . $valueHash{type};
 
                         #
@@ -1073,7 +1075,7 @@ sub _replaceContentColumn {
     $editHash{disableEditTool}    = 1;
     $editHash{disableActiveTool}  = 1;
     $editHash{orderTool}           = 1;
-    $editHash{name}               = '| ' . $editHash{layout} . ' |';
+    $editHash{name}               = $editHash{layout};
     my $changeFrom                = '#' . $editHash{contentType} . '-' . $editHash{layout} . '#';
     my $changeTo                  = '<div class="FWSLanguage-' . uc( $self->language() ) . '" id="' . $editHash{layout} . '">';
 

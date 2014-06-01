@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 1.14042309
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042309';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS
@@ -64,10 +64,10 @@ Return the HTML used for a default FWS admin login.
 sub displayAdminLogin {
     my ( $self ) = @_;
 
-    my $loginForm = '<div class="container"><form class="form-inline well" style="margin:auto;margin-top:40px;text-align:center;min-height:170px;max-width:550px;">';
-    $loginForm .= '<h2 style="padding-bottom:20px;">' . $self->frameworkSites() . '</h2>';
-    $loginForm .= '<input name="bs" type="text" class="input-large input-block-level" value="' . $self->formValue( 'bs_hold' ) . '" placeholder="User Name">';
-    $loginForm .= ' <input type="password" name="l_password" class="input-large input-block-level" placeholder="Password">';
+    my $loginForm = '<div class="container"><form class="form-inline well" style="margin:auto;margin-top:40px;text-align:center;min-height:170px;max-width:550px;" action="' . $self->{scriptName} . '">';
+    $loginForm .= '<h2 style="padding-bottom:20px;"><strong>' . $self->frameworkSites() . '</strong></h2>';
+    $loginForm .= '<input name="bs" type="text" class="input-large input-block-level form-control" value="' . $self->formValue( 'bs_hold' ) . '" placeholder="User Name">';
+    $loginForm .= ' <input type="password" name="l_password" class="input-large input-block-level form-control" placeholder="Password">';
     $loginForm .= ' <button class="btn btn-primary" type="submit">Sign in</button>';
     $loginForm .= '<input type="hidden" class="name="p" value="' . $self->{adminURL} . '"/>';
     $loginForm .= '<input type="hidden" name="session" value="' . $self->formValue( 'session' ) . '"/>';
@@ -433,7 +433,6 @@ sub systemInfo {
     #
     # run directory checks
     #
-    $errorReturn;
     $systemInfo .= '<h3>File directory check:</h3>';
     $systemInfo .= "<ul>";
     $errorReturn .= $self->_systemInfoCheckDir( $self->{filePath} );
@@ -521,14 +520,31 @@ Placeholder for FWSMenu() until the admin element brings one in.
 sub FWSMenu {
     my ( $self, %paramHash ) = @_;
 
-    return $self->_bootstrapCDN() . 
-        '<div class="container"><div class="hero-unit">' . 
-        '<h1>Welcome to FrameWork Sites!</h1>' .
-        '<p>First thing your going to need is a way to access your installation.   This will install a default site, give you access to install plugins, and everything else you will need to get going.</p>' . 
-        '<p><a href="' . $self->{scriptName} . $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Install Default Admin Package</a></p>' .
-        '</div>';
-        '</div>';
+    $self->FWSBanner( title => 'Welcome to FrameWork Sites!', content => 'First thing your going to need is a way to access your installation.   This will install a default site, give you access to install plugins, and everything else you will need to get going.<br/><br/><a href="' . $self->{scriptName} .  $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Install Default Admin Package</a>' );
+    return;
+}
 
+
+=head2 FWSBanner
+
+Spit out default formatting when a real page can't be sent.
+
+=cut
+
+sub FWSBanner {
+    my ( $self, %paramHash ) = @_;
+
+    #
+    # since we are bailing, lets save the session if we need to
+    #
+    $self->saveSession();
+
+    #
+    # print the banner out and bail!
+    #
+    print "Content-Type: text/html; charset=UTF-8\n\n";
+    print '<html><head>' . $self->_bootstrapCDN() . '</head><body><div class="container"><div class="jumbotron" ><img src="https://www.frameworksites.com/files/saa5681d7aab2b4f591b34a7580f9140e/dfcf464ae40664ec795a719729c95e2ac/fws_logo_transparent.png"/><hr><h2>' . $paramHash{title} . '</h2><p>' . $paramHash{content} . '</p></div></div></body></html>';
+    exit;
 }
 
 
@@ -557,8 +573,7 @@ sub displayAdminPage {
         if ( $pageId =~ /^fws_/ ) { 
             my %elementHash = $self->_fullElementHash();
 
-            
-
+   
 
             for my $guid ( sort { $elementHash{$a}{alphaOrd} <=> $elementHash{$b}{alphaOrd} } keys %elementHash ) {
 
@@ -583,6 +598,8 @@ sub displayAdminPage {
                     if ( !$elementHash{adminGroup} || $self->userValue( 'isAdmin' ) ) {
                        
                         my %valueHash;
+                        $valueHash{pageGUID}        = $pageId;
+                        $valueHash{elementGUID}     = $guid;
                         $valueHash{pageId}          = $pageId;
                         $valueHash{elementId}       = $guid;
                         $valueHash{elementWebPath}  = $self->fileWebPath() . '/' . $elementHash{siteGUID} . '/' . $valueHash{elementId};
@@ -606,13 +623,20 @@ sub displayAdminPage {
                         # set head and foot from cache so we can use it for our admin page
                         #
                         $self->{tinyMCEEnable} = 1;
+
+                        #
+                        # disable all plugins except the admin plugin
+                        #
+                        my $adminPlugin = $self->{FWSAdminLib} || 'FWSAdmin2';
+                        %{$self->{_jsHash}} = ( 'plugins/' . $adminPlugin . '/FWSElement', -2000 );
+                        
                         $self->setPageCache();
     
                         #
                         # just in case we havn't rendered yet, here we go!  if we have already rendered  (like we should have
                         # than this just gets passed by
                         #
-                        $self->printPage( content => $valueHash{html}, head => $self->FWSHead(), foot => $self->siteValue( 'pageFoot' )  );
+                        $self->printPage( content => $valueHash{html}, head => $self->FWSHead(), foot => $self->siteValue( 'pageFoot' ) );
                     }
                 }
             }
@@ -713,12 +737,12 @@ sub _processAdminAction {
         #
         if ( $self->formValue( 'pageAction' ) eq 'forceUpdateScript' ) {
             my %valueHash;
-            my $script = $self->safeSQL( $self->formValue( "script" ) );
-            $self->runSQL( SQL => "update element set script_devel='" . $self->safeSQL( $self->formValue( "script" ) ) . "' where guid='" . $self->safeSQL( $self->formValue( 'guid' ) )  . "'" );
+            my $script = $self->safeSQL( $self->formValue( 'script' ) );
+            $self->runSQL( SQL => "update element set script_devel='" . $self->safeSQL( $self->formValue( 'script' ) ) . "' where guid='" . $self->safeSQL( $self->formValue( 'guid' ) )  . "'" );
             $self->printPage( content => '<div style="padding:20px;">Script was force saved.  This is used to save the script that saves scripts.  No JS, or CSS was saved and no sanity check was made. </div>' );
         } 
         
-        if ( $self->formValue( 'pageAction' ) eq "installCore") {
+        if ( $self->formValue( 'pageAction' ) eq 'installCore' ) {
         
             #
             # set the base URL for where the dist files are pulled from
@@ -754,6 +778,9 @@ sub _processAdminAction {
                 #
                 my $demoFile        = $self->{fileSecurePath} . '/backups/fwsdemo';
                 my $FWSAdminPlugin  = $self->{fileSecurePath} . '/backups/FWSAdmin2.pm';
+
+            $self->FWSLog( $imageBaseURL );
+
                 if ( !-e $demoFile . '.sql' ) {
                     $self->_pullDistFile( $imageBaseURL . '/fwsdemo.sql', $self->{fileSecurePath} . '/backups', 'fwsdemo.sql', '' );
                 }
@@ -860,6 +887,7 @@ sub _systemInfoCheckDir {
     my $documentRoot     = $ENV{DOCUMENT_ROOT};
     my $scriptFilename   = $ENV{SCRIPT_FILENAME};
 
+
     if ( !-e $newDir ) {
         if ( $newDir =~ /\/fws/ ) {
             if ( !$self->{hideFWSCoreUpgrade} ) {
@@ -959,8 +987,14 @@ sub _convertImportTags {
 }
 
 sub _bootstrapCDN {
-    return  '<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">';
+    return  '<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">';
 }
+
+
+sub _bootstrapJSCDN {
+    return "<script src=\"//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js\"></script>";
+}
+
 
 =head1 AUTHOR
 

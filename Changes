@@ -1,4 +1,10 @@
 Revision history for FWS-V2
+1.... 2014-05-01
+ - bootstrap 3
+ - jquery 1.11
+ - cleaner responsive tools and modals
+ - general cleanup and removed obsolete code and default elements
+
 1.1305 2013-09-09
  - FULL WEB RELEASE! You can now run FWS web renderings from FWS::V2
  - Added formMap methods as part of core release

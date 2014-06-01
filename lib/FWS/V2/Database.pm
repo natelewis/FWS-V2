@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 1.14042521
+Version 3.14052820
 
 =cut
 
-our $VERSION = '1.14042521';
+our $VERSION = '3.14052820';
 
 
 =head1 SYNOPSIS
@@ -68,7 +68,17 @@ sub mergeExtra {
     #
     # only if its populated unthaw it
     #
-    if ( $extraValue ) { %extraHash = %{thaw( $extraValue )} }
+    if ( $extraValue ) {
+        #
+        # wrap this in eval so we can report if we find issues instead of exploding
+        #
+        eval {
+            %extraHash = %{thaw( $extraValue )};
+        };
+        if ( $@ ) {
+            $self->FWSLog( 'Hash currupt - guid: ' . $addHash{guid} );
+        }
+    }
 
     #
     # return the two hashes combined together
@@ -158,6 +168,12 @@ It is not recommended you would use the alterTable method outside of its intende
 sub alterTable {
     my ( $self, %paramHash ) = @_;
 
+
+    #
+    # if there is no type then skip
+    #
+    return if !$paramHash{type};
+    
     #
     # because this is only called interanally and all data is static and known,
     # we can be a little laxed on safety there is no need to wrapper everything
@@ -406,7 +422,10 @@ sub connectDBH {
         #
         # send an error if we got one
         #
-        if ( DBI->errstr() ) { $self->FWSLog( 'DB connection error: ' . DBI->errstr() ) }
+        if ( DBI->errstr() ) { 
+            $self->FWSLog( 'DB connection error: ' . DBI->errstr() );
+            $self->FWSBanner( title => 'Database Connection Error',  content => 'Check your database connection settings in your  ' . $self->{scriptName} . ' file. <div class="alert alert-danger">'. DBI->errstr . "</div>" ); 
+        }
 
         #
         # run the init script ( does not work if noCache it will eat up the connections )
@@ -419,9 +438,9 @@ sub connectDBH {
             $self->{'_DBH_' . $paramHash{DBName} . $paramHash{DBHost}} = $DBH;
 
             #
-            # get and save init script
+            # get and save init script - make sure we don't run udpates to the DB because of this in case we are doing simple stuff that will not have it.
             #
-            my ( $initScript ) = @{$self->runSQL( DBH => $DBH, SQL => "select init_script from site where sid='site'" )};
+            my ( $initScript ) = @{$self->runSQL( DBH => $DBH, SQL => "select init_script from site where sid='site'", noUpdate => 1 )};
        
             if ( $initScript ) { 
 
@@ -487,56 +506,56 @@ sub copyData {
 }
 
 
-=head2 changeUserEmail
-
-Change the email of a user throught the system.
-
-    my $failMessage = $fws->changeUserEmail( 'from@email.com', 'to@eamil.com' );
-
-Fail message will be blank if it worked.
-
-=cut
-
-sub changeUserEmail {
-    my ( $self, $emailFrom, $emailTo ) = @_;
-
-    #
-    # check to make sure its not already being used
-    #
-    my %userHash = $self->userHash( $emailTo );
-
-    #
-    # check to make sure the emails we are chaning it to are valid
-    #
-    if ( !$self->isValidEmail( $emailTo ) ) {
-        return 'The email you are chaning to is invalid';
-    }
-
-    #
-    # if its not used, lets do it!
-    #
-    if ( $userHash{guid} && $emailFrom ) {
-
-        #
-        # THIS NEEDS TO BE EXPORTD SOME HOW TO ECommerce
-        #
-        #my @transArray = $self->transactionArray(email=>$emailFrom);
-        #for my $i (0 .. $#transArray) {
-        #       $self->runSQL( SQL => "update trans set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
+#=head2 changeUserEmail
 #
-#               }
-
-        #
-        # update the profile we are changing
-        #
-        $self->runSQL( SQL => "update profile set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
-
-
-
-    }
-    else { return 'Email could not be changed, it is already being used.'; }
-    return;
-}
+#Change the email of a user throught the system.
+#
+#    my $failMessage = $fws->changeUserEmail( 'from@email.com', 'to@eamil.com' );
+#
+#Fail message will be blank if it worked.
+#
+#=cut
+#
+#sub changeUserEmail {
+#    my ( $self, $emailFrom, $emailTo ) = @_;
+#
+#    #
+#    # check to make sure its not already being used
+#    #
+#    my %userHash = $self->userHash( $emailTo );
+#
+#    #
+#    # check to make sure the emails we are chaning it to are valid
+#    #
+#    if ( !$self->isValidEmail( $emailTo ) ) {
+#        return 'The email you are chaning to is invalid';
+#    }
+#
+#    #
+#    # if its not used, lets do it!
+#    #
+#    if ( $userHash{guid} && $emailFrom ) {
+#
+#        #
+#        # THIS NEEDS TO BE EXPORTD SOME HOW TO ECommerce
+#        #
+#        #my @transArray = $self->transactionArray(email=>$emailFrom);
+#        #for my $i (0 .. $#transArray) {
+#        #       $self->runSQL( SQL => "update trans set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
+##
+##               }
+#
+#        #
+#        # update the profile we are changing
+#        #
+#        $self->runSQL( SQL => "update profile set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
+#
+#
+#
+#    }
+#    else { return 'Email could not be changed, it is already being used.'; }
+#    return;
+#}
 
 
 =head2 dataArray
@@ -1729,6 +1748,11 @@ sub runSQL {
     my ( $self, %paramHash ) = @_;
 
     #
+    # kill if something bad happened with the db and we want to bail
+    #
+    return if $self->{killDatabase};
+
+    #
     # Make sure we are connected to the default DBH
     #
     $self->connectDBH();
@@ -1749,11 +1773,21 @@ sub runSQL {
     # send this off to the log
     #
     $self->SQLLog( $paramHash{SQL} );
-
     #
     # prepare the SQL and loop though the arrays
     #
-    my $sth = $paramHash{DBH}->prepare( $paramHash{SQL} );
+    my $sth;
+    my $sthError;
+    eval {
+        $sth = $paramHash{DBH}->prepare( $paramHash{SQL} );
+    };
+    if ( $@ ) {
+        $sthError = $@;
+    }
+
+    #
+    # graceful error message;
+    #
     if ( $sth ) {
 
         #
@@ -1805,15 +1839,34 @@ sub runSQL {
     # if errstr is populated, lets EXPLODE!
     # but not if its fetch without windows 7 will give this genericly when
     # returns without records are passed
+    
     #
-    if ( $sth->errstr ){
-        $self->FWSLog( 'DB SQL error: ' . $paramHash{SQL} . ': ' . $sth->errstr );
+    # but lets do it gently in case we are here for an edge case where we wont have sth
+    # yet the DBH is ok
+    #
+    eval {
+        $sthError .= $sth->errstr;
+    };
+
+    if ( $sthError ){
+        $self->FWSLog( 'DB SQL error: ' . $paramHash{SQL} . ': ' . $sthError );
 
         #
         # run update DB on an error to fix anything that was broke :(
         # if noUpdate is passed lets not do this, so we do recurse!
         #
-        if ( !$paramHash{noUpdate} ) { $self->FWSLog( 'DB update ran: ' . $self->updateDatabase() ) }
+        if ( !$paramHash{noUpdate} ) { 
+            $self->FWSLog( 'DB update ran: ' . $self->updateDatabase() ); 
+            $self->FWSBanner( title => 'Database schema was updated ',  content => 'Your database was schema was updated. Refresh your browser to continue.</div>' );
+        }
+      
+        # 
+        # extra fail safe to make sure we don't spin out of control 
+        # 
+        $self->{DBErrorCount}++;
+        if ( $self->{DBErrorCount} > 3 && !$paramHash{noUpdate} ) { 
+            $self->FWSBanner( title => 'Database Connection Error',  content => 'Check your database connection settings in your  ' . $self->{scriptName} . ' file. <div class="alert alert-danger">'. $paramHash{SQL} . '<br/>' . $sthError . "</div>" );
+        }
     }
 
     #
@@ -3005,6 +3058,39 @@ sub userHash {
 }
 
 
+=head2 changeEmail
+
+Check the ability to change your email account, then update it.
+
+    if ( $fws->changeEmail( 'yourUserGUID', 'newemail@address.com' ) ) {
+        print 'It worked!';
+    }
+
+=cut
+
+sub changeUserEmail {
+    my ( $self, $guid, $newEmail ) = @_;
+    
+    #
+    # make sure the email is valid
+    #
+    return 0 if !$self->isValidEmail( $newEmail );
+    
+    #
+    # check if its used
+    #
+    my %testEmailHash = $self->userHash( email => $newEmail );
+    return 0 if $testEmailHash{guid};
+    
+    #
+    # do the deed
+    #
+    $self->runSQL( SQL => "update profile set email='" . $self->safeSQL( $newEmail ) . "' where guid='" . $self->safeSQL( $guid ) . "'" );
+    
+    return 1;
+}
+
+
 =head2 userGroupHash
 
 Return the hash for a user group by passing the groups guid.
@@ -3109,6 +3195,9 @@ sub updateDatabase {
                 if ( $table ) { $dbResponse .= $self->alterTable( table => $table, field => $field, type => $type, key => $key, default => $default ) }
             }
         }
+    }
+    else {
+        $self->FWSBanner( title => 'Database Error',  content => 'Your database might be having issues.   Check your FWS.log for more information.' ); 
     }
         
     $self->{upadateDatabaseRan} = 1; 
