@@ -11,11 +11,11 @@ FWS::V2::Format - Framework Sites version 2 text and html formatting
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 =head1 SYNOPSIS
 
@@ -92,51 +92,6 @@ sub createGUID {
     use Digest::SHA1 qw(sha1);
     return $guid . join( '', unpack( 'H8 H4 H4 H4 H12', sha1( shift() . shift() . time() . rand() . $< . $$ ) ) );
 }
-
-=head2 activeToggleIcon
-
-Create a on off admin lightbulb for an item that will work if you are logged in as an edit mode editor role.  Pass a data hash, and append ajaxUpdateTable if it is not updating the standard data table.
-
-=cut
-
-sub DEPREICTATED___activeToggleIcon {
-    my ( $self, %paramHash ) = @_;
-
-    my $table = 'data';
-    if ( $paramHash{ajaxUpdateTable} ) { $table = $paramHash{ajaxUpdateTable} }
-
-    if ( !$paramHash{active} ) {
-        return $self->FWSIcon(
-              icon    => "lightbulb_off_16.png",
-              onClick => "var currentState = 1; if (this.src.substr(this.src.length-9,2) == 'on')" .
-                         "{this.src='" . $self->{fileFWSPath} .
-                         "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='".$self->{fileFWSPath} .
-                         "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
-                         "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
-                         "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
-              title   => "Active Toggle",
-              alt     => "Active Toggle",
-              style   => $paramHash{style},
-              width   => "16",
-        );
-    }
-    else {
-        return $self->FWSIcon(    
-              icon    => "lightbulb_on_16.png",
-              onClick => "var currentState = 1; if (this.src.substr(this.src.length-9,2) == 'on')" .
-                         "{this.src='" . $self->{fileFWSPath} .
-                         "/icons/lightbulb_off_16.png'; currentState = 0; } else { this.src='" . $self->{fileFWSPath} .
-                         "/icons/lightbulb_on_16.png';};\$('<div></div>').FWSAjax({queryString:'" .
-                         "p=fws_dataEdit&value='+currentState+'&guid=" . $paramHash{guid} .
-                         "&table=" . $table . "&field=active&pageAction=AJAXUpdate',showLoading:false});",
-              style   => $paramHash{style},
-              title   => "Active Toggle",
-              alt     => "Active Toggle",
-              width   => "16",
-        );
-    }
-}
-
 
 =head2 applyLanguage
 
@@ -957,74 +912,6 @@ sub FWSButton{
     $buttonHTML .= "</button>";
     
     return $buttonHTML;
-}
-
-
-=head2 FWSHint
-
-Return a FWS Hint HTML for roll over hint icons or links.
-
-=cut
-
-sub DEPRICATED_FWSHint {
-    my ( $self, %paramHash ) = @_;
-    #
-    # add the jquery
-    #
-    $self->jqueryEnable( 'easyToolTip-1.0' );
-
-    #
-    # if no id is givin, that means we are posting an image
-    #
-    my $returnHTML;
-    if ( !$paramHash{id} ) {
-        my $imgPath = $self->fileWebPath()."/fws/jquery/easyToolTip-1.0/";
-        $paramHash{id} = 'hint_' . $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM', lowLength => 4, highLength => 4 );
-        $returnHTML .= "<img onmouseout=\"this.src='" . $imgPath . "help_trans.png';\" onmouseover=\"this.src='" . $imgPath . "help.png';\" class=\"FWSHint\" id=\"" . $paramHash{id} . "\" src=\"" . $imgPath . "help_trans.png\"/>";
-    }
-
-    #
-    # create the JS
-    #
-    my $headHTML = "<script type=\"text/javascript\">";
-    $paramHash{content} =~ s/\n//sg;
-    $paramHash{content} =~ s/'/&#39;/sg;
-    $headHTML .= "\$('#" . $paramHash{id} . "').easyTooltip({ content: '" . $paramHash{content} . "'});";
-    $headHTML .= "</script>\n";
-
-    return $returnHTML . $headHTML;
-}
-
-
-=head2 DEPRICATED_FWSIcon
-
-Return just the file name when given a full file path
-
-       $valueHash{html} .= $fws->FWSIcon( icon => 'blank_16.png' );
-
-You can pass the following keys:
-
-    icon
-    class
-    id
-    width
-    alt
-    onClick
-
-=cut
-
-sub DEPRICATED_FWSIcon {
-    my ( $self, %paramHash ) = @_;
-    $paramHash{icon}    ||= 'blank.png';
-    $paramHash{alt}     ||= '\'\'';
-    if ( $paramHash{class} ) {    $paramHash{class}  = ' class="' . $paramHash{class} . '"' }
-    if ( $paramHash{id} ) {       $paramHash{id}     = ' id="' . $paramHash{id} . '"' }
-    if ( $paramHash{width} ) {    $paramHash{style} .= "width:" . $paramHash{width} . "px" }
-    if ( $paramHash{onClick} ) {
-        $paramHash{onClick}   = " onclick=\"" . $paramHash{onClick} . "\"";
-        $paramHash{style}     = 'cursor:pointer;' . $paramHash{style};
-    }
-    return "<img src=\"" . $self->{fileFWSPath} . "/icons/" . $paramHash{icon} . "\" alt=\"" . $paramHash{alt} . "\"" . $paramHash{id} . $paramHash{class} . $paramHash{onClick} . " style=\"border:none;" . $paramHash{style} . "\"/>";
 }
 
 

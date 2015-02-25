@@ -11,11 +11,11 @@ FWS::V2::Database - Framework Sites version 2 data management
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -425,6 +425,8 @@ sub connectDBH {
         if ( DBI->errstr() ) { 
             $self->FWSLog( 'DB connection error: ' . DBI->errstr() );
             $self->FWSBanner( title => 'Database Connection Error',  content => 'Check your database connection settings in your  ' . $self->{scriptName} . ' file. <div class="alert alert-danger">'. DBI->errstr . "</div>" ); 
+            $self->{'_DBH_' . $self->{DBName} . $self->{DBHost}} = '';
+
         }
 
         #
@@ -460,7 +462,7 @@ sub connectDBH {
                 # process any error if we got one
                 #
                 my $errorCode = $@;
-                if ( $errorCode ) { $self->FWSLog( 'site_init',  $errorCode ) }
+                if ( $errorCode ) { $self->FWSLog( 'site_init error: ',  $errorCode ) }
             }
         }
     }
@@ -504,58 +506,6 @@ sub copyData {
 
     return $self->saveData( %dataHash );
 }
-
-
-#=head2 changeUserEmail
-#
-#Change the email of a user throught the system.
-#
-#    my $failMessage = $fws->changeUserEmail( 'from@email.com', 'to@eamil.com' );
-#
-#Fail message will be blank if it worked.
-#
-#=cut
-#
-#sub changeUserEmail {
-#    my ( $self, $emailFrom, $emailTo ) = @_;
-#
-#    #
-#    # check to make sure its not already being used
-#    #
-#    my %userHash = $self->userHash( $emailTo );
-#
-#    #
-#    # check to make sure the emails we are chaning it to are valid
-#    #
-#    if ( !$self->isValidEmail( $emailTo ) ) {
-#        return 'The email you are chaning to is invalid';
-#    }
-#
-#    #
-#    # if its not used, lets do it!
-#    #
-#    if ( $userHash{guid} && $emailFrom ) {
-#
-#        #
-#        # THIS NEEDS TO BE EXPORTD SOME HOW TO ECommerce
-#        #
-#        #my @transArray = $self->transactionArray(email=>$emailFrom);
-#        #for my $i (0 .. $#transArray) {
-#        #       $self->runSQL( SQL => "update trans set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
-##
-##               }
-#
-#        #
-#        # update the profile we are changing
-#        #
-#        $self->runSQL( SQL => "update profile set email='" . $self->safeSQL( $emailTo ) . "' where email like '" . $self->safeSQL( $emailFrom ) . "'" );
-#
-#
-#
-#    }
-#    else { return 'Email could not be changed, it is already being used.'; }
-#    return;
-#}
 
 
 =head2 dataArray
@@ -1136,7 +1086,7 @@ sub elementArray {
     #
     # grab the array from the DB
     #
-    my ( @elementArray ) = @{$self->runSQL( SQL => "select ord, plugin, admin_group, root_element, site_guid, guid, type, parent, title, schema_devel, script_devel, checkedout from element where 1=1" . $addToWhere . " order by title" )};
+    my ( @elementArray ) = @{$self->runSQL( SQL => "select ord, tags, plugin, admin_group, hook, root_element, site_guid, guid, type, parent, title, schema_devel, script_devel, checkedout from element where 1=1" . $addToWhere . " order by title" )};
     
     #
     # look at element included in plugins
@@ -1168,8 +1118,10 @@ sub elementArray {
         my %elementHash;
         $alphaOrd++;
         $elementHash{ord}         = shift @elementArray;
+        $elementHash{tags}        = shift @elementArray;
         $elementHash{plugin}      = shift @elementArray;
         $elementHash{adminGroup}  = shift @elementArray;
+        $elementHash{hook}        = shift @elementArray;
         $elementHash{rootElement} = shift @elementArray;
         $elementHash{siteGUID}    = shift @elementArray;
         $elementHash{guid}        = shift @elementArray;
@@ -1180,8 +1132,8 @@ sub elementArray {
         $elementHash{scriptDevel} = shift @elementArray;
         $elementHash{checkedout}  = shift @elementArray;
         $elementHash{alphaOrd}    = $alphaOrd;
-        $elementHash{label}       = $elementHash{type} . ' - ' . $elementHash{title};
-        if ( !$elementHash{type} ) { $elementHash{label} = 'element' . $elementHash{label} }
+        $elementHash{label}       = $elementHash{title};
+        #if ( !$elementHash{type} ) { $elementHash{label} = 'element' . $elementHash{label} }
 
         push @elementArrayReturn, {%elementHash};
     }
@@ -1210,12 +1162,17 @@ sub elementHash {
         #
         # get tha hash from the DB
         #
-        my (@scriptArray) = @{$self->runSQL( SQL => "select 'plugin', plugin, 'jsDevel', js_devel, 'cssDevel', css_devel, 'adminGroup', admin_group, 'classPrefix', class_prefix, 'siteGUID', site_guid, 'guid', guid, 'ord', ord, 'tags', tags, 'public', public, 'rootElement', root_element, 'type', type, 'parent', parent, 'title', title, 'schemaDevel', schema_devel, 'scriptDevel', script_devel, 'checkedout', checkedout from element where " . $addToWhere . " order by ord limit 1" )};
+        my (@scriptArray) = @{$self->runSQL( SQL => "select 'hook', hook, 'plugin', plugin, 'jsDevel', js_devel, 'cssDevel', css_devel, 'adminGroup', admin_group, 'classPrefix', class_prefix, 'siteGUID', site_guid, 'guid', guid, 'ord', ord, 'tags', tags, 'public', public, 'rootElement', root_element, 'type', type, 'parent', parent, 'title', title, 'schemaDevel', schema_devel, 'scriptDevel', script_devel, 'checkedout', checkedout from element where " . $addToWhere . " order by ord limit 1" )};
 
         #
         # create the hash and return it
         #
         %{$self->{elementHash}->{$paramHash{guid}}} = @scriptArray;
+
+        #
+        # make sure siteGUID is set - it should be set to current site guid if its blank
+        #
+        ${$self->{elementHash}->{$paramHash{guid}}}{siteGUID} ||= $self->{siteGUID};
     }
 
     return %{$self->{elementHash}->{$paramHash{guid}}};
@@ -1347,8 +1304,8 @@ sub flushSearchCache {
     #
     my $dataArray = $self->runSQL( SQL => "select guid from data where site_guid='" . $self->safeSQL( $siteGUID ) . "'");
     while (@$dataArray) {
-        my $guid = shift @{$dataArray};
-        my %dataHash = $self->dataHash( guid => $guid );
+        my $guid        = shift @{$dataArray};
+        my %dataHash    = $self->dataHash( guid => $guid );
         $self->updateDataCache( %dataHash );
         $dataUnits++;
     }
@@ -1368,6 +1325,7 @@ NOTE: This should not be used and will eventually be pulled in as a FWS internal
 
 sub getSiteGUID {
     my ( $self, $sid ) = @_;
+
     #
     # get the ID to the sid for site ids these always match the corrisponding sid
     #
@@ -1544,7 +1502,11 @@ sub queueArray {
         $sendHash{scheduledDate}    = shift @{$arrayRef};
         push @queueArray, {%sendHash};
     }
-    if ( $paramHash{ref} ) { return \@queueArray }
+
+    if ( $paramHash{ref} ) {
+        return \@queueArray;
+    }
+
     return @queueArray;
 }
 
@@ -1567,7 +1529,10 @@ sub queueHash {
     #
     my %itemHash = @$arrayRef;
 
-    if ( $paramHash{ref} ) { return \%itemHash }
+    if ( $paramHash{ref} ) { 
+        return \%itemHash; 
+    }
+
     return %itemHash;
 }
 
@@ -1677,7 +1642,10 @@ sub queueHistoryHash {
     #
     my %itemHash = @$arrayRef;
 
-    if ( $paramHash{ref} ) { return \%itemHash } 
+    if ( $paramHash{ref} ) {
+        return \%itemHash;
+    }
+     
     return %itemHash;
 }
 
@@ -1711,6 +1679,7 @@ sub processQueue {
             $self->deleteQueue( %{$queueArray[$i]} );
         }
     }
+   
     return;
 }
 
@@ -1748,6 +1717,11 @@ sub runSQL {
     my ( $self, %paramHash ) = @_;
 
     #
+    # send this off to the log
+    #
+    $self->SQLLog( $paramHash{SQL} );
+    
+    #
     # kill if something bad happened with the db and we want to bail
     #
     return if $self->{killDatabase};
@@ -1762,6 +1736,11 @@ sub runSQL {
     #
     $paramHash{DBH} ||= $self->{'_DBH_' . $self->{DBName} . $self->{DBHost}};
 
+    if ( !$paramHash{DBH} ) { 
+            $self->FWSBanner( title => 'Database Connection Error',  content => 'Check your database connection settings in your  ' . $self->{scriptName} . ' file. <div class="alert alert-danger">'. DBI->errstr . "</div>" );
+           return {};  
+    } 
+
     #
     # Get this data array ready to slurp
     # and set the failFlag for future use to autocreate a dB schema
@@ -1770,17 +1749,15 @@ sub runSQL {
     my @data;
 
     #
-    # send this off to the log
-    #
-    $self->SQLLog( $paramHash{SQL} );
-    #
     # prepare the SQL and loop though the arrays
     #
     my $sth;
     my $sthError;
+
     eval {
         $sth = $paramHash{DBH}->prepare( $paramHash{SQL} );
     };
+
     if ( $@ ) {
         $sthError = $@;
     }
@@ -1858,6 +1835,7 @@ sub runSQL {
         if ( !$paramHash{noUpdate} ) { 
             $self->FWSLog( 'DB update ran: ' . $self->updateDatabase() ); 
             $self->FWSBanner( title => 'Database schema was updated ',  content => 'Your database was schema was updated. Refresh your browser to continue.</div>' );
+            $self->{killDatabase}++;
         }
       
         # 
@@ -1866,6 +1844,7 @@ sub runSQL {
         $self->{DBErrorCount}++;
         if ( $self->{DBErrorCount} > 3 && !$paramHash{noUpdate} ) { 
             $self->FWSBanner( title => 'Database Connection Error',  content => 'Check your database connection settings in your  ' . $self->{scriptName} . ' file. <div class="alert alert-danger">'. $paramHash{SQL} . '<br/>' . $sthError . "</div>" );
+            $self->{killDatabase}++;
         }
     }
 
@@ -2086,32 +2065,30 @@ sub saveData {
     # Save the data minus the extra fields
     #
     $self->runSQL( SQL => "update data set " .
-                                "extra_value = ''" .
-                                ", show_mobile = '" .       $self->safeSQL( $paramHash{showMobile} ) . "'" .
-                                ", show_login = '" .        $self->safeSQL( $paramHash{showLogin} ) . "'" .
-                                ", default_element = '" .   $self->safeSQL( $paramHash{default_element} ) . "'" .
-                                ", disable_title = '" .     $self->safeSQL( $paramHash{disableTitle} ) . "'" .
-                                ", disable_edit_mode = '" . $self->safeSQL( $paramHash{disableEditMode} ) . "'" .
-                                ", disable_title = '" .     $self->safeSQL( $paramHash{disableTitle} ) . "'" .
-                                ", lang = '" .              $self->safeSQL( $paramHash{lang} ) . "'" .
-                                ", friendly_url = '" .      $self->safeSQL( $paramHash{friendlyURL} ) . "'" .
-                                ", page_friendly_url = '" . $self->safeSQL( $paramHash{pageFriendlyURL} ) . "'" .
-                                ", active = '" .            $self->safeSQL( $paramHash{active} ) . "'" .
-                                ", nav_name = '" .          $self->safeSQL( $paramHash{navigationName} ) . "'" .
-                                ", name = '" .              $self->safeSQL( $paramHash{name} ) . "'" .
-                                ", title = '" .             $self->safeSQL( $paramHash{title} ) . "'" .
-                                ", element_type = '" .      $self->safeSQL( $paramHash{type} ) . "' " .
-                                "where guid = '" . $self->safeSQL( $paramHash{guid} ) . "' and site_guid = '" . $self->safeSQL( $paramHash{siteGUID}) . "'"
+         "extra_value = ''" .
+         ", show_mobile = '" .       $self->safeSQL( $paramHash{showMobile} ) . "'" .
+         ", show_login = '" .        $self->safeSQL( $paramHash{showLogin} ) . "'" .
+         ", default_element = '" .   $self->safeSQL( $paramHash{default_element} ) . "'" .
+         ", disable_title = '" .     $self->safeSQL( $paramHash{disableTitle} ) . "'" .
+         ", disable_edit_mode = '" . $self->safeSQL( $paramHash{disableEditMode} ) . "'" .
+         ", disable_title = '" .     $self->safeSQL( $paramHash{disableTitle} ) . "'" .
+         ", lang = '" .              $self->safeSQL( $paramHash{lang} ) . "'" .
+         ", friendly_url = '" .      $self->safeSQL( $paramHash{friendlyURL} ) . "'" .
+         ", page_friendly_url = '" . $self->safeSQL( $paramHash{pageFriendlyURL} ) . "'" .
+         ", active = '" .            $self->safeSQL( $paramHash{active} ) . "'" .
+         ", nav_name = '" .          $self->safeSQL( $paramHash{navigationName} ) . "'" .
+         ", name = '" .              $self->safeSQL( $paramHash{name} ) . "'" .
+         ", title = '" .             $self->safeSQL( $paramHash{title} ) . "'" .
+         ", element_type = '" .      $self->safeSQL( $paramHash{type} ) . "' " .
+         "where guid = '" . $self->safeSQL( $paramHash{guid} ) . "' and site_guid = '" . $self->safeSQL( $paramHash{siteGUID}) . "'"
     );
 
     #
     # loop though and update every one that is diffrent
     #
-    for my $key ( keys %paramHash ) {
-        if ( $key !~ /^ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|default_element|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid$/ ) {
-            $self->saveExtra( table => 'data', siteGUID => $paramHash{siteGUID}, guid => $paramHash{guid}, field => $key, value => $paramHash{$key} );
-        }
-    }
+    my $hashRef = {%paramHash};
+    delete @{$hashRef}{ grep /^ord|pageIdOfElement|keywordScore|navigationName|showResubscribe|default_element|guid_xref_site_guid|groupId|lang|friendlyURL|pageFriendlyURL|type|guid|siteGUID|newGUID|showMobile|name|element_type|active|title|disableTitle|disableEditMode|defaultElement|showLogin|parent|layout|site_guid$/, keys %$hashRef };
+    $self->saveExtra( table => 'data', guid => $paramHash{guid}, hashRef => $hashRef );
 
     #
     # update the modified stamp
@@ -2181,9 +2158,18 @@ sub saveExtra {
     if ( $extraValue ) { %extraHash = %{thaw( $extraValue )} }
 
     #
-    # add the new one
+    # add the new one just a one
     #
-    $extraHash{$paramHash{field}} = $paramHash{value};
+    if ( $paramHash{field} ) {
+        $extraHash{$paramHash{field}} = $paramHash{value};
+    }
+    
+    #
+    # Do a whole bunch at once
+    #
+    if ( $paramHash{hashRef} ) {
+        @extraHash{ keys %{$paramHash{hashRef}} } = values %{$paramHash{hashRef}};
+    }
 
     #
     # convert back to a hash string
@@ -2210,6 +2196,7 @@ sub saveExtra {
         #
         $self->updateDataCache( $self->dataHash( guid => $paramHash{guid} ) );
     }
+
     return;
 }
 
@@ -2261,11 +2248,14 @@ sub saveHash {
             #
             push @newArray, {%paramHash};
             $hashUpdated = 1;
-            }
+        }
+
         #
         # update the loc with the same thing but repackaged (no change was made)
         #
-        else { push @newArray, {%{$hashArray[$i]}} }
+        else { 
+            push @newArray, {%{$hashArray[$i]}};
+        }
     }
 
     #
@@ -2331,18 +2321,20 @@ sub saveQueueHistory {
     if ( !$paramHash{sentDate} || $paramHash{sentDate}  =~ /^0000.00.00/ ) { $paramHash{sentDate} = $self->safeSQL( $self->formatDate( format => "SQL" ) ) }
 
     %paramHash = $self->_recordInit(
-                '_guidLeader'   => 'q',
-                '_table'        => 'queue_history',
-                %paramHash);
+         '_guidLeader'   => 'q',
+         '_table'        => 'queue_history',
+         %paramHash,
+    );
 
     %paramHash = $self->_recordSave(
-                '_fields'       => 'synced|queue_guid|directory_guid|profile_guid|hash|scheduled_date|queue_from|from_name|queue_to|body|type|subject|success|failure_code|response|sent_date',
-                '_keys'         => 'synced|queueGUID|directoryGUID|profileGUID|hash|scheduledDate|from|fromName|to|body|type|subject|success|failureCode|response|sentDate',
-                '_table'        => 'queue_history',
-                '_noExtra'      => '1',
-                %paramHash);
+        '_fields'       => 'synced|queue_guid|directory_guid|profile_guid|hash|scheduled_date|queue_from|from_name|queue_to|body|type|subject|success|failure_code|response|sent_date',
+        '_keys'         => 'synced|queueGUID|directoryGUID|profileGUID|hash|scheduledDate|from|fromName|to|body|type|subject|success|failureCode|response|sentDate',
+        '_table'        => 'queue_history',
+        '_noExtra'      => '1',
+        %paramHash,
+    );
 
-    %paramHash = $self->runScript('postSaveQueueHistory',%paramHash);
+    %paramHash = $self->runScript( 'postSaveQueueHistory', %paramHash );
 
     return %paramHash;
 }
@@ -2358,7 +2350,14 @@ Save a user and return its hash.
 
 sub saveUser {
     my ( $self, %paramHash ) = @_;
-    %paramHash = $self->runScript('preSaveUser',%paramHash);
+
+    #
+    # my new user flag - or is this just a save
+    #
+    my $newUser = 0;
+
+
+    %paramHash = $self->runScript( 'preSaveUser', %paramHash );
 
     if ( !$paramHash{guid} ) {
         #
@@ -2393,6 +2392,12 @@ sub saveUser {
             #
             if ( $self->siteValue('profileCreationEmail') ) {
                 $self->send( to => $self->siteValue('profileCreationEmail'), fromName => $self->{email},from => $self->{email}, subject => "New User Created", mimeType => "text/plain", body => 'Name: ' . $paramHash{name} . "\nEmail: " . $paramHash{email} . "\n" );
+  
+            # 
+            # this is a new user, we will need to runScript at the end because of it 
+            # 
+            $newUser++; 
+
             }
         }
     }
@@ -2422,16 +2427,14 @@ sub saveUser {
     #
     # update the core of the record
     #
-    $self->runSQL( SQL => "update profile set fb_id='" . $self->safeSQL( $paramHash{FBId} ) . "',fb_access_token='" . $self->safeSQL( $paramHash{FBAccessToken} ) . "', pin='" . $self->safeSQL( $paramHash{pin} ) . "',active='" . $self->safeSQL( $paramHash{active} ) . "',name='" . $self->safeSQL( $paramHash{name} ) . "' " . $insertSQL . " where guid='" . $paramHash{guid} . "'" );
+    $self->runSQL( SQL => "update profile set fb_id='" . $self->safeSQL( $paramHash{FBId} ) . "',fb_access_token='" . $self->safeSQL( $paramHash{FBAccessToken} ) . "', friendly_url='" . $self->safeSQL( $paramHash{friendlyURL} ) . "',page_friendly_url='" . $self->safeSQL( $paramHash{pageFriendlyURL} ) . "',pin='" . $self->safeSQL( $paramHash{pin} ) . "',active='" . $self->safeSQL( $paramHash{active} ) . "',name='" . $self->safeSQL( $paramHash{name} ) . "' " . $insertSQL . " where guid='" . $paramHash{guid} . "'" );
 
     #
     # loop though and update every one that is diffrent, but you can't touch for security reasons
     #
-    for my $key ( keys %paramHash ) {
-        if ( $key !~ /^(FBId|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid)$/ ) {
-            $self->saveExtra( table => 'profile', guid => $paramHash{guid}, field => $key, value => $paramHash{$key} );
-        }
-    }
+    my $hashRef = {%paramHash};
+    delete @{$hashRef}{ grep /^(pin|FBId|pageFriendlyURL|friendlyURL|FBAccessToken|googleId|password|passwordConfirm|group|name|guid|active|pin|active|email|profile_password|passwordConfirm|password|site_guid)$/, keys %$hashRef };
+    $self->saveExtra( table => 'profile', guid => $paramHash{guid}, hashRef => $hashRef );
 
     #
     # do a hard reset of the profile so it will load again the next time a proc asks for it
@@ -2442,6 +2445,11 @@ sub saveUser {
     # Not sure if this is needed, but for consistance, the Update doesn't actually Update the hash so it will return its self unaltered
     #
     %paramHash = $self->runScript( 'postSaveUser', %paramHash );
+
+    if ( $newUser ) {
+        %paramHash = $self->runScript( 'postSaveNewUser', %paramHash );
+    }
+
     return %paramHash;
 }
 
@@ -2473,8 +2481,11 @@ sub schemaHash {
     ## no critic (RequireCheckingReturnValueOfEval ProhibitStringyEval)
     eval $elementHash{schemaDevel};
     ## use critic
+
     my $errorCode = $@;
-    if ( $errorCode ) { $self->FWSLog( 'DB schema error: ' . $guid . ' - ' . $errorCode ) }
+    if ( $errorCode ) {
+        $self->FWSLog( 'DB schema error: ' . $guid . ' - ' . $errorCode );
+    }
 
     return %dataSchema;
 }
@@ -2521,6 +2532,7 @@ sub setCacheIndex {
         $self->FWSLog( "Adding data cache index: ".$cacheValue );
         $self->saveExtra( table => 'site', guid => $paramHash{siteGUID}, field => 'dataCacheIndex', value => $cacheValue );
     }
+
     return;
 }
 
@@ -2548,6 +2560,7 @@ sub sortArray {
     else {
         @returnArray = ( map{$_->[1]} sort {$a->[0] cmp $b->[0]} map{[$_->{$paramHash{key}},$_]} @returnArray )
     }
+
     return \@returnArray;
 }
 
@@ -2628,8 +2641,8 @@ sub tableFieldHash {
             }
         }
     }
-    return %{$self->{'_' . $table . 'FieldCache'}};
 
+    return %{$self->{'_' . $table . 'FieldCache'}};
 }
 
 =head2 templateArray
@@ -2661,6 +2674,7 @@ sub templateArray {
 
         push @templateHashArray, {%templateHash};
     }
+
     return @templateHashArray;
 }
 
@@ -2675,8 +2689,7 @@ sub templateHash {
 
     my ( $self, %paramHash ) = @_;
 
-    my $pageId          = $paramHash{pageGIUD};
-
+    my $pageId = $paramHash{pageGIUD};
     my $template;
     my $css;
     my $js;
@@ -2913,7 +2926,11 @@ sub userArray {
         #
         push @userHashArray, {%userHash};
     }
-    if ( $paramHash{ref} ) { return \@userHashArray }
+
+    if ( $paramHash{ref} ) {
+        return \@userHashArray;
+    }
+
     return @userHashArray;
 }
 
@@ -2933,7 +2950,7 @@ sub userHash {
     #
     # manipulate any incomming settings
     #
-    %paramHash = $self->runScript('preUserHash',%paramHash);
+    %paramHash = $self->runScript( 'preUserHash', %paramHash );
 
     #
     # store the guid in this, till we figure out what one we are looking up
@@ -3005,7 +3022,7 @@ sub userHash {
             # get the goods from the profile table and grab the ID from the front,
             # so we can use it to get the profile;
             #
-            my @profileExtArray     = @{$self->runSQL( SQL => "select profile.extra_value, profile.guid, 'pin', profile.pin, 'guid', profile.guid, 'googleId', profile.google_id, 'name', profile.name, 'FBId', fb_id, 'FBAccessToken', fb_access_token, 'email', profile.email, 'active', profile.active from profile where " . $lookupSQL )};
+            my @profileExtArray     = @{$self->runSQL( SQL => "select profile.extra_value, profile.guid, 'friendlyURL', profile.friendly_url, 'pageFriendlyURL', profile.page_friendly_url, 'pin', profile.pin, 'guid', profile.guid, 'googleId', profile.google_id, 'name', profile.name, 'FBId', fb_id, 'FBAccessToken', fb_access_token, 'email', profile.email, 'active', profile.active from profile where " . $lookupSQL )};
             my $extraValue          = shift @profileExtArray;
             my $guid                = shift @profileExtArray;
 
@@ -3032,7 +3049,9 @@ sub userHash {
             # set the id to 0 and active to 0 and destroy what we have
             #
             if ( !$self->isUserLoggedIn() && !$lookupGUID ) {
-                for ( keys %{$self->{profileHash}} ) { delete $self->{profileHash}->{$_} }
+                for ( keys %{$self->{profileHash}} ) {
+                    delete $self->{profileHash}->{$_};
+                }
                 $userHash{guid}    = '';
                 $userHash{active}  = '0';
             }
@@ -3045,7 +3064,9 @@ sub userHash {
             #
             # if are a disposable record, don't save it as the profile hash, just return it
             #
-            if ( !$lookupGUID ) { %{$self->{profileHash}} = %userHash }
+            if ( !$lookupGUID ) {
+                %{$self->{profileHash}} = %userHash;
+            }
         }
     }
 
@@ -3058,13 +3079,13 @@ sub userHash {
 }
 
 
-=head2 changeEmail
+=head2 changeUserEmail
 
-Check the ability to change your email account, then update it.
+Change the email of a user throught the system.
 
-    if ( $fws->changeEmail( 'yourUserGUID', 'newemail@address.com' ) ) {
-        print 'It worked!';
-    }
+    my $failMessage = $fws->changeUserEmail( 'from@email.com', 'to@eamil.com' );
+
+Fail message will be blank if it worked.
 
 =cut
 
@@ -3101,6 +3122,7 @@ Return the hash for a user group by passing the groups guid.
 
 sub userGroupHash {
     my ( $self, $guid ) = @_;
+
     my ( $name, $description ) = @{$self->runSQL( SQL => "select name,description from groups where guid='" . $self->safeSQL( $guid ) . "'" )};
     my %userGroupHash;
     $userGroupHash{name}          = $name;
@@ -3151,6 +3173,7 @@ sub userGroupArray {
         #
         push @userGroupHashArray, {%userGroupHash};
     }
+
     return @userGroupHashArray;
 }
 
@@ -3169,10 +3192,15 @@ sub updateDatabase {
     my ( $self ) = @_;
 
     #
+    # kill if something bad happened with the db and we want to bail
+    #
+    return if $self->{killDatabase};
+
+    #
     # our passback for what we did
     #
     my $dbResponse;
-    
+   
     #
     # make sure I didn't do this yet
     #
@@ -3198,9 +3226,11 @@ sub updateDatabase {
     }
     else {
         $self->FWSBanner( title => 'Database Error',  content => 'Your database might be having issues.   Check your FWS.log for more information.' ); 
+        $self->{killDatabase}++;
     }
         
-    $self->{upadateDatabaseRan} = 1; 
+    $self->{upadateDatabaseRan} = 1;
+     
     return $dbResponse;
 }
 
@@ -3265,6 +3295,7 @@ sub updateModifiedDate {
     if ( $type eq 'page' || $type eq 'home' ) {
         $self->saveExtra( table => 'data', siteGUID => $paramHash{siteGUID}, guid => $paramHash{guid}, field => 'dateUpdated', value => time );
     }
+
     return;
 }
 
@@ -3306,6 +3337,7 @@ sub randomizeArray {
         my $j = int rand ( $i + 1 );
         @$dataRef[$i,$j] = @$dataRef[$j,$i];
     }
+    
     return $dataRef;
 }
 
@@ -3318,6 +3350,7 @@ need doc
 
 sub sortDataByAlpha {
     my ( $self, $sortId, @data ) = @_;
+    
     return ( map{$_->[1]} sort {$a->[0] cmp $b->[0]} map{[$_->{$sortId},$_]} @data )
 }
 
@@ -3330,6 +3363,7 @@ need doc
 
 sub sortDataByNumber {
     my ( $self, $sortId, @data ) = @_;
+    
     return (map{$_->[1]} sort {$a->[0] <=> $b->[0]} map{[$_->{$sortId},$_]} @data)
 }
 
@@ -3389,9 +3423,11 @@ sub _setPageGUID {
 
     #
     # set the data record
+    # but skip if we do not have a pageGUID
     #
-    $self->runSQL( SQL => "update data set page_guid='". $self->safeSQL( $pageGUID ) . "' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
-
+    if ( $self->safeSQL( $pageGUID ) ) {
+        $self->runSQL( SQL => "update data set page_guid='". $self->safeSQL( $pageGUID ) . "' where guid='" . $self->safeSQL( $updateGUID ) . "'" );
+    }
     return $pageGUID;
 }
 
@@ -3444,6 +3480,7 @@ sub _deleteOrphanedData {
 #
 sub _deleteXRef {
     my ( $self, $child, $parent, $siteGUID ) = @_;
+   
     return $self->runSQL( SQL => "delete from guid_xref where child='" . $self->safeSQL( $child ) . "' and parent='" . $self->safeSQL( $parent ) . "' and site_guid='" . $self->safeSQL( $siteGUID ) . "'");
 }
 
@@ -3465,7 +3502,7 @@ sub _fullElementHash {
         #
         # get the elementArray
         #
-        my $elementArray = $self->runSQL( SQL => "select guid, plugin, type, class_prefix, css_devel, js_devel, title, tags, parent, ord, site_guid, root_element, public, checkedout from element" );
+        my $elementArray = $self->runSQL( SQL => "select guid, plugin, type, hook, class_prefix, css_devel, js_devel, title, tags, parent, ord, site_guid, root_element, public, checkedout from element" );
 
         #
         # Push the elementHash into the Cache
@@ -3478,6 +3515,7 @@ sub _fullElementHash {
             $self->{_fullElementHashCache}->{$guid}{guid}           = $guid;
             $self->{_fullElementHashCache}->{$guid}{plugin}         = shift @{$elementArray};
             $self->{_fullElementHashCache}->{$guid}{type}           = shift @{$elementArray};
+            $self->{_fullElementHashCache}->{$guid}{hook}           = shift @{$elementArray};
             $self->{_fullElementHashCache}->{$guid}{classPrefix}    = shift @{$elementArray};
             $self->{_fullElementHashCache}->{$guid}{cssDevel}       = shift @{$elementArray};
             $self->{_fullElementHashCache}->{$guid}{jsDevel}        = shift @{$elementArray};
@@ -3506,6 +3544,7 @@ sub _fullElementHash {
             }
         }
     }
+ 
     return %{$self->{_fullElementHashCache}};
 }
 
@@ -3551,6 +3590,7 @@ sub _recordInit {
             $self->runSQL( DBH => $paramHash{DBH}, SQL => "update " . $self->safeSQL( $paramHash{_table} ) . " set pin='" . $self->safeSQL( $paramHash{pin} ) . "' where guid='" . $self->safeSQL( $paramHash{guid} ) . "'" );
         }
     }
+
     return %paramHash;
 }
 
@@ -3677,17 +3717,15 @@ sub _recordSave {
     #
     # save the keys in the ext field;
     #
-    my $keyReg = $paramHash{_keys};
-    for my $key ( keys %paramHash ) {
-        if ( $key !~ /^_/ && $key !~ /^(guid|site_guid|created_date|createdDate|siteGUID|pin)$/ ) {
-            if ( $self->{dataSchema}{$paramHash{_table}}{extra_value}{type} ) {
-                $self->saveExtra( DBH => $paramHash{DBH}, table => $paramHash{_table}, guid => $paramHash{guid}, field => $key, value => $paramHash{$key} );
-            }
-        }
+    if ( $self->{dataSchema}{$paramHash{_table}}{extra_value}{type} ) {
+        my $hashRef = {%paramHash};
+        delete @{$hashRef}{ grep /^(guid|site_guid|created_date|createdDate|siteGUID|pin)$/, keys %$hashRef };
+        delete @{$hashRef}{ grep /^_/, keys %$hashRef };
+        $self->saveExtra( DBH => $paramHash{DBH}, table => $paramHash{_table}, hashRef => $hashRef );        
     }
+
     return %paramHolder;
 }
-
 
 #
 # Pass keywords and field list, and create a wellformed where statement for keyword
@@ -3733,6 +3771,7 @@ sub _getKeywordSQL {
     # kILL THE last and and then wrap it in parans so it will fit will in sql statements
     #
     $keywordSQL =~ s/\s*and\s*$//sg;
+
     return $keywordSQL;
 }
 

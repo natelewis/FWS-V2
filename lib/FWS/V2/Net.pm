@@ -11,11 +11,11 @@ FWS::V2::Net - Framework Sites version 2 network access methods
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -184,7 +184,8 @@ sub send {
     #
     my @digitalAssets;
     if ( $paramHash{digitalAssets} ) {
-        @digitalAssets = split( /\|/, $paramHash{digitalAssets} );
+        #@digitalAssets = split( /\|/, $paramHash{digitalAssets} );
+        @digitalAssets = @{ $paramHash{digitalAssets} };
     }
 
     #

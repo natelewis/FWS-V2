@@ -11,11 +11,11 @@ FWS::V2::Display - Framework Sites version 2 web display methods
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -68,17 +68,20 @@ sub FWSHead {
 
     my $pageTitle = $self->siteValue( 'pageTitle' );
 
+    #
+    # set up secure meta
+    # 
+    my $secureMeta = ( $self->siteValue( 'OGImage' ) =~ /^https/ ) ? ':secure_url' : '';
+    ( my $nonSecureImage = $self->siteValue( 'OGImage' ) ) =~ s/^https/http/sg;
+    
+
     my $html = '<title>' . $pageTitle . "</title>\n";
     if ( $self->siteValue( 'pageKeywords' ) )     { $html .= '<meta name="keywords" content="' . $self->siteValue( 'pageKeywords' ) . "\"/>\n" }
     if ( $self->siteValue( 'pageDescription' ) )  { $html .= '<meta name="description" content="' . $self->siteValue( 'pageDescription' ) . "\"/>\n" }
-
-    #
-    # Load jquery in head if it is flagged to, if not it will be lazy loaded
-    #
-    my %jqueryHash = %{$self->{_jqueryHash}};
-    if ( keys %jqueryHash && $self->{loadJQueryInHead} ) {
-    #    $html .= "<script type=\"text/javascript\" src=\"//code.jquery.com/ui/1.10.4/jquery-ui.min.js\"></script>\n";
-    }
+    if ( $self->siteValue( 'OGTitle' ) )          { $html .= '<meta property="og:title" content="' . $self->siteValue( 'OGTitle' ) . "\"/>\n" }
+    if ( $self->siteValue( 'OGImage' ) )          { $html .= '<meta property="og:image" content="' . $nonSecureImage . "\"/>\n" }
+    if ( $self->siteValue( 'OGImage' ) )          { $html .= '<meta property="og:image' . $secureMeta . '" content="' . $self->siteValue( 'OGImage' ) . "\"/>\n" }
+    if ( $self->siteValue( 'OGDescription' ) )    { $html .= '<meta property="og:description" content="' . $self->siteValue( 'OGDescription' ) . "\"/>\n" }
 
     return $html . $self->siteValue( 'pageHead' ) . $self->siteValue( 'templateHead' );
 }
@@ -320,9 +323,12 @@ sub printPage {
         #
         $self->formValue( 'FWS_showElementOnly', 1 );
 
-        if ( $self->formValue( 'redirect' ) ) {
+
+        if ( $self->formValue( 'redirect' ) || $paramHash{redirect} ) {
+            $paramHash{redirect} ||=  $self->formValue( 'redirect' );
             print "Status: 302 Found\n";
-            print 'Location: ' . $self->urlDecode( $self->formValue( 'redirect' ) ) . "\n\n";
+            print 'Location: ' . $self->urlDecode( $paramHash{redirect} ) . "\n\n";
+            exit;
         }
         else { 
             print $theHeader  . $paramHash{content};
@@ -345,10 +351,24 @@ sub printPage {
 sub _FWSContent {
     my ( $self ) = @_;
 
+    #                    
+    # Get ready to time our elements                    
+    #                    
+    use Benchmark;
+
+    #
+    # Page content will be stored here
+    #
     my $pageHTML;
 
+    #
+    # if this flag ever gets flipped STOP STOP STOP!
+    #
     if ( !$self->{stopProcessing} ) {
-    
+   
+        # 
+        # this was figured out during the session init 
+        # 
         my $pageId = $self->safeSQL( $self->formValue( 'p' ) );
 
         #
@@ -360,6 +380,8 @@ sub _FWSContent {
         # if this is an admin url move to a adminLogin
         #
         if ( $pageId eq $self->{adminURL} ) { $self->displayAdminLogin() }
+
+
 
         #
         # if this is an ispadmin control process the page differntly
@@ -488,10 +510,19 @@ sub _FWSContent {
             # lets not change this stuff around if we are on an aadmin page of some sort
             #
             if ( $pageId !~ /^fws_/ ) {
+
+                #
+                # set the OG Tags
+                #
+                if ( !$self->siteValue( 'OGTitle' ) )         { $self->siteValue( 'OGTitle'         , $pageHash{OGTitle} ) }
+                if ( !$self->siteValue( 'OGDescription' ) )   { $self->siteValue( 'OGDescription'   , $pageHash{OGDescription} ) }
+                if ( !$self->siteValue( 'OGImage' ) )         { $self->siteValue( 'OGImage'         , $pageHash{OGImage} ) }
+
                 #
                 # ONLY if these things aren't set by elements,  then set them by the page defaults... if not pass them by and accept what it already is
                 #
-                if ( !$self->siteValue( 'pageTitle' ) )         { $self->siteValue( 'pageTitle'         , $self->{siteName} . ' - ' . $pageHash{title} ) }
+                if ( !$self->siteValue( 'pageTitle' ) )         { $self->siteValue( 'pageTitle'         , $pageHash{title} ) }
+                if ( !$self->siteValue( 'pageTitle' ) )         { $self->siteValue( 'pageTitle'         , $self->{siteName} ) }
                 if ( !$self->siteValue( 'pageKeywords' ) )      { $self->siteValue( 'pageKeywords'      , $pageHash{pageKeywords} ) }
                 if ( !$self->siteValue( 'pageDescription' ) )   { $self->siteValue( 'pageDescription'   , $pageHash{pageDescription} ) }
             }
@@ -686,7 +717,7 @@ sub _FWSContent {
                             # if If group ID is "-1" then all I need to be is just logged in
                             # Special login code group flag checker
                             #
-                            %userHash = $self->runScript( 'login', 
+                            %userHash = $self->runScript( 'preLoginSecurity', 
                                 %userHash,
                                 'userGroup'             => $valueHash{userGroup},
                                 'type'                  => $valueHash{type},
@@ -833,9 +864,37 @@ sub _FWSContent {
                         #
                         my $htmlHold = $html;
                         $html = '';
+            
+                        #
+                        # Ready set go!
+                        #
+                        my $start_time = new Benchmark;
+
+                        #
+                        # use shorthand v
+                        #
+                        my %v = %valueHash;
+
                         ## no critic qw(RequireCheckingReturnValueOfEval ProhibitStringyEval)
                         eval $elementHash{scriptDevel};
                         ## use critic
+
+                        #
+                        # if shorthand v was used, put it back to valueHash
+                        #
+                        if ( $v{html} ne '' ) {
+                            %valueHash = %v;
+                        }
+
+                        #
+                        # And..... STOP!
+                        #
+                        my $end_time = new Benchmark;
+                        ( $valueHash{elementTime} = timestr(timediff( $end_time, $start_time ), 'noc' ) ) =~ s/.*\s=\s(.*)\s.*/$1/;
+
+                        #
+                        # Process any error html if something exploded
+                        #
                         my $errorCode = $@;
                         if ( $errorCode ) {
                             $valueHash{html} .= "<div style=\"border:solid 1px;font-weight:bold;\">FrameWork Element Error:</div><div style=\"font-style:italic;\">" . $errorCode . "</div>";
@@ -882,7 +941,7 @@ sub _FWSContent {
                         #
                         my $editBox;
 
-                        $columnContent{$valueHash{layout}} .= "<div" . $editBox . " class=\"" . $valueHash{layout} . "_element element_" . $valueHash{guid} . "\" id=\"" . $valueHash{layout} . "_element_" . $columnCount{$valueHash{layout}} . "\">";
+                        $columnContent{$valueHash{layout}} .= '<div' . $editBox . " class=\"" . $valueHash{layout} . "_element element_" . $valueHash{guid} . "\" id=\"" . $valueHash{layout} . "_element_" . $columnCount{$valueHash{layout}} . "\">";
 
                         if ( ( $self->{adminLoginId} && $valueHash{siteGUID} eq $self->{siteGUID} && !$self->formValue( 'FWS_showElementOnly' ) && !$showElementOnly && !$valueHash{disableEditMode} && $self->formValue( 'editMode' ) ) )  {
                             $columnContent{$valueHash{layout}} .= $self->editBox( %valueHash, AJAXDivStyle => '', editBoxContent => $html );
@@ -892,7 +951,7 @@ sub _FWSContent {
                         }
 
                         $elementTotal++;
-                        $columnContent{$valueHash{layout}} .= "</div>";
+                        $columnContent{$valueHash{layout}} .= '</div>';
                     }
                 }
             }

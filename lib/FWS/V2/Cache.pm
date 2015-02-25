@@ -11,11 +11,11 @@ FWS::V2::Cache - Framework Sites version 2 data caching
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -330,14 +330,6 @@ sub setPageCache {
             #
             if ( $self->{tinyMCEEnable} && !$paramHash{jqueryOnly} ) {
                 print $JS $self->tinyMCEHead();
-
-                #my $tinyMCEInit = $self->{filePath} . "/fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js";
-                #if ( -e $tinyMCEInit ) {
-                #    open ( my $FILE, "<", $tinyMCEInit ) || $self->FWSLog( "Can not open file:" .  $tinyMCEInit );
-                #    print $JS "\n\n// /fws/" . $self->{tinyMCEPath} . "/tiny_mce_init.js\n\n";
-                #    while ( my $line = <$FILE> ) { print $JS $line }
-                #    close $FILE;
-                #}
             }
 
             #
@@ -437,7 +429,7 @@ sub setPageCache {
         $pageFoot .= "<script type=\"text/javascript\" src=\"" . $cacheWeb . ".js\"></script>\n";
 
         if ( $self->{tinyMCEEnable}  && !$paramHash{jqueryOnly} ) {
-            $pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/" . $self->{tinyMCEPath} . "/tiny_mce.min.js\"></script>\n" . $pageFoot;
+            $pageFoot = "<script type=\"text/javascript\" src=\"" . $self->{fileFWSPath} . "/" . $self->{tinyMCEPath} . "/tiny_mce.js\"></script>\n" . $pageFoot;
         }
 
 

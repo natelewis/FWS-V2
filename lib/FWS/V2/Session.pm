@@ -11,11 +11,11 @@ FWS::V2::Session - Framework Sites version 2 session related methods
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -272,7 +272,7 @@ sub setSession {
     #
     # if we have an A value lets do some stuff with the aff exp
     #
-    if ( $self->formValue( 'a' ) ne '' ) {
+    if ( $self->formValue( 'a' ) ) {
 
         #
         # this is a new affiliate or it has been switched lets reset tht time
@@ -408,7 +408,7 @@ sub setSiteFriendly {
             #
             # got a match, siteGUID the siteGUID and and find a freidnly match
             #
-            if ( $sid ne '' && $friendlyURL ne '' ) {
+            if ( $sid && $friendlyURL ) {
                 my ( $p, $pageFriendlyURL, $theOrder ) = @{$self->runSQL( SQL =>
                 "select data.guid,data.page_friendly_url,1 as ordering from data left join site on site.guid=data.site_guid where site.sid='" . $self->safeSQL( $sid ) . "' and friendly_url='" . $self->safeSQL( $friendlyURL ) . "' ".
                 "union select data.guid,data.page_friendly_url,2 as ordering from data left join site on site.guid=data.site_guid where data.guid='" . $self->safeSQL( $permPage ) . "' or (site.sid='" . $self->safeSQL( $sid ) . "' and friendly_url='" . $self->safeSQL( $permPage ) . "') ".
@@ -421,7 +421,7 @@ sub setSiteFriendly {
                 #
                 if ( $theOrder eq '2' ) { $self->formValue( 'id', $self->safeQuery( $permId ) ) }
 
-                if ( $pageFriendlyURL ne '' ) {
+                if ( $pageFriendlyURL ) {
                     #
                     # if this page came from a friendly but has pageFriendlyURL, this is special!
                     # it will use the pageFriendlyURL place of its intended page and set its ID to what page it would have been.
@@ -434,7 +434,7 @@ sub setSiteFriendly {
                     #
                     if ( !$p ) { $p = $pageFriendlyURL }
                 }
-                if ( $p ne '' ) {
+                if ( $p ) {
 
                     #
                     # the page does exist and it will show something.
@@ -536,7 +536,7 @@ sub processLogin {
     #
     # if statuNote is not blank we failed login criteria
     #
-    if ( $loginStatusNote ne '' ) {
+    if ( $loginStatusNote ) {
         my $pageActionSave = $self->formValue( 'pageActionSave' );
         if ( $pageActionSave eq '' ) {$self->formValue( 'pageActionSave', $self->formValue( 'pageAction' ) ) }
     }
@@ -618,7 +618,7 @@ sub _localLogin {
     #
     # Login if the site critera works for an admin
     #
-    if ( $self->formValue( 'bs' ) ne '' && $self->formValue( 'l_password' ) ne '' && $self->formValue( 'pageAction' ) ne 'adminLogOut' ) {
+    if ( $self->formValue( 'bs' ) && $self->formValue( 'l_password' ) && $self->formValue( 'pageAction' ) ne 'adminLogOut' ) {
         my ( $adminPass ) = @{$self->runSQL( SQL => "select admin_user_password from admin_user where user_id='" . $self->safeSQL( $self->formValue( 'bs' ) ) . "'" )};
 
         #
@@ -659,7 +659,7 @@ sub _localLogin {
             }
         }
 
-        if ( $adminPass eq $formPassword && $adminPass ne '' ) {
+        if ( $adminPass eq $formPassword && $adminPass ) {
             $self->{adminLoginId} = $self->formValue( 'bs' );
             if ( $self->formValue( 'p' ) eq $self->{adminURL} ) { 
                 $self->formValue( 'p', $self->homeGUID() ) 
@@ -675,7 +675,7 @@ sub _localLogin {
     #
     # Login as a profile
     #
-    if ( ( ( $self->formValue( 'b' ) ne '' && $self->formValue( 'password' ) ne '' ) )  && $self->formValue( 'pageAction' ) ne 'logout' ) {
+    if ( ( ( $self->formValue( 'b' ) && $self->formValue( 'password' ) ) )  && $self->formValue( 'pageAction' ) ne 'logout' ) {
 
         #
         # set the BH field in case we need to use it to show in the field
@@ -684,15 +684,22 @@ sub _localLogin {
         my ( $userGUID, $active, $passCheck, $googleAppsId ) = @{$self->runSQL( SQL => "select guid, active, profile_password, google_id from profile where email like '" . $self->safeSQL( $self->formValue( 'b' ) ) . "'" )};
 
         my $formPassword = $self->cryptPassword( $self->formValue( 'password' ) );
-        if ( ( $passCheck eq $formPassword && $passCheck ne '' ) ) {
+        if ( ( $passCheck eq $formPassword && $passCheck ) ) {
 
             if (!$active) {
                 $self->formValue( 'statusNote', $self->formValue( 'statusNote' ) . 'Your account has been disabled.' )
             }
             else {
 
-                #$self->{userLoginId} = $self->formValue( 'b' );
+                #
+                # we are logged in!!!!!  set the userLoginId
+                #
                 $self->{userLoginId} = $userGUID;
+
+                #
+                # set the last logged in for the user
+                #
+                $self->runSQL( SQL => "update profile set last_login = now() where guid = '" . $self->safeSQL( $userGUID ) . "'" );
 
                 #
                 # if for ever reason we are on the default login page, lets dump you to the home page
@@ -715,7 +722,7 @@ sub _localLogin {
                             login   => $googleAppsId,
                             request => $self->urlDecode( $self->formValue( 'SAMLRequest' ) )
                         } );
-                        if ( $self->formValue( 'RelayState' ) ne '' ) {
+                        if ( $self->formValue( 'RelayState' ) ) {
                             $self->printPage( content => $saml->get_google_form( $self->urlDecode( $self->formValue( 'RelayState' ) ) ) );
                         }
                     }
@@ -750,7 +757,9 @@ sub _localLogin {
         #
         # get the keys and and set them
         #
-        for my $key ( keys %adminHash ) { $self->userValue( $key, $adminHash{$key} ) }
+        for my $key ( keys %adminHash ) { 
+            $self->userValue( $key, $adminHash{$key} );
+        }
 
         #
         # if we logged in as admin - or we have isAdmin clicked.  lets give the full montie
@@ -794,8 +803,8 @@ sub _localLogin {
         if ( $self->formValue( 'pageAction' ) !~ /^(\d+|addToNewsList|formMail|recoverPassword|updateCart|addProfile)$/) {
             $self->formValue( 'pageAction', '' )
         }
-        if ( $self->formValue( 'l_password' ) ne '' ) { $self->formValue( 'editMode', 0 ) }
-        if ( $self->formValue( 'password' ) ne '' || $self->formValue( 'l_password' ) ne '' ) {
+        if ( $self->formValue( 'l_password' ) ) { $self->formValue( 'editMode', 0 ) }
+        if ( $self->formValue( 'password' ) || $self->formValue( 'l_password' ) ) {
             return 'Your password is invalid or expired';
         }
     }
@@ -969,11 +978,10 @@ sub setSiteValues {
 
     #
     # Now that we have the session we can set the queryHead
+    # A couple of legacy things still need this or the post will explode
+    # New code won't use this because they wil use a ? when its needed
     #
-    $self->{queryHead} = "?fws_noCache=" . 
-        $self->createPassword( composition => 'qwertyupasdfghjkzxcvbnmQWERTYUPASDFGHJKZXCVBNM',lowLength=>6,highLength=>6) . 
-        "&session=" . $self->formValue( 'session' ) . 
-        "&s=" . $self->{siteId} . "&";
+    $self->{queryHead} = '?&';
 
     #
     # if p is still blank, lets set it
@@ -984,11 +992,24 @@ sub setSiteValues {
             $self->formValue( 'p', $self->siteValue( 'homeGUID' ) )
         } 
         else {
+            
             print "Status: 404 Not Found\n";
             print "Connection: close\n";
             print "Content-Type: text/html\n\n";
-            print "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n";
-            print "<HTML><HEAD>\n<TITLE>404 Not Found</TITLE>\n</HEAD><BODY>\n<H1>Not Found</H1>\n<P>The requested file is not available or does not exist.</P>\n</BODY></HTML>";
+           
+            my $notFoundPage = '/' . $self->siteGUID() . '/' . $self->homeGUID() . '/404.html';
+
+            if ( -e $self->filePath() . $notFoundPage ) {
+                open my $outFile, '<', $self->filePath() . $notFoundPage;
+                while ( <$outFile> ) {
+                    print $_ . "\n";
+                }
+            }
+            else {
+                print "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n";
+                print "<HTML><HEAD>\n<TITLE>404 Not Found</TITLE>\n</HEAD><BODY>\n<H1>Not Found</H1>\n<P>The requested file is not available or does not exist.</P>\n</BODY></HTML>";
+            }
+
             $self->{stopProcessing} = 1;
         } 
     }

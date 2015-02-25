@@ -11,11 +11,11 @@ FWS::V2 - Framework Sites version 2.3.x
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -388,6 +388,8 @@ Further instructions on making web based rendering go.pl files visit http://www.
 #
 #########################################################################
 
+my @test;
+my $that = $#test;
 
 ########### HIDE ################
 
@@ -471,7 +473,6 @@ sub new {
 
     # The subdirectory of where tinyMCE is placed to make upgrading  and testing new versions easier
     $self->{tinyMCEPath}                  ||= 'tinymce-4.0.26';
-    #$self->{tinyMCEPath}                  ||= 'tinymce-3.5.4';
 
     # Sometimes sites need bigger thatn text blob, 'mediumtext' might be needed
     $self->{scriptTextSize}               ||= 'text';
@@ -703,13 +704,16 @@ sub new {
         site_guid             => { type => 'char(36)' ,key => 'MUL'         ,default => ''                  ,noSite => 1},
         guid                  => { type => 'char(36)' ,key => 'MUL'         ,default => ''                  },
         pin                   => { type => 'char(6)'  ,key => 'MUL'         ,default => ''                  },
-        profile_password      => { type => 'char(255)',key => ''            ,default => ''                  ,AJAXGroup => 'showSiteUsers',cryptPassword => 1},
+        profile_password      => { type => 'char(255)',key => ''            ,default => ''                  ,AJAXGroup => 'showSiteUsers', cryptPassword => 1},
         fb_access_token       => { type => 'char(255)',key => ''            ,default => ''                  },
         fb_id                 => { type => 'char(255)',key => ''            ,default => ''                  },
         email                 => { type => 'char(255)',key => 'MUL'         ,default => ''                  },
+        last_login            => { type => 'datetime' ,key => ''            ,default => '0000-00-00'        },
         name                  => { type => 'char(255)',key => ''            ,default => ''                  ,AJAXGroup => 'showSiteUsers'},
         active                => { type => 'int(1)'   ,key => ''            ,default => '1'                 ,AJAXGroup => 'showSiteUsers'},
         google_id             => { type => 'char(255)',key => ''            ,default => ''                  ,AJAXGroup => 'showSiteUsers'},
+        friendly_url          => { type => 'char(255)',key => 'MUL'         ,default => ''                  ,AJAXGroup => 'showSiteUsers'},
+        page_friendly_url     => { type => 'char(255)',key => 'MUL'         ,default => ''                  ,AJAXGroup => 'showSiteUsers'},
         extra_value           => { type => 'text'     ,key => ''            ,default => ''                  ,AJAXGroup => 'showSiteUsers'},
     };
 
@@ -754,6 +758,7 @@ sub new {
         schema_devel          => { type => 'text'     ,key => ''            ,default => ''                  },
         active                => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
         checkedout            => { type => 'int(1)'   ,key => ''            ,default => '0'                 },
+        hook                  => { type => 'int(1)'   ,key => ''            ,default => '0'                 ,AJAXGroup => 'showDeveloper'},
         root_element          => { type => 'int(1)'   ,key => ''            ,default => '0'                 ,AJAXGroup => 'showDeveloper'},
     };
     
@@ -817,7 +822,7 @@ sub processWeb {
     # default boostrapEnable to on!
     # unless its specifically turned off we want it on
     #
-    if ( $self->{bootstrapEnable} ne '0' ) {
+    if ( !defined $self->{bootstrapEnable} ) {
         $self->{bootstrapEnable} = 1;
     }
     

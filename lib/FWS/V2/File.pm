@@ -10,11 +10,11 @@ FWS::V2::File - Framework Sites version 2 text and image file methods
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -443,6 +443,10 @@ sub unpackDirectory {
     #
     open ( my $UNPACKFILE, '<', $paramHash{fileName} );
     while ( <$UNPACKFILE> ) {
+
+        #
+        # pull the line from the file
+        #
         my $line = $_;
 
         #
@@ -450,7 +454,11 @@ sub unpackDirectory {
         #
         chomp $line;
 
+        #
+        # process the file if we have reached the end of one.
+        #
         if ( $line =~ /^FILE_END\|/ ) {
+
             #
             # save the file to that directory
             #
@@ -475,7 +483,23 @@ sub unpackDirectory {
         # will be looking at the base 64
         #
         if ( $line =~ /^FILE\|/ ) {
+
+            #
+            # Pull the file name out
+            #
             ( $fileName = $line ) =~ s/.*?\|\/*(.*)\n*/$1/sg;
+            
+            #
+            # if there is a site GUID in the filename fix it so it will land in the right spot
+            #
+            my $siteGUID = $self->{siteGUID};
+            $fileName =~ s/#siteGUID#/$siteGUID/g;
+
+            $self->FWSLog( 'FILE: ' . $fileName );
+
+            #
+            # set the dir and make it
+            #
             ( my $directory = $paramHash{directory} . '/' . $fileName ) =~ s/^(.*)\/.*/$1/sg;
             $self->makeDir( $directory );
         }
@@ -515,6 +539,8 @@ sub uploadFile {
     my $buffer;
     my $fileHolder;
     while ( $byteReader = read( $fileHandle, $buffer, 1024 ) ) { $fileHolder .= $buffer }
+
+    $self->FWSLog( 'Uploading File: ' .  $directory . '/' . $fileName );
 
     #
     # if we meet the restrictions write the file to the filesystem and create thumbnails and icons.
@@ -581,14 +607,16 @@ sub packDirectory {
         # if we have a list of dirs, lets make sure we are ok to process this one
         #
         my $dirOK = 0;
-        if ( $paramHash{directoryList} ne '' ) {
+        if ( $paramHash{directoryList} ) {
             map { if ( $file =~ /^$_/ ) { $dirOK = 1 } } split( /,/, $paramHash{directoryList} );
         }
 
         #
         # if we didn't pass a directoryList then we are all good for every file
         #
-        else { $dirOK = 1 }
+        else {
+            $dirOK = 1;
+        }
 
         #
         # move though the files
@@ -608,6 +636,15 @@ sub packDirectory {
             binmode $FILE;
             while ( read( $FILE, my $buffer, 1 ) ) { $rawFile .= $buffer }
             close $FILE;
+        
+            # 
+            # site guid will change from place to place so lets make it anon 
+            # only if its populated
+            # 
+            my $siteGUID = $self->{siteGUID};
+            if ( $siteGUID ) {
+                $file =~ s/$siteGUID/#siteGUID#/g;
+            }
 
             #
             # print the header - encode it - footer around the file
@@ -619,10 +656,12 @@ sub packDirectory {
             }
         }, $paramHash{directory} );
 
-    if ( $paramHash{fileName} ) { close $FILEFILE }
+    if ( $paramHash{fileName} ) {
+        close $FILEFILE;
+    }
 
     return $packFile;
-    }
+}
 
 
 =head2 saveEncodedBinary
@@ -642,6 +681,7 @@ sub saveEncodedBinary {
     #
     # take a base64 text string, and save it to filesystem
     #
+    $self->FWSLog( 'Unpacking Encoded file: ' . $fileName );
     open ( my $FILE, ">", $fileName );
     binmode $FILE;
     $rawFile = decode_base64( $rawFile );
@@ -684,33 +724,45 @@ sub pluginInfo {
         while ( <$SCRIPTFILE> ) { $scriptContent .= $_ }
         close $SCRIPTFILE;
     }
-   
-    #
-    # strip the version and header data out and create the commit button
-    #
-    $scriptContent             =~ s/our\s\$VERSION\s*=\s*\'([\d\.]+).*?\n//s;
-    $returnHash{version}       = $1;
-  
+
+    $returnHash{minified} = 0;
+ 
+    if ( $scriptContent =~ /^#PLUGIN/ ) {
+        ( $returnHash{pin}          = $scriptContent ) =~ s/^#PLUGIN:\s(.*?)\s(.*?)\n.*/$2/sg;
+        ( $returnHash{version}      = $scriptContent ) =~ s/.*#VERSION: (.*?)\n.*/$1/sg;
+        ( $returnHash{authorName}   = $scriptContent ) =~ s/.*AUTHOR: (.*?)\n.*/$1/sg;
+        ( $returnHash{authorEmail}  = $scriptContent ) =~ s/.*EMAIL: (.*?)\n.*/$1/sg;
+        ( $returnHash{description}  = $scriptContent ) =~ s/.*DESCRIPTION: (.*?)\npackage .*/$1/sg;
+        $returnHash{minified} = 1;
+    }
+    else {
+        #
+        # strip the version and header data out and create the commit button
+        #
+        $scriptContent             =~ s/our\s\$VERSION\s*=\s*\'([\d\.]+).*?\n//s;
+        $returnHash{version}       = $1;
+      
+        #   
+        # get description
+        #
+        $scriptContent              =~  s/.head1\sNAME\n\n[a-zA-Z0-9]+\s-\s(.*?)\n//sg;
+        $returnHash{description}    = $1;
+        
+        #
+        # Pull out the author
+        #
+        $scriptContent              =~ s/.head1 AUTHOR[\n]*(.*?),\sC\<\<\s\<\s*(.*?)\s*\>\s\>\>.*//sg;
+        $returnHash{authorName}     = $1;
+        ( $returnHash{authorEmail}  = $2 ) =~ s/ at /\@/g;
+    }
+        
     #
     # make the version cool if its not in there
     # 
     $returnHash{version}        =~ s/[^\d\.]//g;
     $returnHash{version}       ||= '0.0000';
-
     $returnHash{version}        = sprintf( "%.4f", $returnHash{version} );
-
-    #   
-    # get description
-    #
-    $scriptContent              =~  s/.head1\sNAME\n\n[a-zA-Z0-9]+\s-\s(.*?)\n//sg;
-    $returnHash{description}    = $1;
-    
-    #
-    # Pull out the author
-    #
-    $scriptContent              =~ s/.head1 AUTHOR[\n]*(.*?),\sC\<\<\s\<\s*(.*?)\s*\>\s\>\>.*//sg;
-    $returnHash{authorName}     = $1;
-    ( $returnHash{authorEmail}  = $2 ) =~ s/ at /\@/g;
+  
     
     return %returnHash; 
 }

@@ -11,11 +11,11 @@ FWS::V2::Admin - Framework Sites version 2 internal administration
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
@@ -50,6 +50,7 @@ Run admin actions to do the initial install or reinstall of core FWS package.
 
 sub runAdminAction {
     my ( $self ) = @_;
+
     if ( $self->isAdminLoggedIn() && !$self->{stopProcessing} ) { $self->_processAdminAction() }
     return;
 }
@@ -64,7 +65,7 @@ Return the HTML used for a default FWS admin login.
 sub displayAdminLogin {
     my ( $self ) = @_;
 
-    my $loginForm = '<div class="container"><form class="form-inline well" style="margin:auto;margin-top:40px;text-align:center;min-height:170px;max-width:550px;" action="' . $self->{scriptName} . '">';
+    my $loginForm = '<div class="container"><form class="form-inline well" style="margin:auto;margin-top:40px;text-align:center;min-height:170px;max-width:550px;" method="post" action="' . $self->{scriptName} . '">';
     $loginForm .= '<h2 style="padding-bottom:20px;"><strong>' . $self->frameworkSites() . '</strong></h2>';
     $loginForm .= '<input name="bs" type="text" class="input-large input-block-level form-control" value="' . $self->formValue( 'bs_hold' ) . '" placeholder="User Name">';
     $loginForm .= ' <input type="password" name="l_password" class="input-large input-block-level form-control" placeholder="Password">';
@@ -407,6 +408,12 @@ sub importSiteImage {
             }
         }
     close $READ_FILE;
+
+    #
+    # kill the file so they don't build up
+    #
+    unlink $importFile; 
+
     return $importReturn;
 }
     
@@ -520,7 +527,10 @@ Placeholder for FWSMenu() until the admin element brings one in.
 sub FWSMenu {
     my ( $self, %paramHash ) = @_;
 
-    $self->FWSBanner( title => 'Welcome to FrameWork Sites!', content => 'First thing your going to need is a way to access your installation.   This will install a default site, give you access to install plugins, and everything else you will need to get going.<br/><br/><a href="' . $self->{scriptName} .  $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Install Default Admin Package</a>' );
+    $self->FWSBanner( 
+        saveSession => 1,
+        title       => 'Welcome to FrameWork Sites!',
+        content     => 'First thing your going to need is a way to access your installation.   This will install a default site, give you access to install plugins, and everything else you will need to get going.<br/><br/><a href="' . $self->{scriptName} .  $self->{queryHead} . 'p=fws_systemInfo&pageAction=installCore" class="btn btn-primary btn-large">Install Default Admin Package</a>' );
     return;
 }
 
@@ -537,7 +547,15 @@ sub FWSBanner {
     #
     # since we are bailing, lets save the session if we need to
     #
-    $self->saveSession();
+    $self->FWSLog( 'Banner shown: ' .  $paramHash{content} );
+    $self->{stopProcessing}++;
+
+    #
+    #
+    #
+    if ( $paramHash{saveSession} ) { 
+        $self->saveSession();
+    }
 
     #
     # print the banner out and bail!
@@ -586,6 +604,7 @@ sub displayAdminPage {
                 if ( $self->{_fullElementHashCache}->{$guid}{type} eq $fwsElementType || "fws_" . $guid eq $pageId ) {
                 
                     my %elementHash = $self->elementHash( guid => $guid );
+   
     
                     #
                     # blank out the adminGroup if we have access so we can pass by the security check
@@ -706,7 +725,7 @@ sub _isValidSID {
 sub _processAdminAction {
     my ( $self ) = @_;
             
-                
+               
     #
     # run FWS Admin lib or the default one
     #
@@ -743,7 +762,11 @@ sub _processAdminAction {
         } 
         
         if ( $self->formValue( 'pageAction' ) eq 'installCore' ) {
-        
+       
+            # 
+            # 
+            $self->FWSLog( 'Install core initiated via web' );
+            # 
             #
             # set the base URL for where the dist files are pulled from
             #
@@ -892,6 +915,7 @@ sub _systemInfoCheckDir {
         if ( $newDir =~ /\/fws/ ) {
             if ( !$self->{hideFWSCoreUpgrade} ) {
                 $errorReturn .= "Your core element and file package is not installed yet.<br/>";
+                $errorReturn .= $newDir . '-';
                 $errorReturn .= '<a href="' . $self->{scriptName} . '?p=fws_systemInfo&pageAction=installCore">Click here to install your core element and file package</a><br/>';
                 $errorReturn .= '<i>Depending on your connection speed and server performance, your page may take a few minutes to load after clicking the link below.</i>';
             }

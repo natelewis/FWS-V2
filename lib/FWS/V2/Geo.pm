@@ -10,11 +10,11 @@ FWS::V2::Geo - Framework Sites version 2 geo location methods
 
 =head1 VERSION
 
-Version 3.14052820
+Version 3.15022201
 
 =cut
 
-our $VERSION = '3.14052820';
+our $VERSION = '3.15022201';
 
 
 =head1 SYNOPSIS
